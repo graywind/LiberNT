@@ -896,6 +896,14 @@ USBPORT_Wait(IN PVOID MiniPortExtension,
     LARGE_INTEGER Interval = {{0, 0}};
 
     DPRINT("USBPORT_Wait: Milliseconds - %x\n", Milliseconds);
+
+    /* A miniport calls this from its DPC callbacks, where a thread wait stops the system */
+    if (KeGetCurrentIrql() >= DISPATCH_LEVEL)
+    {
+        KeStallExecutionProcessor(Milliseconds * 1000);
+        return STATUS_SUCCESS;
+    }
+
     Interval.QuadPart -= 10000 * Milliseconds + (KeQueryTimeIncrement() - 1);
     return KeDelayExecutionThread(KernelMode, FALSE, &Interval);
 }
