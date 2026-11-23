@@ -306,6 +306,7 @@
 @ stdcall FsRtlProcessFileLock(ptr ptr ptr)
 @ stdcall FsRtlRegisterFileSystemFilterCallbacks(ptr ptr)
 @ stdcall FsRtlRegisterUncProvider(ptr ptr long)
+@ stdcall FsRtlRegisterUncProviderEx(ptr ptr ptr long)
 @ stdcall FsRtlReleaseFile(ptr)
 @ stdcall FsRtlRemoveDotsFromPath(ptr long ptr)
 @ stdcall FsRtlValidateReparsePointBuffer(long ptr)
@@ -2305,7 +2306,6 @@
 @ stub -arch=win64 FsRtlQueryMaximumVirtualDiskNestingLevel
 @ stub -arch=win64 FsRtlRegisterFltMgrCalls
 @ stub -arch=win64 FsRtlRegisterMupCalls
-@ stub -arch=win64 FsRtlRegisterUncProviderEx
 @ stub -arch=win64 FsRtlRegisterUncProviderEx2
 @ stub -arch=win64 FsRtlReleaseEofLock
 @ stub -arch=win64 FsRtlReleaseFileNameInformation
