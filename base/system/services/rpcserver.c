@@ -842,9 +842,8 @@ ScmCanonDriverImagePath(DWORD dwStartType,
             return ERROR_NOT_ENOUGH_MEMORY;
         }
 
-        /* If it's a boot-time driver, it must be systemroot relative */
-        if (dwStartType == SERVICE_BOOT_START)
-            wcscpy(*lpCanonName, L"\\SystemRoot\\");
+        /* The loader resolves the global system root for every start type */
+        wcscpy(*lpCanonName, L"\\SystemRoot\\");
 
         wcscat(*lpCanonName, lpServiceName + 13);
 
@@ -895,29 +894,35 @@ ScmCanonDriverImagePath(DWORD dwStartType,
     /* The unicode string is not needed anymore */
     RtlFreeUnicodeString(&NtServiceName);
 
-    if (dwStartType != SERVICE_BOOT_START)
+    Result = ScmConvertToBootPathName(*lpCanonName, &RelativeName);
+    if (Result)
     {
+        /* A driver outside the system root keeps its full NT path */
+        if (dwStartType == SERVICE_BOOT_START)
+        {
+            HeapFree(GetProcessHeap(), 0, *lpCanonName);
+            DPRINT("Error converting named\n");
+            return Result;
+        }
+
         DPRINT("Canonicalized name %S\n", *lpCanonName);
         return NO_ERROR;
     }
 
-    /* The service is boot-started, so must be relative */
-    Result = ScmConvertToBootPathName(*lpCanonName, &RelativeName);
-    if (Result)
-    {
-        /* There is a problem, free name and return */
-        HeapFree(GetProcessHeap(), 0, *lpCanonName);
-        DPRINT("Error converting named\n");
-        return Result;
-    }
-
     ASSERT(RelativeName);
 
-    /* Copy that string */
-    wcscpy(*lpCanonName, RelativeName + 12);
-
-    /* Free the allocated buffer */
-    HeapFree(GetProcessHeap(), 0, RelativeName);
+    if (dwStartType == SERVICE_BOOT_START)
+    {
+        /* Boot drivers are given to the bootloader system-root relative */
+        wcscpy(*lpCanonName, RelativeName + 12);
+        HeapFree(GetProcessHeap(), 0, RelativeName);
+    }
+    else
+    {
+        /* The loader resolves the global system root for every start type */
+        HeapFree(GetProcessHeap(), 0, *lpCanonName);
+        *lpCanonName = RelativeName;
+    }
 
     DPRINT("Canonicalized name %S\n", *lpCanonName);
 
