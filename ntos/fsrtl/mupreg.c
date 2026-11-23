@@ -126,6 +126,36 @@ FsRtlRegisterUncProvider(
     return STATUS_SUCCESS;
 }
 
+NTSTATUS
+NTAPI
+FsRtlRegisterUncProviderEx(
+    _Out_ PHANDLE MupHandle,
+    _In_ PUNICODE_STRING RedirDevName,
+    _In_ PDEVICE_OBJECT DeviceObject,
+    _In_ ULONG Flags)
+{
+    PAGED_CODE();
+
+    if ((MupHandle == NULL) ||
+        (RedirDevName == NULL) ||
+        (RedirDevName->Length == 0) ||
+        (RedirDevName->Buffer == NULL) ||
+        (DeviceObject == NULL))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if (DeviceObject->Type != IO_TYPE_DEVICE)
+    {
+        return STATUS_OBJECT_TYPE_MISMATCH;
+    }
+
+    return FsRtlRegisterUncProvider(
+               MupHandle,
+               RedirDevName,
+               (Flags & FSRTL_UNC_PROVIDER_FLAGS_MAILSLOTS_SUPPORTED) != 0);
+}
+
 VOID
 NTAPI
 FsRtlDeregisterUncProvider(
