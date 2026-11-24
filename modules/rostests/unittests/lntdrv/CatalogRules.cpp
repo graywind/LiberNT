@@ -173,6 +173,17 @@ static void CheckSearchTerms()
     terms = CatalogSearchTerms(ids);
     ok(terms.size() == 2 && terms[0] == ids[0] && terms[1] == ids[1], "ACPI device: %u terms\n",
        (unsigned)terms.size());
+
+    ids.assign(Display, Display + ARRAYSIZE(Display));
+    terms = CatalogNarrowerTerms(L"PCI\\VEN_8086&DEV_3185", ids);
+    ok(terms.size() == 3, "%u narrower terms, expected 3\n", (unsigned)terms.size());
+    if (terms.size() == 3)
+    {
+        ok(terms[0] == Display[0] && terms[1] == Display[1] && terms[2] == Display[4],
+           "narrower terms '%ls', '%ls', '%ls'\n", terms[0].c_str(), terms[1].c_str(), terms[2].c_str());
+    }
+    terms = CatalogNarrowerTerms(L"PCI\\VEN_8086&CC_030000", ids);
+    ok(terms.empty(), "%u narrower terms for a class-code term\n", (unsigned)terms.size());
 }
 
 static void CheckSupported()
@@ -242,13 +253,56 @@ static void CheckVersion(const wchar_t *row, const wchar_t *details, const wchar
        update.Version.c_str(), expected);
 }
 
+static void CheckProductFit(const wchar_t *products, ULONG build, bool server, int expected)
+{
+    SystemTarget system;
+    int fit;
+
+    system.Build = build;
+    system.Server = server;
+    fit = ProductFit(products, system);
+    ok(fit == expected, "'%ls' on %s build %lu: fit %d, expected %d\n", products, server ? "server" : "client", build,
+       fit, expected);
+}
+
+static void CheckOfferedName(const wchar_t *model, const wchar_t *title, const wchar_t *expected)
+{
+    CatalogUpdate update;
+
+    update.Model = model;
+    update.Title = title;
+    ok(OfferedName(update) == expected, "model '%ls', title '%ls': offered '%ls', expected '%ls'\n", model, title,
+       OfferedName(update).c_str(), expected);
+}
+
 START_TEST(CatalogRules)
 {
+    CheckOfferedName(L"AMD Radeon(TM) 780M Graphics", L"Advanced Micro Devices, Inc. - Display - 32.0.21025.1001",
+                     L"AMD Radeon(TM) 780M Graphics");
+    CheckOfferedName(L"", L"Realtek Semiconductor Corp. - Net - 10.74.1128.2024",
+                     L"Realtek Semiconductor Corp. - Net - 10.74.1128.2024");
     CheckParser();
     CheckThrottle();
     CheckSearchCache();
     CheckSearchTerms();
     CheckSupported();
+    CheckProductFit(L"Windows XP 64-Bit Edition Version 2003, Windows Server 2003", 26100, false, 0);
+    CheckProductFit(L"Windows XP 64-Bit Edition Version 2003, Windows Server 2003", 20348, true, 0);
+    CheckProductFit(L"Windows XP", 26100, false, 0);
+    CheckProductFit(L"Windows 2000, Windows XP", 26100, false, 0);
+    CheckProductFit(L"Windows XP, Windows Vista, Windows 7", 26100, false, 0);
+    CheckProductFit(L"Windows 7", 26100, false, 0);
+    CheckProductFit(L"Windows 8.1 and later drivers", 26100, false, 0);
+    CheckProductFit(L"Windows Server 2008 R2", 20348, true, 0);
+    CheckProductFit(L"Windows Server 2012 R2", 20348, true, 0);
+    CheckProductFit(L"Windows 7, Windows 10 and later drivers", 26100, false, 2);
+    CheckProductFit(L"Windows 10 and later drivers", 26100, false, 2);
+    CheckProductFit(L"Windows 10 and later drivers", 20348, true, 2);
+    CheckProductFit(L"Windows 11 Client, version 24H2 and later, Servicing Drivers", 26100, false, 2);
+    CheckProductFit(L"Windows 11 Client, version 24H2 and later, Servicing Drivers", 22631, false, 0);
+    CheckProductFit(L"Windows Server 2016 and Later Servicing Drivers", 20348, true, 2);
+    CheckProductFit(L"Windows Server 2016 and Later Servicing Drivers", 26100, false, 0);
+    CheckProductFit(L"", 26100, false, 0);
     CheckRanges(0, 0);
     CheckRanges(23552, 0);
     CheckRanges(2 * 1024 * 1024 - 1, 0);

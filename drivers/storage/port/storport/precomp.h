@@ -43,6 +43,7 @@
 #define TAG_DMA_BUFFER      'DBtS'
 #define TAG_RESET_REQUEST   'RRtS'
 #define TAG_LU_EXTENSION    'ULtS'
+#define TAG_REGISTRY_BUFFER 'BRtS'
 
 typedef enum
 {
@@ -128,6 +129,7 @@ typedef struct _PORT_LU_ENTRY
     volatile LONG Present;
     ULONG ExtensionSize;
     PVOID Extension;
+    volatile LONG64 PausedUntil;
 } PORT_LU_ENTRY, *PPORT_LU_ENTRY;
 
 typedef struct _FDO_DEVICE_EXTENSION
@@ -241,6 +243,8 @@ typedef struct _FDO_DEVICE_EXTENSION
     volatile BOOLEAN ResetActive;
     BOOLEAN BusResetActive;
     LONG BusyCompletions;
+    volatile LONG64 PausedUntil;
+    PVOID volatile RegistryBuffer;
     PIO_WORKITEM ResetWorkItem;
     KEVENT ResetIdle;
     UCHAR ResetPathId;
@@ -692,6 +696,13 @@ PortDeletePdo(
 VOID
 PortFreeLuEntries(
     _In_ PFDO_DEVICE_EXTENSION FdoExtension);
+
+PPORT_LU_ENTRY
+PortFindLuEntry(
+    _In_ PFDO_DEVICE_EXTENSION FdoExtension,
+    _In_ ULONG Bus,
+    _In_ ULONG Target,
+    _In_ ULONG Lun);
 
 PVOID
 PortFindLuExtension(

@@ -306,6 +306,12 @@ FileRecordNumber < ((DiskVolume->SectorsPerCluster * DiskVolume->BytesPerSector)
  ? (1UL << (-(DiskVolume)->ClustersPerIndexRecord)) \
  : (BytesPerCluster(DiskVolume) * (DiskVolume)->ClustersPerIndexRecord))
 
+// INDEX_ROOT holds the index record size in clusters, or in index VCN units when a record is smaller than a cluster
+#define IndexRootClustersPerIndexRecord(DiskVolume) \
+((UCHAR)((BytesPerIndexRecord(DiskVolume) < BytesPerCluster(DiskVolume)) \
+ ? (BytesPerIndexRecord(DiskVolume) / (DiskVolume)->BytesPerSector) \
+ : (BytesPerIndexRecord(DiskVolume) / BytesPerCluster(DiskVolume))))
+
 #define IsRootFile(Path) \
 ((Path)[0] == L'\0' || ((Path)[0] == L'\\' && (Path)[1] == L'\0'))
 
@@ -541,18 +547,46 @@ NtfsFlushVolumeContext(_In_opt_ void* Context);
 
 #ifdef __cplusplus
 
-#define NTFS_LOOKUP_SLOTS 8
+#define NTFS_LOOKUP_SLOTS 16
+/* Entries an index-node search collects to bisect; a fuller node is walked in order (a 4 KiB $I30 node holds 46). */
+#define NTFS_INDEX_SEARCH_ENTRIES 64
+
+/* Entry offsets from the node header, kept with a cached node once a search has checked them. */
+typedef struct _NtfsIndexEntryTable
+{
+    BOOLEAN Valid;
+    ULONG Count;
+    ULONG EndOffset;
+    ULONG Offsets[NTFS_INDEX_SEARCH_ENTRIES];
+} NtfsIndexEntryTable, *PNtfsIndexEntryTable;
+
+/* An index name as part of a lookup-cache key; 0 for a name longer than four characters, whose nodes are not cached. */
+static inline ULONGLONG
+NtfsLookupIndexName(_In_ PCWSTR Name)
+{
+    ULONGLONG Key = 0;
+
+    for (ULONG Index = 0; Name[Index]; Index++)
+    {
+        if (Index == 4)
+            return 0;
+        Key = (Key << 16) | (USHORT)Name[Index];
+    }
+    return Key;
+}
 
 typedef struct _NtfsLookupSlot
 {
     PUCHAR Buffer;
     ULONG BufferSize;
-    ULONG Generation;
     ULONGLONG FileReference;
+    ULONGLONG IndexName;
     ULONGLONG VCN;
+    ULONG LastUse;
     BOOLEAN Valid;
     BOOLEAN Busy;
     BOOLEAN Private;
+    NtfsIndexEntryTable Table;
 } NtfsLookupSlot, *PNtfsLookupSlot;
 
 typedef class Volume
@@ -607,15 +641,47 @@ public:
     PUCHAR IndexWorkBuffer = NULL;
     ULONG IndexWorkBufferSize = 0;
 
-    ULONG IndexEditGeneration = 0;
+    /* Cached index nodes by file, index name and VCN; each write replaces its copy and each free drops it. */
     NtfsLookupSlot LookupSlots[NTFS_LOOKUP_SLOTS] = {};
+    ULONG LookupClock = 0;
 
+    /* A slot to use for the node; Hit says it already holds it. Previous, if any, is released first. */
     PNtfsLookupSlot
-    AcquireLookupSlot(_In_ ULONGLONG DirectoryReference,
-                      _In_ ULONG BufferSize);
+    AcquireLookupSlot(_In_ ULONGLONG FileReference,
+                      _In_ ULONGLONG IndexName,
+                      _In_ ULONGLONG Vcn,
+                      _In_ ULONG BufferSize,
+                      _Out_ PBOOLEAN Hit,
+                      _In_opt_ PNtfsLookupSlot Previous = NULL);
 
     void
     ReleaseLookupSlot(_In_ PNtfsLookupSlot Slot);
+
+    BOOLEAN
+    CopyLookupNode(_In_ ULONGLONG FileReference,
+                   _In_ ULONGLONG IndexName,
+                   _In_ ULONGLONG Vcn,
+                   _Out_writes_bytes_(Size) PUCHAR Image,
+                   _In_ ULONG Size);
+
+    /* A slot for the node about to be written, every older copy dropped; NULL when none is free. */
+    PNtfsLookupSlot
+    BeginLookupStore(_In_ ULONGLONG FileReference,
+                     _In_ ULONGLONG IndexName,
+                     _In_ ULONGLONG Vcn,
+                     _In_ ULONG Size);
+
+    void
+    EndLookupStore(_In_ PNtfsLookupSlot Slot,
+                   _In_ BOOLEAN Valid);
+
+    void
+    InvalidateLookupNode(_In_ ULONGLONG FileReference,
+                         _In_ ULONGLONG IndexName,
+                         _In_ ULONGLONG Vcn);
+
+    void
+    ForgetLookupNodes();
 
     /* Free list of record-sized buffers. Every parsed record allocated and
      * freed 1 KB of pool; recycling them needs its own lock because records
@@ -1082,6 +1148,9 @@ public:
     UINT32
     GetAutomaticTimestampMask() const;
 
+    void
+    DeferDirectoryTimes(_In_ BOOLEAN Defer);
+
     NTSTATUS
     UpdateAutomaticTimestamps(_In_ UINT32 Fields);
 
@@ -1213,6 +1282,7 @@ private:
     UINT32 AutomaticTimestampMask =
         NTFS_AUTOMATIC_TIMESTAMP_FIELDS;
     BOOLEAN FileNameUpdatesDeferred = FALSE;
+    BOOLEAN DirectoryTimesDeferred = FALSE;
     UINT32 PendingFileNameFields = 0;
     ULONGLONG PendingAllocatedSize = 0;
     ULONGLONG PendingDataSize = 0;
@@ -1648,7 +1718,33 @@ NtfsFindIndexInsertionPoint(
     _Out_ PULONG InsertionOffset,
     _Out_ PULONGLONG ChildVcn,
     _Out_ PBOOLEAN Descend,
-    _Out_opt_ PBOOLEAN FoundExact = NULL);
+    _Out_opt_ PBOOLEAN FoundExact = NULL,
+    _In_opt_ PNtfsIndexEntryTable Table = NULL);
+
+/*
+ * Holds the node in a lookup slot, reading it on a miss. *Slot is released first and on return holds the
+ * slot to read the node from, for the caller to release; the node in it must not be changed.
+ */
+NTSTATUS
+PinIndexNode(
+    _In_ PVolume DiskVolume,
+    _In_ PFileRecord DirectoryFile,
+    _In_ PCWSTR IndexName,
+    _In_ ULONG RecordSize,
+    _In_ ULONGLONG AllocationUnit,
+    _In_ ULONGLONG Vcn,
+    _Inout_ PNtfsLookupSlot* Slot);
+
+/* Writes one index node; Image is in memory form and leaves with its update sequence applied. */
+NTSTATUS
+WriteIndexNode(
+    _In_ PVolume DiskVolume,
+    _In_ PFileRecord DirectoryFile,
+    _In_ PCWSTR IndexName,
+    _In_ ULONGLONG Vcn,
+    _In_ ULONGLONG AllocationUnit,
+    _In_ ULONG RecordSize,
+    _Inout_updates_bytes_(RecordSize) PUCHAR Image);
 
 typedef class Directory : BTree
 {
@@ -1682,6 +1778,9 @@ public:
     NTSTATUS
     GetNextEntry(_In_ BOOLEAN RestartScan,
                  _Out_ PNtfsDirectoryEntry Entry);
+
+    NTSTATUS
+    VisitNames(PFileRecord File, PNtfsDirectoryNameCallback Callback, void* Context);
 
     // ./editdir.cpp
     NTSTATUS

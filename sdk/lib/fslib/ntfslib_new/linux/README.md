@@ -7,7 +7,13 @@ commands that do not require FUSE privileges.
 This is a dedicated Linux test build and is not added to ReactOS's top-level
 CMake targets.
 
-The mounted frontend is single-threaded. Normal inspection opens the image
+The mounted frontend serializes requests to the shared volume, except file
+data that changes no allocation: those reads and writes go to the image
+outside the request lock, and two helper threads drain the request queue
+beside the main one when the kernel has several requests waiting (writeback,
+read-ahead). With a kernel and libfuse supporting FUSE over io_uring, pass
+`-o io_uring` after the mountpoint to use per-CPU request queues instead.
+Normal inspection opens the image
 read-only. Writable mounts and mutation probes have no LFS logging or crash
 recovery; use them on disposable test images or volumes you check afterwards.
 This is a test driver for the shared core, not a production replacement for
@@ -161,12 +167,63 @@ attribute lifetimes. A writable mount keeps file data in the kernel page
 cache too, so `write()` and shared mappings of a file stay coherent.
 `--direct-io` sends every read and write straight to the core instead; a
 `write()` can then be lost when another process dirties a shared mapping of
-the same page at the same time. `--writeback-cache` lets the kernel batch
-writes, at the cost of reporting a full volume only at `fsync` or `close`.
-Both follow `--writable`. Access times follow relatime; `-o noatime` turns them off,
+the same page at the same time. Writable mounts enable writeback caching when
+the kernel supports it. Applications must check `fsync` and `close` for deferred
+write errors, including `ENOSPC`. Use `--writable --write-through` to report
+allocation failures at `write`. With writeback active, setting a regular file’s
+mtime outside the supported NTFS range returns `EOVERFLOW` and preserves its
+previous timestamps. Access times follow relatime; `-o noatime` turns them off,
 `-o strictatime` updates them on every opened read, and the other access-time
 options of mount(8) are accepted. Directory access times are not updated. A block device can be
 supplied instead of an image when the invoking user has access to it.
+
+Three things cut requests on a tree walk. Directories are read without an
+open or a release, each scan tied to the listing it started on. A reader that
+opens the files of a directory in listing order finds the small ones (up to
+128 KiB) already in the page cache: the first is pushed with its open, the
+following ones ahead of the walk; such an open takes the access time whether
+or not it reads. A mount made with the privilege to do so raises its share of
+dirty memory from the 1% the kernel gives a FUSE mount, which otherwise paces
+sequential writes below what the daemon can take.
+
+A second mount of an image, or a tool run against a mounted one, fails with
+`EBUSY`; an image whose daemon is still unmounting is waited for, up to two
+seconds.
+
+## Kernel module
+
+`kernel/` builds the same core into `ntfslib.ko`, a Linux filesystem driver
+(`mount -t ntfslib`), for the cases FUSE cannot make fast: every FUSE request
+costs a round trip to the daemon, and creating or removing a file takes two
+or three of them.
+
+```sh
+make -C sdk/lib/fslib/ntfslib_new/linux/kernel OUT=/path/to/empty/build/dir
+```
+
+It is an early driver: files, directories, rename, truncation, times, page
+cache with delayed write-back and mmap work. Plain cluster-backed files are
+read and written through iomap with large folios; resident, compressed and
+sparse streams go through the core. NTFS keeps one written length per stream:
+blocks past it read as zeros, and write-back zeroes on the device whatever
+lies between the old written length and the block it stores before moving the
+length over it, so a store through a mapping or a write far into a grown file
+never exposes what the clusters held before. Bytes past the end of a file in
+its last block are cleared when that page is mapped and when the file grows,
+as the device only holds zeros there if this driver wrote the block.
+Ownership, mode and device numbers are stored as described below, so files,
+directories, hard links, symbolic links, FIFOs, sockets and device nodes made
+here read the same through the FUSE frontend and ntfs3. Extended attributes,
+sparse files, `O_DIRECT`, `fstrim` and mount options are not implemented. One
+lock serializes the core. It has not been used on real hardware yet.
+
+Listing a directory walks its index once per pass: the names wait with the
+open directory between `getdents` calls, and each name handed out also becomes
+a cached name and inode, so the `stat`, `open` or `unlink` that usually follows
+needs no second index lookup. A directory's change times are written once,
+when it leaves a short list of recently changed directories, at `sync`,
+`fsync` or unmount, and not at all if the directory is removed first; until
+then `stat` reports the pending time.
 
 POSIX ownership, mode and device numbers are kept in the `$LXUID`, `$LXGID`,
 `$LXMOD` and `$LXDEV` extended attributes, as WSL and ntfs3 store them, so

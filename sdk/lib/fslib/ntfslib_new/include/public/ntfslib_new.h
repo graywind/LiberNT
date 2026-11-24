@@ -328,6 +328,11 @@ NtfsDirectoryReadNext(
     _In_ BOOLEAN RestartScan,
     _Out_ PNtfsDirectoryEntry Entry);
 
+typedef NTSTATUS (*PNtfsDirectoryNameCallback)(void* Context, ULONGLONG Reference, const FileNameEx* Name);
+
+NTSTATUS
+NtfsDirectoryVisitNames(PNtfsVolume Volume, PNtfsFileRecord File, PNtfsDirectoryNameCallback Callback, void* Context);
+
 /* FileRecord functions */
 PNtfsFileRecord
 NtfsFileRecordCreate(
@@ -417,6 +422,12 @@ NtfsFileRecordSetAutomaticTimestampMask(
 UINT32
 NtfsFileRecordGetAutomaticTimestampMask(
     _In_ NtfsFileRecord *FileRecord);
+
+/* Entry changes through this directory record leave its write and change times to the caller. */
+NTSTATUS
+NtfsFileRecordDeferDirectoryTimes(
+    _In_ NtfsFileRecord *FileRecord,
+    _In_ BOOLEAN Defer);
 
 /* Deferred size, EA and time copies reach the names at a flush; ending deferral flushes. */
 NTSTATUS

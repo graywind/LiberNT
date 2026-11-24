@@ -1345,8 +1345,77 @@ DriverEntry(
 }
 
 
+static
+BOOLEAN
+PortRegistryStringType(
+    _In_ ULONG Type)
+{
+    return (Type == REG_SZ) || (Type == REG_EXPAND_SZ) || (Type == REG_MULTI_SZ);
+}
+
+
+static
+NTSTATUS
+PortRegistryValueName(
+    _In_ PUCHAR ValueName,
+    _Out_ PUNICODE_STRING Name)
+{
+    ANSI_STRING AnsiName;
+    NTSTATUS Status;
+
+    Status = RtlInitAnsiStringEx(&AnsiName, (PCSZ)ValueName);
+    if (!NT_SUCCESS(Status))
+        return Status;
+    return RtlAnsiStringToUnicodeString(Name, &AnsiName, TRUE);
+}
+
+
+static
+NTSTATUS
+PortOpenMiniportRegistryKey(
+    _In_ PFDO_DEVICE_EXTENSION DeviceExtension,
+    _In_ BOOLEAN Global,
+    _In_ BOOLEAN Create,
+    _Out_ PHANDLE Key)
+{
+    WCHAR NameBuffer[RTL_NUMBER_OF(L"Device") + 10];
+    WCHAR NumberBuffer[11];
+    UNICODE_STRING Name, Number;
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    HANDLE ParametersKey;
+    NTSTATUS Status;
+
+    ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+    *Key = NULL;
+    RtlInitEmptyUnicodeString(&Name, NameBuffer, sizeof(NameBuffer));
+    Status = RtlAppendUnicodeToString(&Name, L"Device");
+    if (NT_SUCCESS(Status) && !Global)
+    {
+        RtlInitEmptyUnicodeString(&Number, NumberBuffer, sizeof(NumberBuffer));
+        Status = RtlIntegerToUnicodeString(DeviceExtension->PortNumber, 10, &Number);
+        if (NT_SUCCESS(Status))
+            Status = RtlAppendUnicodeStringToString(&Name, &Number);
+    }
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    Status = IoOpenDriverRegistryKey(DeviceExtension->Device->DriverObject, DriverRegKeyParameters,
+                                     Create ? (KEY_READ | KEY_WRITE) : KEY_READ, 0, &ParametersKey);
+    if (!NT_SUCCESS(Status))
+        return Status;
+    InitializeObjectAttributes(&ObjectAttributes, &Name, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, ParametersKey, NULL);
+    if (Create)
+        Status = ZwCreateKey(Key, KEY_READ | KEY_WRITE, &ObjectAttributes, 0, NULL, REG_OPTION_NON_VOLATILE, NULL);
+    else
+        Status = ZwOpenKey(Key, KEY_READ, &ObjectAttributes);
+    ZwClose(ParametersKey);
+    return Status;
+}
+
+
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 PUCHAR
@@ -1355,9 +1424,20 @@ StorPortAllocateRegistryBuffer(
     _In_ PVOID HwDeviceExtension,
     _In_ PULONG Length)
 {
-    DPRINT1("StorPortAllocateRegistryBuffer()\n");
-    UNIMPLEMENTED;
-    return NULL;
+    PFDO_DEVICE_EXTENSION DeviceExtension = PortMiniportFdo(HwDeviceExtension);
+    PVOID Buffer;
+
+    if ((DeviceExtension == NULL) || (Length == NULL) || (*Length == 0) || (KeGetCurrentIrql() > DISPATCH_LEVEL))
+        return NULL;
+    Buffer = ExAllocatePoolZero(NonPagedPoolNx, *Length, TAG_REGISTRY_BUFFER);
+    if (Buffer == NULL)
+        return NULL;
+    if (InterlockedCompareExchangePointer(&DeviceExtension->RegistryBuffer, Buffer, NULL) != NULL)
+    {
+        ExFreePoolWithTag(Buffer, TAG_REGISTRY_BUFFER);
+        return NULL;
+    }
+    return Buffer;
 }
 
 
@@ -1666,6 +1746,83 @@ PortMiniportTimerExDpc(
 
     if (MiniportTimer && MiniportTimer->Callback)
         MiniportTimer->Callback(MiniportTimer->HwDeviceExtension, MiniportTimer->CallbackContext);
+}
+
+static
+ULONG
+PortGetRequestInfo(
+    _In_opt_ PVOID Srb,
+    _Inout_opt_ PSTOR_REQUEST_INFO RequestInfo)
+{
+    PIRP Irp;
+    PFILE_OBJECT FileObject = NULL;
+    ULONG SrbFlags;
+    ULONG Length;
+    ULONG Flags = 0;
+    STOR_IO_PRIORITY_HINT PriorityHint = StorIoPriorityNormal;
+
+    if (!Srb || !RequestInfo)
+        return STOR_STATUS_INVALID_PARAMETER;
+    if (RequestInfo->Version != STOR_REQUEST_INFO_VER_1 && RequestInfo->Version != STOR_REQUEST_INFO_VER_2)
+        return STOR_STATUS_UNSUPPORTED_VERSION;
+    if (RequestInfo->Size < (RequestInfo->Version == STOR_REQUEST_INFO_VER_1 ? sizeof(STOR_REQUEST_INFO_V1)
+                                                                             : sizeof(STOR_REQUEST_INFO_V2)))
+        return STOR_STATUS_INVALID_PARAMETER;
+
+    if (PortIsExtendedSrb(Srb))
+    {
+        SrbFlags = ((PSTORAGE_REQUEST_BLOCK)Srb)->SrbFlags;
+        Length = ((PSTORAGE_REQUEST_BLOCK)Srb)->DataTransferLength;
+    }
+    else
+    {
+        SrbFlags = ((PSCSI_REQUEST_BLOCK)Srb)->SrbFlags;
+        Length = ((PSCSI_REQUEST_BLOCK)Srb)->DataTransferLength;
+    }
+
+    Irp = PortGetOriginalRequestFromSrb(Srb);
+    ASSERT(Irp == NULL || Irp->Type == IO_TYPE_IRP);
+    if (Irp)
+    {
+        if (Irp->Flags & IRP_NOCACHE)
+            Flags |= REQUEST_INFO_NO_CACHE_FLAG;
+        if (Irp->Flags & IRP_PAGING_IO)
+            Flags |= REQUEST_INFO_PAGING_IO_FLAG;
+        FileObject = Irp->Tail.Overlay.OriginalFileObject;
+        PriorityHint = (STOR_IO_PRIORITY_HINT)IoGetIoPriorityHint(Irp);
+    }
+    if (FileObject)
+    {
+        if (FileObject->Flags & FO_SEQUENTIAL_ONLY)
+            Flags |= REQUEST_INFO_SEQUENTIAL_IO_FLAG;
+        if (FileObject->Flags & FO_TEMPORARY_FILE)
+            Flags |= REQUEST_INFO_TEMPORARY_FLAG;
+        if (FileObject->Flags & FO_WRITE_THROUGH)
+            Flags |= REQUEST_INFO_WRITE_THROUGH_FLAG;
+    }
+    else
+    {
+        Flags |= REQUEST_INFO_NO_FILE_OBJECT_FLAG;
+    }
+
+    /* FIXME: Key, FileName and the file object come from the IRP storport received, not the class driver's original request */
+    RequestInfo->PriorityHint = PriorityHint;
+    RequestInfo->Flags = Flags;
+    RequestInfo->Key = 0;
+    RequestInfo->Length = Length;
+    RequestInfo->IsWriteRequest = (SrbFlags & SRB_FLAGS_UNSPECIFIED_DIRECTION) == SRB_FLAGS_DATA_OUT;
+    RtlZeroMemory(RequestInfo->Reserved, sizeof(RequestInfo->Reserved));
+    if (RequestInfo->Version == STOR_REQUEST_INFO_VER_2)
+    {
+        RequestInfo->FileName = NULL;
+        if (KeGetCurrentIrql() > DISPATCH_LEVEL)
+            RequestInfo->ProcessId = MAXULONG;
+        else if (Irp && Irp->Tail.Overlay.Thread)
+            RequestInfo->ProcessId = HandleToUlong(PsGetThreadProcessId(Irp->Tail.Overlay.Thread));
+        else
+            RequestInfo->ProcessId = 0;
+    }
+    return STOR_STATUS_SUCCESS;
 }
 
 /*
@@ -2677,6 +2834,15 @@ StorPortExtendedFunction(
             break;
         }
 
+        case ExtFunctionGetRequestInfo:
+        {
+            PVOID Srb = va_arg(Args, PVOID);
+            PSTOR_REQUEST_INFO RequestInfo = va_arg(Args, PSTOR_REQUEST_INFO);
+
+            Status = PortGetRequestInfo(Srb, RequestInfo);
+            break;
+        }
+
         default:
             DPRINT1("StorPortExtendedFunction(%d %p ...) not supported\n",
                     FunctionCode, HwDeviceExtension);
@@ -2705,7 +2871,7 @@ StorPortFreeDeviceBase(
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 VOID
@@ -2714,8 +2880,12 @@ StorPortFreeRegistryBuffer(
     _In_ PVOID HwDeviceExtension,
     _In_ PUCHAR Buffer)
 {
-    DPRINT1("StorPortFreeRegistryBuffer()\n");
-    UNIMPLEMENTED;
+    PFDO_DEVICE_EXTENSION DeviceExtension = PortMiniportFdo(HwDeviceExtension);
+
+    if ((DeviceExtension == NULL) || (Buffer == NULL))
+        return;
+    if (InterlockedCompareExchangePointer(&DeviceExtension->RegistryBuffer, NULL, Buffer) == Buffer)
+        ExFreePoolWithTag(Buffer, TAG_REGISTRY_BUFFER);
 }
 
 
@@ -3504,8 +3674,39 @@ StorPortNotification(
 }
 
 
+static
+BOOLEAN
+PortSetPause(
+    _In_ PVOID HwDeviceExtension,
+    _In_ BOOLEAN Unit,
+    _In_ UCHAR PathId,
+    _In_ UCHAR TargetId,
+    _In_ UCHAR Lun,
+    _In_ ULONGLONG Until)
+{
+    PFDO_DEVICE_EXTENSION DeviceExtension = PortMiniportFdo(HwDeviceExtension);
+    PPORT_LU_ENTRY LuEntry;
+
+    if ((DeviceExtension == NULL) || DeviceExtension->DumpMode)
+        return FALSE;
+    if (Unit)
+    {
+        LuEntry = PortFindLuEntry(DeviceExtension, PathId, TargetId, Lun);
+        if (LuEntry == NULL)
+            return FALSE;
+        InterlockedExchange64(&LuEntry->PausedUntil, (LONG64)Until);
+    }
+    else
+    {
+        InterlockedExchange64(&DeviceExtension->PausedUntil, (LONG64)Until);
+    }
+    KeInsertQueueDpc(&DeviceExtension->RequestRestartDpc, NULL, NULL);
+    return TRUE;
+}
+
+
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 BOOLEAN
@@ -3514,14 +3715,12 @@ StorPortPause(
     _In_ PVOID HwDeviceExtension,
     _In_ ULONG TimeOut)
 {
-    DPRINT1("StorPortPause()\n");
-    UNIMPLEMENTED;
-    return FALSE;
+    return PortSetPause(HwDeviceExtension, FALSE, 0, 0, 0, KeQueryInterruptTime() + (ULONGLONG)TimeOut * 10000000ULL);
 }
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 BOOLEAN
@@ -3533,9 +3732,8 @@ StorPortPauseDevice(
     _In_ UCHAR Lun,
     _In_ ULONG TimeOut)
 {
-    DPRINT1("StorPortPauseDevice()\n");
-    UNIMPLEMENTED;
-    return FALSE;
+    return PortSetPause(HwDeviceExtension, TRUE, PathId, TargetId, Lun,
+                        KeQueryInterruptTime() + (ULONGLONG)TimeOut * 10000000ULL);
 }
 
 
@@ -3579,7 +3777,7 @@ StorPortReady(
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 BOOLEAN
@@ -3592,14 +3790,81 @@ StorPortRegistryRead(
     _In_ PUCHAR Buffer,
     _In_ PULONG BufferLength)
 {
-    DPRINT1("StorPortRegistryRead()\n");
-    UNIMPLEMENTED;
-    return FALSE;
+    PFDO_DEVICE_EXTENSION DeviceExtension = PortMiniportFdo(HwDeviceExtension);
+    PKEY_VALUE_PARTIAL_INFORMATION Information = NULL;
+    UNICODE_STRING Name = { 0 };
+    HANDLE Key = NULL;
+    ULONG Capacity, Size, Required;
+    BOOLEAN Result = FALSE;
+    NTSTATUS Status;
+
+    if (BufferLength == NULL)
+        return FALSE;
+    Capacity = *BufferLength;
+    *BufferLength = 0;
+    if ((DeviceExtension == NULL) || (ValueName == NULL) || (Buffer == NULL) ||
+        (KeGetCurrentIrql() != PASSIVE_LEVEL) || !NT_SUCCESS(PortRegistryValueName(ValueName, &Name)))
+    {
+        return FALSE;
+    }
+    Status = PortOpenMiniportRegistryKey(DeviceExtension, Global != 0, FALSE, &Key);
+    if (NT_SUCCESS(Status))
+    {
+        Status = ZwQueryValueKey(Key, &Name, KeyValuePartialInformation, NULL, 0, &Size);
+        if ((Status == STATUS_BUFFER_TOO_SMALL) || (Status == STATUS_BUFFER_OVERFLOW))
+        {
+            Information = ExAllocatePoolWithTag(PagedPool, Size, TAG_REGISTRY_BUFFER);
+            Status = (Information != NULL) ?
+                ZwQueryValueKey(Key, &Name, KeyValuePartialInformation, Information, Size, &Size) :
+                STATUS_INSUFFICIENT_RESOURCES;
+        }
+    }
+    if (NT_SUCCESS(Status) && (Information != NULL) && (Information->Type == Type))
+    {
+        if (PortRegistryStringType(Type))
+        {
+            UNICODE_STRING Data;
+            ANSI_STRING Ansi;
+
+            Required = 0;
+            Status = STATUS_BUFFER_OVERFLOW;
+            if (Information->DataLength <= UNICODE_STRING_MAX_BYTES)
+            {
+                Data.Buffer = (PWCH)Information->Data;
+                Data.Length = Data.MaximumLength = (USHORT)(Information->DataLength & ~1UL);
+                Status = RtlUnicodeStringToAnsiString(&Ansi, &Data, TRUE);
+            }
+            if (NT_SUCCESS(Status))
+            {
+                Required = Ansi.Length;
+                if (Required <= Capacity)
+                    RtlCopyMemory(Buffer, Ansi.Buffer, Required);
+                RtlFreeAnsiString(&Ansi);
+            }
+        }
+        else
+        {
+            Required = Information->DataLength;
+            if (Required <= Capacity)
+                RtlCopyMemory(Buffer, Information->Data, Required);
+        }
+        if (NT_SUCCESS(Status))
+        {
+            *BufferLength = Required;
+            Result = (Required <= Capacity);
+        }
+    }
+    if (Information != NULL)
+        ExFreePoolWithTag(Information, TAG_REGISTRY_BUFFER);
+    if (Key != NULL)
+        ZwClose(Key);
+    RtlFreeUnicodeString(&Name);
+    return Result;
 }
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 BOOLEAN
@@ -3612,14 +3877,51 @@ StorPortRegistryWrite(
     _In_ PUCHAR Buffer,
     _In_ ULONG BufferLength)
 {
-    DPRINT1("StorPortRegistryWrite()\n");
-    UNIMPLEMENTED;
-    return FALSE;
+    PFDO_DEVICE_EXTENSION DeviceExtension = PortMiniportFdo(HwDeviceExtension);
+    UNICODE_STRING Name = { 0 };
+    UNICODE_STRING Unicode = { 0 };
+    PWCH Data = NULL;
+    HANDLE Key = NULL;
+    ULONG Size = BufferLength;
+    NTSTATUS Status;
+
+    if ((DeviceExtension == NULL) || (ValueName == NULL) || ((Buffer == NULL) && (BufferLength != 0)) ||
+        (KeGetCurrentIrql() != PASSIVE_LEVEL) || !NT_SUCCESS(PortRegistryValueName(ValueName, &Name)))
+    {
+        return FALSE;
+    }
+    Status = STATUS_SUCCESS;
+    if (PortRegistryStringType(Type) && (BufferLength != 0))
+    {
+        ANSI_STRING Ansi;
+
+        Status = STATUS_BUFFER_OVERFLOW;
+        if (BufferLength <= MAXUSHORT)
+        {
+            Ansi.Buffer = (PCHAR)Buffer;
+            Ansi.Length = Ansi.MaximumLength = (USHORT)BufferLength;
+            Status = RtlAnsiStringToUnicodeString(&Unicode, &Ansi, TRUE);
+        }
+        if (NT_SUCCESS(Status))
+        {
+            Data = Unicode.Buffer;
+            Size = Unicode.Length;
+        }
+    }
+    if (NT_SUCCESS(Status))
+        Status = PortOpenMiniportRegistryKey(DeviceExtension, Global != 0, TRUE, &Key);
+    if (NT_SUCCESS(Status))
+        Status = ZwSetValueKey(Key, &Name, 0, Type, (Data != NULL) ? (PVOID)Data : (PVOID)Buffer, Size);
+    if (Key != NULL)
+        ZwClose(Key);
+    RtlFreeUnicodeString(&Unicode);
+    RtlFreeUnicodeString(&Name);
+    return NT_SUCCESS(Status);
 }
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 BOOLEAN
@@ -3627,14 +3929,12 @@ NTAPI
 StorPortResume(
     _In_ PVOID HwDeviceExtension)
 {
-    DPRINT1("StorPortResume()\n");
-    UNIMPLEMENTED;
-    return FALSE;
+    return PortSetPause(HwDeviceExtension, FALSE, 0, 0, 0, 0);
 }
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 STORPORT_API
 BOOLEAN
@@ -3645,9 +3945,7 @@ StorPortResumeDevice(
     _In_ UCHAR TargetId,
     _In_ UCHAR Lun)
 {
-    DPRINT1("StorPortResumeDevice()\n");
-    UNIMPLEMENTED;
-    return FALSE;
+    return PortSetPause(HwDeviceExtension, TRUE, PathId, TargetId, Lun, 0);
 }
 
 
