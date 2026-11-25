@@ -48,6 +48,7 @@ list(APPEND SOURCE
     CpuSetsApi.c
     CreateAfterMissingName.c
     CreateDirectoryRoot.c
+    CreateFileDirectory.c
     CreateProcess.c
     DefaultActCtx.c
     DeleteFileCase.c
