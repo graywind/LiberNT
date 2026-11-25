@@ -9,7 +9,7 @@
 /* INCLUDES ******************************************************************/
 
 #include <win32k.h>
-#include <reactos/buildstamp.h>
+#include <libernt/buildstamp.h>
 #include <ndk/inbvfuncs.h>
 DBG_DEFAULT_CHANNEL(UserDesktop);
 
@@ -1357,7 +1357,10 @@ DesktopWindowProc(PWND Wnd, UINT Msg, WPARAM wParam, LPARAM lParam, LRESULT *lRe
             return TRUE;
 
         case WM_DISPLAYCHANGE:
-            co_WinPosSetWindowPos(Wnd, 0, 0, 0, LOWORD(lParam), HIWORD(lParam), SWP_NOZORDER | SWP_NOACTIVATE);
+            /* The message gives the primary display's size; the desktop window covers every display */
+            co_WinPosSetWindowPos(Wnd, 0, gpsi->aiSysMet[SM_XVIRTUALSCREEN], gpsi->aiSysMet[SM_YVIRTUALSCREEN],
+                                  gpsi->aiSysMet[SM_CXVIRTUALSCREEN], gpsi->aiSysMet[SM_CYVIRTUALSCREEN],
+                                  SWP_NOZORDER | SWP_NOACTIVATE);
             return TRUE;
 
         case WM_ERASEBKGND:
@@ -1546,7 +1549,8 @@ co_IntShowDesktop(PDESKTOP Desktop, ULONG Width, ULONG Height, BOOL bRedraw)
     if (!bRedraw)
         flags |= SWP_NOREDRAW;
 
-    co_WinPosSetWindowPos(pwnd, NULL, 0, 0, Width, Height, flags);
+    co_WinPosSetWindowPos(pwnd, NULL, gpsi->aiSysMet[SM_XVIRTUALSCREEN], gpsi->aiSysMet[SM_YVIRTUALSCREEN],
+                          Width, Height, flags);
 
     if (bRedraw)
         co_UserRedrawWindow( pwnd, NULL, 0, RDW_UPDATENOW | RDW_ALLCHILDREN | RDW_INVALIDATE );
@@ -2614,7 +2618,7 @@ IntCreateDesktop(
     /* In case the object was not created (eg if it existed), return now */
     if (Context == FALSE)
     {
-        TRACE("IntCreateDesktop opened desktop '%wZ'\n", ObjectAttributes->ObjectName);
+        TRACE("IntCreateDesktop opened desktop %p\n", ObjectAttributes->ObjectName);
         Status = STATUS_SUCCESS;
         goto Quit;
     }
@@ -2849,7 +2853,7 @@ NtUserOpenDesktop(
         return NULL;
     }
 
-    TRACE("Opened desktop %S with handle 0x%p\n", ObjectAttributes->ObjectName->Buffer, Desktop);
+    TRACE("Opened desktop with handle 0x%p\n", Desktop);
 
     IntSetDesktopHandleProtection(Desktop, TRUE);
     return Desktop;

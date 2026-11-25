@@ -325,7 +325,7 @@ ExpQueryModuleInformationWorker(
     _Out_ PULONG ReturnLength)
 {
     PLIST_ENTRY Entry;
-    PLDR_DATA_TABLE_ENTRY Module;
+    PKLDR_DATA_TABLE_ENTRY Module;
     ULONG Count = 0;
     ULONG Fit;
     ULONG Needed;
@@ -369,7 +369,7 @@ ExpQueryModuleInformationWorker(
     {
         PRTL_PROCESS_MODULE_INFORMATION Info = &Modules->Modules[Index];
 
-        Module = CONTAINING_RECORD(Entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        Module = CONTAINING_RECORD(Entry, KLDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
 
         RtlZeroMemory(Info, sizeof(*Info));
 
@@ -413,7 +413,7 @@ ExpQueryModuleInformationEx(
 {
     PRTL_PROCESS_MODULE_INFORMATION_EX Info;
     PIMAGE_NT_HEADERS NtHeaders;
-    PLDR_DATA_TABLE_ENTRY Module;
+    PKLDR_DATA_TABLE_ENTRY Module;
     PLIST_ENTRY Entry;
     ANSI_STRING Ansi;
     ULONG Count = 0;
@@ -446,7 +446,7 @@ ExpQueryModuleInformationEx(
          Entry != &PsLoadedModuleList;
          Entry = Entry->Flink, Index++)
     {
-        Module = CONTAINING_RECORD(Entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        Module = CONTAINING_RECORD(Entry, KLDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
         Info = (PRTL_PROCESS_MODULE_INFORMATION_EX)Buffer + Index;
 
         RtlZeroMemory(Info, sizeof(*Info));
@@ -852,7 +852,7 @@ RtlQueryModuleInformation(
     _Out_opt_ PVOID Buffer)
 {
     PAUX_MODULE_EXTENDED_INFO Entry;
-    PLDR_DATA_TABLE_ENTRY Module;
+    PKLDR_DATA_TABLE_ENTRY Module;
     PLIST_ENTRY ListEntry;
     ANSI_STRING Ansi;
     ULONG Count = 0;
@@ -902,7 +902,7 @@ RtlQueryModuleInformation(
          ListEntry = ListEntry->Flink, Index++)
     {
         Module = CONTAINING_RECORD(ListEntry,
-                                   LDR_DATA_TABLE_ENTRY,
+                                   KLDR_DATA_TABLE_ENTRY,
                                    InLoadOrderLinks);
 
         Entry = (PAUX_MODULE_EXTENDED_INFO)((PUCHAR)Buffer + Index * EntrySize);
@@ -2451,19 +2451,112 @@ NtQuerySystemEnvironmentValueEx(
     _Inout_ PULONG ReturnLength,
     _Out_opt_ PULONG Attributes)
 {
+    KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
+    UNICODE_STRING Name;
+    GUID Vendor;
+    PVOID Buffer = NULL;
+    ULONG Capacity;
+    ULONG Length = 0;
+    ULONG VariableAttributes = 0;
+    NTSTATUS Status;
+
     PAGED_CODE();
 
-    if (!SeSinglePrivilegeCheck(SeSystemEnvironmentPrivilege,
-                                ExGetPreviousMode()))
+    if (!SeSinglePrivilegeCheck(SeSystemEnvironmentPrivilege, PreviousMode))
     {
         return STATUS_PRIVILEGE_NOT_HELD;
     }
 
-    return ExGetFirmwareEnvironmentVariable(VariableName,
-                                            VendorGuid,
-                                            Value,
-                                            ReturnLength,
-                                            Attributes);
+    if ((VendorGuid == NULL) || (ReturnLength == NULL))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    _SEH2_TRY
+    {
+        if (PreviousMode != KernelMode)
+        {
+            ProbeForRead(VendorGuid, sizeof(GUID), sizeof(ULONG));
+            ProbeForWriteUlong(ReturnLength);
+            if (Attributes != NULL) ProbeForWriteUlong(Attributes);
+        }
+
+        Vendor = *VendorGuid;
+        Capacity = *ReturnLength;
+    }
+    _SEH2_EXCEPT(ExSystemExceptionFilter())
+    {
+        _SEH2_YIELD(return _SEH2_GetExceptionCode());
+    }
+    _SEH2_END;
+
+    Status = ExpCaptureUnicodeString(&Name, VariableName);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    Status = ExGetFirmwareEnvironmentVariable(&Name,
+                                              &Vendor,
+                                              NULL,
+                                              &Length,
+                                              &VariableAttributes);
+
+    if ((Status == STATUS_BUFFER_TOO_SMALL) && (Value != NULL) && (Capacity >= Length))
+    {
+        Buffer = ExAllocatePoolWithTag(PagedPool, max(Length, 1), EXP_SYSINFO_TAG);
+        if (Buffer == NULL)
+        {
+            ExpFreeCapturedUnicodeString(&Name);
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+
+        Status = ExGetFirmwareEnvironmentVariable(&Name,
+                                                  &Vendor,
+                                                  Buffer,
+                                                  &Length,
+                                                  &VariableAttributes);
+    }
+
+    ExpFreeCapturedUnicodeString(&Name);
+
+    if (NT_SUCCESS(Status) || (Status == STATUS_BUFFER_TOO_SMALL))
+    {
+        _SEH2_TRY
+        {
+            if (NT_SUCCESS(Status) && (Length != 0))
+            {
+                ASSERT(Buffer != NULL);
+                ASSERT(Length <= Capacity);
+
+                if (PreviousMode != KernelMode)
+                {
+                    ProbeForWrite(Value, Length, sizeof(UCHAR));
+                }
+
+                RtlCopyMemory(Value, Buffer, Length);
+            }
+
+            *ReturnLength = Length;
+
+            if (NT_SUCCESS(Status) && (Attributes != NULL))
+            {
+                *Attributes = VariableAttributes;
+            }
+        }
+        _SEH2_EXCEPT(ExSystemExceptionFilter())
+        {
+            Status = _SEH2_GetExceptionCode();
+        }
+        _SEH2_END;
+    }
+
+    if (Buffer != NULL)
+    {
+        ExFreePoolWithTag(Buffer, EXP_SYSINFO_TAG);
+    }
+
+    return Status;
 }
 
 NTSTATUS
@@ -2475,19 +2568,85 @@ NtSetSystemEnvironmentValueEx(
     _In_ ULONG ValueLength,
     _In_ ULONG Attributes)
 {
+    KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
+    UNICODE_STRING Name;
+    GUID Vendor;
+    PVOID Buffer = NULL;
+    NTSTATUS Status = STATUS_SUCCESS;
+
     PAGED_CODE();
 
-    if (!SeSinglePrivilegeCheck(SeSystemEnvironmentPrivilege,
-                                ExGetPreviousMode()))
+    if (!SeSinglePrivilegeCheck(SeSystemEnvironmentPrivilege, PreviousMode))
     {
         return STATUS_PRIVILEGE_NOT_HELD;
     }
 
-    return ExSetFirmwareEnvironmentVariable(VariableName,
-                                            VendorGuid,
-                                            Value,
-                                            ValueLength,
-                                            Attributes);
+    if (ExpFirmwareType != FirmwareTypeUefi)
+    {
+        return STATUS_NOT_IMPLEMENTED;
+    }
+
+    if (ValueLength > EXP_FIRMWARE_VALUE_MAXIMUM)
+    {
+        return STATUS_INVALID_PARAMETER_4;
+    }
+
+    if ((VendorGuid == NULL) || ((Value == NULL) && (ValueLength != 0)))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if (ValueLength != 0)
+    {
+        Buffer = ExAllocatePoolWithTag(PagedPool, ValueLength, EXP_SYSINFO_TAG);
+        if (Buffer == NULL)
+        {
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+    }
+
+    _SEH2_TRY
+    {
+        if (PreviousMode != KernelMode)
+        {
+            ProbeForRead(VendorGuid, sizeof(GUID), sizeof(ULONG));
+            if (ValueLength != 0) ProbeForRead(Value, ValueLength, sizeof(UCHAR));
+        }
+
+        Vendor = *VendorGuid;
+
+        if (ValueLength != 0)
+        {
+            RtlCopyMemory(Buffer, Value, ValueLength);
+        }
+    }
+    _SEH2_EXCEPT(ExSystemExceptionFilter())
+    {
+        Status = _SEH2_GetExceptionCode();
+    }
+    _SEH2_END;
+
+    if (NT_SUCCESS(Status))
+    {
+        Status = ExpCaptureUnicodeString(&Name, VariableName);
+    }
+
+    if (NT_SUCCESS(Status))
+    {
+        Status = ExSetFirmwareEnvironmentVariable(&Name,
+                                                  &Vendor,
+                                                  Buffer,
+                                                  ValueLength,
+                                                  Attributes);
+        ExpFreeCapturedUnicodeString(&Name);
+    }
+
+    if (Buffer != NULL)
+    {
+        ExFreePoolWithTag(Buffer, EXP_SYSINFO_TAG);
+    }
+
+    return Status;
 }
 
 /*

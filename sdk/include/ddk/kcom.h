@@ -35,6 +35,7 @@ DEFINE_GUIDSTRUCT("72CF721C-525A-11D1-9AA1-00A0C9223196", KoCreateObject);
 
 #ifndef CLSCTX_KERNEL_SERVER
 #define CLSCTX_KERNEL_SERVER    0x00000200
+
 #endif
 
 #if !defined(__cplusplus) || _MSC_VER < 1100
@@ -263,3 +264,9 @@ __inline BOOL operator!=(const GUID& guidOne, const GUID& guidOther) {
 #endif /* __cplusplus */
 
 #endif /* _KCOM_ */
+
+typedef struct IIndirectedUnknownVtbl IIndirectedUnknownVtbl;
+
+typedef struct IKoInitializeParentDeviceObjectVtbl IKoInitializeParentDeviceObjectVtbl;
+
+typedef struct INonDelegatedUnknownVtbl INonDelegatedUnknownVtbl;

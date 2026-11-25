@@ -310,12 +310,13 @@ typedef struct tagCONVCONTEXT
     INT   iCodePage;
     DWORD   dwLangID;
     DWORD   dwSecurity;
+    SECURITY_QUALITY_OF_SERVICE qos;
 } CONVCONTEXT, *PCONVCONTEXT;
 
 typedef struct tagCONVINFO
 {
     DWORD		cb;
-    DWORD 		hUser;
+    DWORD_PTR		hUser;
     HCONV		hConvPartner;
     HSZ			hszSvcPartner;
     HSZ			hszServiceReq;
@@ -365,7 +366,7 @@ LPBYTE    WINAPI DdeAccessData(HDDEDATA,LPDWORD);
 BOOL      WINAPI DdeUnaccessData(HDDEDATA);
 BOOL      WINAPI DdeEnableCallback(DWORD,HCONV,UINT);
 INT       WINAPI DdeCmpStringHandles(HSZ,HSZ);
-BOOL      WINAPI DdeSetUserHandle(HCONV,DWORD,DWORD);
+BOOL      WINAPI DdeSetUserHandle(HCONV,DWORD,DWORD_PTR);
 
 HDDEDATA  WINAPI DdeNameService(DWORD,HSZ,HSZ,UINT);
 UINT      WINAPI DdeGetLastError(DWORD);
@@ -374,5 +375,129 @@ UINT      WINAPI DdeQueryConvInfo(HCONV,DWORD,PCONVINFO);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* defined(__cplusplus) */
+
+#ifndef MAX_MONITORS
+#define MAX_MONITORS 4
+#endif
+#ifndef MH_CLEANUP
+#define MH_CLEANUP 4
+#endif
+#ifndef MH_DELETE
+#define MH_DELETE 3
+#endif
+#ifndef MH_KEEP
+#define MH_KEEP 2
+#endif
+
+typedef struct tagDDEML_MSG_HOOK_DATA {
+  UINT_PTR uiLo;
+  UINT_PTR uiHi;
+  DWORD cbData;
+  DWORD Data[8];
+} DDEML_MSG_HOOK_DATA, *PDDEML_MSG_HOOK_DATA;
+
+typedef struct tagMONCBSTRUCT {
+  UINT cb;
+  DWORD dwTime;
+  HANDLE hTask;
+  DWORD dwRet;
+  UINT wType;
+  UINT wFmt;
+  HCONV hConv;
+  HSZ hsz1;
+  HSZ hsz2;
+  HDDEDATA hData;
+  ULONG_PTR dwData1;
+  ULONG_PTR dwData2;
+  CONVCONTEXT cc;
+  DWORD cbData;
+  DWORD Data[8];
+} MONCBSTRUCT, *PMONCBSTRUCT;
+
+typedef struct tagMONCONVSTRUCT {
+  UINT cb;
+  BOOL fConnect;
+  DWORD dwTime;
+  HANDLE hTask;
+  HSZ hszSvc;
+  HSZ hszTopic;
+  HCONV hConvClient;
+  HCONV hConvServer;
+} MONCONVSTRUCT, *PMONCONVSTRUCT;
+
+typedef struct tagMONERRSTRUCT {
+  UINT cb;
+  UINT wLastError;
+  DWORD dwTime;
+  HANDLE hTask;
+} MONERRSTRUCT, *PMONERRSTRUCT;
+
+typedef struct tagMONHSZSTRUCTA {
+  UINT cb;
+  BOOL fsAction;
+  DWORD dwTime;
+  HSZ hsz;
+  HANDLE hTask;
+  CHAR str[1];
+} MONHSZSTRUCTA, *PMONHSZSTRUCTA;
+
+typedef struct tagMONHSZSTRUCTW {
+  UINT cb;
+  BOOL fsAction;
+  DWORD dwTime;
+  HSZ hsz;
+  HANDLE hTask;
+  WCHAR str[1];
+} MONHSZSTRUCTW, *PMONHSZSTRUCTW;
+
+typedef struct tagMONLINKSTRUCT {
+  UINT cb;
+  DWORD dwTime;
+  HANDLE hTask;
+  BOOL fEstablished;
+  BOOL fNoData;
+  HSZ hszSvc;
+  HSZ hszTopic;
+  HSZ hszItem;
+  UINT wFmt;
+  BOOL fServer;
+  HCONV hConvServer;
+  HCONV hConvClient;
+} MONLINKSTRUCT, *PMONLINKSTRUCT;
+
+typedef struct tagMONMSGSTRUCT {
+  UINT cb;
+  HWND hwndTo;
+  DWORD dwTime;
+  HANDLE hTask;
+  UINT wMsg;
+  WPARAM wParam;
+  LPARAM lParam;
+  DDEML_MSG_HOOK_DATA dmhd;
+} MONMSGSTRUCT, *PMONMSGSTRUCT;
+
+#define _INC_DDEMLH
+#if (!(defined(UNICODE)))
+#define CP_WINNEUTRAL 0x3EC
+#else
+#define CP_WINNEUTRAL 0x4B0
+#endif
+#define MH_CREATE 1
+
+typedef HDDEDATA WINAPI FNCALLBACK(UINT, UINT, HCONV, HSZ, HSZ, HDDEDATA, ULONG_PTR, ULONG_PTR);
+
+
+
+
+
+#if (!(defined(UNICODE)))
+typedef MONHSZSTRUCTA MONHSZSTRUCT;
+
+typedef PMONHSZSTRUCTA PMONHSZSTRUCT;
+#else
+typedef MONHSZSTRUCTW MONHSZSTRUCT;
+
+typedef PMONHSZSTRUCTW PMONHSZSTRUCT;
+#endif
 
 #endif  /* __WINE_DDEML_H */

@@ -307,11 +307,16 @@ typedef struct _PREVENT_MEDIA_REMOVAL {
 #endif
 
 #if (_WIN32_WINNT >= 0x0500)
-#define GPT_ATTRIBUTE_PLATFORM_REQUIRED          0x0000000000000001
-#define GPT_BASIC_DATA_ATTRIBUTE_READ_ONLY       0x1000000000000000
-#define GPT_BASIC_DATA_ATTRIBUTE_SHADOW_COPY     0x2000000000000000
-#define GPT_BASIC_DATA_ATTRIBUTE_HIDDEN          0x4000000000000000
-#define GPT_BASIC_DATA_ATTRIBUTE_NO_DRIVE_LETTER 0x8000000000000000
+#define GPT_ATTRIBUTE_PLATFORM_REQUIRED          (0x0000000000000001)
+#define GPT_ATTRIBUTE_NO_BLOCK_IO_PROTOCOL       (0x0000000000000002)
+#define GPT_ATTRIBUTE_LEGACY_BIOS_BOOTABLE       (0x0000000000000004)
+#define GPT_BASIC_DATA_ATTRIBUTE_NO_DRIVE_LETTER (0x8000000000000000)
+#define GPT_BASIC_DATA_ATTRIBUTE_HIDDEN          (0x4000000000000000)
+#define GPT_BASIC_DATA_ATTRIBUTE_SHADOW_COPY     (0x2000000000000000)
+#define GPT_BASIC_DATA_ATTRIBUTE_READ_ONLY       (0x1000000000000000)
+#define GPT_BASIC_DATA_ATTRIBUTE_OFFLINE         (0x0800000000000000)
+#define GPT_BASIC_DATA_ATTRIBUTE_DAX             (0x0400000000000000)
+#define GPT_BASIC_DATA_ATTRIBUTE_SERVICE         (0x0200000000000000)
 #endif
 
 #define DISK_LOGGING_START   0
@@ -881,6 +886,15 @@ typedef struct {
   ULONG ByteCount;
   USHORT MajorVersion;
   USHORT MinorVersion;
+  ULONG BytesPerPhysicalSector;
+  USHORT LfsMajorVersion;
+  USHORT LfsMinorVersion;
+#if (_WIN32_WINNT >= _WIN32_WINNT_WINTHRESHOLD)
+  ULONG MaxDeviceTrimExtentCount;
+  ULONG MaxDeviceTrimByteCount;
+  ULONG MaxVolumeTrimExtentCount;
+  ULONG MaxVolumeTrimByteCount;
+#endif
 } NTFS_EXTENDED_VOLUME_DATA, *PNTFS_EXTENDED_VOLUME_DATA;
 typedef struct {
   LARGE_INTEGER FileReferenceNumber;
@@ -1014,6 +1028,7 @@ typedef struct _NTFS_STATISTICS {
     ULONG CacheMiss;
     ULONG CacheMissClusters;
   } Allocate;
+  ULONG DiskResourcesExhausted;
 } NTFS_STATISTICS, *PNTFS_STATISTICS;
 
 #if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
@@ -1066,4 +1081,505 @@ typedef struct _FILE_OBJECTID_BUFFER {
 #ifdef __cplusplus
 }
 #endif
+#ifndef IOCTL_SCMBUS_DEVICE_FUNCTION_BASE
+#define IOCTL_SCMBUS_DEVICE_FUNCTION_BASE 0x0
+#endif
+#ifndef IOCTL_SCM_LOGICAL_DEVICE_FUNCTION_BASE
+#define IOCTL_SCM_LOGICAL_DEVICE_FUNCTION_BASE 0x300
+#endif
+#ifndef IOCTL_SCM_PHYSICAL_DEVICE_FUNCTION_BASE
+#define IOCTL_SCM_PHYSICAL_DEVICE_FUNCTION_BASE 0x600
+#endif
+#ifndef MAX_INTERFACE_CODES
+#define MAX_INTERFACE_CODES 8
+#endif
+#ifndef SCM_MAX_SYMLINK_LEN_IN_CHARS
+#define SCM_MAX_SYMLINK_LEN_IN_CHARS 256
+#endif
+#ifndef SCM_PD_FIRMWARE_LAST_DOWNLOAD
+#define SCM_PD_FIRMWARE_LAST_DOWNLOAD 0x1
+#endif
+#ifndef SCM_PD_FIRMWARE_REVISION_LENGTH_BYTES
+#define SCM_PD_FIRMWARE_REVISION_LENGTH_BYTES 32
+#endif
+#ifndef SCM_PD_MAX_OPERATIONAL_STATUS
+#define SCM_PD_MAX_OPERATIONAL_STATUS 16
+#endif
+#ifndef SCM_PD_PROPERTY_NAME_LENGTH_IN_CHARS
+#define SCM_PD_PROPERTY_NAME_LENGTH_IN_CHARS 128
+#endif
+
+typedef enum _SCM_BUS_FIRMWARE_ACTIVATION_STATE {
+    ScmBusFirmwareActivationState_Idle = 0,
+    ScmBusFirmwareActivationState_Armed = 1,
+    ScmBusFirmwareActivationState_Busy = 2
+} SCM_BUS_FIRMWARE_ACTIVATION_STATE, *PSCM_BUS_FIRMWARE_ACTIVATION_STATE;
+
+typedef enum _SCM_BUS_PROPERTY_ID {
+    ScmBusProperty_RuntimeFwActivationInfo = 0,
+    ScmBusProperty_DedicatedMemoryInfo = 1,
+    ScmBusProperty_DedicatedMemoryState = 2,
+    ScmBusProperty_Max = 3
+} SCM_BUS_PROPERTY_ID, *PSCM_BUS_PROPERTY_ID;
+
+typedef enum _SCM_BUS_QUERY_TYPE {
+    ScmBusQuery_Descriptor = 0,
+    ScmBusQuery_IsSupported = 1,
+    ScmBusQuery_Max = 2
+} SCM_BUS_QUERY_TYPE, *PSCM_BUS_QUERY_TYPE;
+
+typedef enum _SCM_BUS_SET_TYPE {
+    ScmBusSet_Descriptor = 0,
+    ScmBusSet_IsSupported = 1,
+    ScmBusSet_Max = 2
+} SCM_BUS_SET_TYPE, *PSCM_BUS_SET_TYPE;
+
+typedef enum _SCM_PD_FIRMWARE_ACTIVATION_STATE {
+    ScmPdFirmwareActivationState_Idle = 0,
+    ScmPdFirmwareActivationState_Armed = 1,
+    ScmPdFirmwareActivationState_Busy = 2
+} SCM_PD_FIRMWARE_ACTIVATION_STATE, *PSCM_PD_FIRMWARE_ACTIVATION_STATE;
+
+typedef enum _SCM_PD_HEALTH_STATUS {
+    ScmPhysicalDeviceHealth_Unknown = 0,
+    ScmPhysicalDeviceHealth_Unhealthy = 1,
+    ScmPhysicalDeviceHealth_Warning = 2,
+    ScmPhysicalDeviceHealth_Healthy = 3,
+    ScmPhysicalDeviceHealth_Max = 4
+} SCM_PD_HEALTH_STATUS, *PSCM_PD_HEALTH_STATUS;
+
+typedef enum _SCM_PD_LAST_FW_ACTIVATION_STATUS {
+    ScmPdLastFwActivationStatus_None = 0,
+    ScmPdLastFwActivationStatus_Success = 1,
+    ScmPdLastFwActivationStatus_FwNotFound = 2,
+    ScmPdLastFwActivationStatus_ColdRebootRequired = 3,
+    ScmPdLastFwActivaitonStatus_ActivationInProgress = 4,
+    ScmPdLastFwActivaitonStatus_Retry = 5,
+    ScmPdLastFwActivaitonStatus_FwUnsupported = 6,
+    ScmPdLastFwActivaitonStatus_UnknownError = 7
+} SCM_PD_LAST_FW_ACTIVATION_STATUS, *PSCM_PD_LAST_FW_ACTIVATION_STATUS;
+
+typedef enum _SCM_PD_MEDIA_REINITIALIZATION_STATUS {
+    ScmPhysicalDeviceReinit_Success = 0,
+    ScmPhysicalDeviceReinit_RebootNeeded = 1,
+    ScmPhysicalDeviceReinit_ColdBootNeeded = 2,
+    ScmPhysicalDeviceReinit_Max = 3
+} SCM_PD_MEDIA_REINITIALIZATION_STATUS, *PSCM_PD_MEDIA_REINITIALIZATION_STATUS;
+
+typedef enum _SCM_PD_OPERATIONAL_STATUS {
+    ScmPhysicalDeviceOpStatus_Unknown = 0,
+    ScmPhysicalDeviceOpStatus_Ok = 1,
+    ScmPhysicalDeviceOpStatus_PredictingFailure = 2,
+    ScmPhysicalDeviceOpStatus_InService = 3,
+    ScmPhysicalDeviceOpStatus_HardwareError = 4,
+    ScmPhysicalDeviceOpStatus_NotUsable = 5,
+    ScmPhysicalDeviceOpStatus_TransientError = 6,
+    ScmPhysicalDeviceOpStatus_Missing = 7,
+    ScmPhysicalDeviceOpStatus_Max = 8
+} SCM_PD_OPERATIONAL_STATUS, *PSCM_PD_OPERATIONAL_STATUS;
+
+typedef enum _SCM_PD_OPERATIONAL_STATUS_REASON {
+    ScmPhysicalDeviceOpReason_Unknown = 0,
+    ScmPhysicalDeviceOpReason_Media = 1,
+    ScmPhysicalDeviceOpReason_ThresholdExceeded = 2,
+    ScmPhysicalDeviceOpReason_LostData = 3,
+    ScmPhysicalDeviceOpReason_EnergySource = 4,
+    ScmPhysicalDeviceOpReason_Configuration = 5,
+    ScmPhysicalDeviceOpReason_DeviceController = 6,
+    ScmPhysicalDeviceOpReason_MediaController = 7,
+    ScmPhysicalDeviceOpReason_Component = 8,
+    ScmPhysicalDeviceOpReason_BackgroundOperation = 9,
+    ScmPhysicalDeviceOpReason_InvalidFirmware = 10,
+    ScmPhysicalDeviceOpReason_HealthCheck = 11,
+    ScmPhysicalDeviceOpReason_LostDataPersistence = 12,
+    ScmPhysicalDeviceOpReason_DisabledByPlatform = 13,
+    ScmPhysicalDeviceOpReason_PermanentError = 14,
+    ScmPhysicalDeviceOpReason_LostWritePersistence = 15,
+    ScmPhysicalDeviceOpReason_FatalError = 16,
+    ScmPhysicalDeviceOpReason_DataPersistenceLossImminent = 17,
+    ScmPhysicalDeviceOpReason_WritePersistenceLossImminent = 18,
+    ScmPhysicalDeviceOpReason_MediaRemainingSpareBlock = 19,
+    ScmPhysicalDeviceOpReason_PerformanceDegradation = 20,
+    ScmPhysicalDeviceOpReason_ExcessiveTemperature = 21,
+    ScmPhysicalDeviceOpReason_InternalFailure = 22,
+    ScmPhysicalDeviceOpReason_Max = 23
+} SCM_PD_OPERATIONAL_STATUS_REASON, *PSCM_PD_OPERATIONAL_STATUS_REASON;
+
+typedef enum _SCM_PD_PROPERTY_ID {
+    ScmPhysicalDeviceProperty_DeviceInfo = 0,
+    ScmPhysicalDeviceProperty_ManagementStatus = 1,
+    ScmPhysicalDeviceProperty_FirmwareInfo = 2,
+    ScmPhysicalDeviceProperty_LocationString = 3,
+    ScmPhysicalDeviceProperty_DeviceSpecificInfo = 4,
+    ScmPhysicalDeviceProperty_DeviceHandle = 5,
+    ScmPhysicalDeviceProperty_FruIdString = 6,
+    ScmPhysicalDeviceProperty_RuntimeFwActivationInfo = 7,
+    ScmPhysicalDeviceProperty_RuntimeFwActivationArmState = 8,
+    ScmPhysicalDeviceProperty_Max = 9
+} SCM_PD_PROPERTY_ID, *PSCM_PD_PROPERTY_ID;
+
+typedef enum _SCM_PD_QUERY_TYPE {
+    ScmPhysicalDeviceQuery_Descriptor = 0,
+    ScmPhysicalDeviceQuery_IsSupported = 1,
+    ScmPhysicalDeviceQuery_Max = 2
+} SCM_PD_QUERY_TYPE, *PSCM_PD_QUERY_TYPE;
+
+typedef enum _SCM_PD_SET_TYPE {
+    ScmPhysicalDeviceSet_Descriptor = 0,
+    ScmPhysicalDeviceSet_IsSupported = 1,
+    ScmPhysicalDeviceSet_Max = 2
+} SCM_PD_SET_TYPE, *PSCM_PD_SET_TYPE;
+
+typedef enum _SCM_REGION_FLAG {
+    ScmRegionFlagNone = 0,
+    ScmRegionFlagLabel = 1
+} SCM_REGION_FLAG, *PSCM_REGION_FLAG;
+
+typedef struct _SCM_BUS_DEDICATED_MEMORY_STATE {
+  BOOLEAN ActivateState;
+} SCM_BUS_DEDICATED_MEMORY_STATE, *PSCM_BUS_DEDICATED_MEMORY_STATE;
+
+typedef struct _SCM_BUS_PROPERTY_QUERY {
+  DWORD Version;
+  DWORD Size;
+  SCM_BUS_PROPERTY_ID PropertyId;
+  SCM_BUS_QUERY_TYPE QueryType;
+  BYTE AdditionalParameters[1];
+} SCM_BUS_PROPERTY_QUERY, *PSCM_BUS_PROPERTY_QUERY;
+
+typedef struct _SCM_BUS_PROPERTY_SET {
+  DWORD Version;
+  DWORD Size;
+  SCM_BUS_PROPERTY_ID PropertyId;
+  SCM_BUS_SET_TYPE SetType;
+  BYTE AdditionalParameters[1];
+} SCM_BUS_PROPERTY_SET, *PSCM_BUS_PROPERTY_SET;
+
+typedef struct _SCM_INTERLEAVED_PD_INFO {
+  DWORD DeviceHandle;
+  GUID DeviceGuid;
+} SCM_INTERLEAVED_PD_INFO, *PSCM_INTERLEAVED_PD_INFO;
+
+typedef struct _SCM_LD_INTERLEAVE_SET_INFO {
+  DWORD Version;
+  DWORD Size;
+  DWORD InterleaveSetSize;
+  SCM_INTERLEAVED_PD_INFO InterleaveSet[1];
+} SCM_LD_INTERLEAVE_SET_INFO, *PSCM_LD_INTERLEAVE_SET_INFO;
+
+typedef struct _SCM_LOGICAL_DEVICE_INSTANCE {
+  DWORD Version;
+  DWORD Size;
+  GUID DeviceGuid;
+  WCHAR SymbolicLink[256];
+} SCM_LOGICAL_DEVICE_INSTANCE, *PSCM_LOGICAL_DEVICE_INSTANCE;
+
+typedef struct _SCM_LOGICAL_DEVICES {
+  DWORD Version;
+  DWORD Size;
+  DWORD DeviceCount;
+  SCM_LOGICAL_DEVICE_INSTANCE Devices[1];
+} SCM_LOGICAL_DEVICES, *PSCM_LOGICAL_DEVICES;
+
+typedef struct _SCM_PD_DESCRIPTOR_HEADER {
+  DWORD Version;
+  DWORD Size;
+} SCM_PD_DESCRIPTOR_HEADER, *PSCM_PD_DESCRIPTOR_HEADER;
+
+typedef struct _SCM_PD_DEVICE_HANDLE {
+  DWORD Version;
+  DWORD Size;
+  GUID DeviceGuid;
+  DWORD DeviceHandle;
+} SCM_PD_DEVICE_HANDLE, *PSCM_PD_DEVICE_HANDLE;
+
+typedef struct _SCM_PD_DEVICE_INFO {
+  DWORD Version;
+  DWORD Size;
+  GUID DeviceGuid;
+  DWORD UnsafeShutdownCount;
+  DWORD64 PersistentMemorySizeInBytes;
+  DWORD64 VolatileMemorySizeInBytes;
+  DWORD64 TotalMemorySizeInBytes;
+  DWORD SlotNumber;
+  DWORD DeviceHandle;
+  WORD PhysicalId;
+  BYTE NumberOfFormatInterfaceCodes;
+  WORD FormatInterfaceCodes[8];
+  DWORD VendorId;
+  DWORD ProductId;
+  DWORD SubsystemDeviceId;
+  DWORD SubsystemVendorId;
+  BYTE ManufacturingLocation;
+  BYTE ManufacturingWeek;
+  BYTE ManufacturingYear;
+  DWORD SerialNumber4Byte;
+  DWORD SerialNumberLengthInChars;
+  CHAR SerialNumber[1];
+} SCM_PD_DEVICE_INFO, *PSCM_PD_DEVICE_INFO;
+
+typedef struct _SCM_PD_DEVICE_SPECIFIC_PROPERTY {
+  WCHAR Name[128];
+  LONGLONG Value;
+} SCM_PD_DEVICE_SPECIFIC_PROPERTY, *PSCM_PD_DEVICE_SPECIFIC_PROPERTY;
+
+typedef struct _SCM_PD_DEVICE_SPECIFIC_INFO {
+  DWORD Version;
+  DWORD Size;
+  DWORD NumberOfProperties;
+  SCM_PD_DEVICE_SPECIFIC_PROPERTY DeviceSpecificProperties[1];
+} SCM_PD_DEVICE_SPECIFIC_INFO, *PSCM_PD_DEVICE_SPECIFIC_INFO;
+
+typedef struct _SCM_PD_FIRMWARE_ACTIVATE {
+  DWORD Version;
+  DWORD Size;
+  DWORD Flags;
+  BYTE Slot;
+} SCM_PD_FIRMWARE_ACTIVATE, *PSCM_PD_FIRMWARE_ACTIVATE;
+
+typedef struct _SCM_PD_FIRMWARE_DOWNLOAD {
+  DWORD Version;
+  DWORD Size;
+  DWORD Flags;
+  BYTE Slot;
+  BYTE Reserved[3];
+  DWORD64 Offset;
+  DWORD FirmwareImageSizeInBytes;
+  BYTE FirmwareImage[1];
+} SCM_PD_FIRMWARE_DOWNLOAD, *PSCM_PD_FIRMWARE_DOWNLOAD;
+
+typedef struct _SCM_PD_FIRMWARE_SLOT_INFO {
+  DWORD Version;
+  DWORD Size;
+  BYTE SlotNumber;
+  BYTE ReadOnly : 1;
+  BYTE Reserved0 : 7;
+  BYTE Reserved1[6];
+  BYTE Revision[32];
+} SCM_PD_FIRMWARE_SLOT_INFO, *PSCM_PD_FIRMWARE_SLOT_INFO;
+
+typedef struct _SCM_PD_FIRMWARE_INFO {
+  DWORD Version;
+  DWORD Size;
+  BYTE ActiveSlot;
+  BYTE NextActiveSlot;
+  BYTE SlotCount;
+  SCM_PD_FIRMWARE_SLOT_INFO Slots[1];
+} SCM_PD_FIRMWARE_INFO, *PSCM_PD_FIRMWARE_INFO;
+
+typedef struct _SCM_PD_FRU_ID_STRING {
+  DWORD Version;
+  DWORD Size;
+  DWORD IdentifierSize;
+  BYTE Identifier[1];
+} SCM_PD_FRU_ID_STRING, *PSCM_PD_FRU_ID_STRING;
+
+typedef struct _SCM_PD_HEALTH_NOTIFICATION_DATA {
+  GUID DeviceGuid;
+} SCM_PD_HEALTH_NOTIFICATION_DATA, *PSCM_PD_HEALTH_NOTIFICATION_DATA;
+
+typedef struct _SCM_PD_LOCATION_STRING {
+  DWORD Version;
+  DWORD Size;
+  WCHAR Location[1];
+} SCM_PD_LOCATION_STRING, *PSCM_PD_LOCATION_STRING;
+
+typedef struct _SCM_PD_MANAGEMENT_STATUS {
+  DWORD Version;
+  DWORD Size;
+  SCM_PD_HEALTH_STATUS Health;
+  DWORD NumberOfOperationalStatus;
+  DWORD NumberOfAdditionalReasons;
+  SCM_PD_OPERATIONAL_STATUS OperationalStatus[16];
+  SCM_PD_OPERATIONAL_STATUS_REASON AdditionalReasons[1];
+} SCM_PD_MANAGEMENT_STATUS, *PSCM_PD_MANAGEMENT_STATUS;
+
+typedef struct _SCM_PD_PASSTHROUGH_INPUT {
+  DWORD Version;
+  DWORD Size;
+  GUID ProtocolGuid;
+  DWORD DataSize;
+  BYTE Data[1];
+} SCM_PD_PASSTHROUGH_INPUT, *PSCM_PD_PASSTHROUGH_INPUT;
+
+typedef struct _SCM_PD_PASSTHROUGH_INVDIMM_INPUT {
+  DWORD Opcode;
+  DWORD OpcodeParametersLength;
+  BYTE OpcodeParameters[1];
+} SCM_PD_PASSTHROUGH_INVDIMM_INPUT, *PSCM_PD_PASSTHROUGH_INVDIMM_INPUT;
+
+typedef struct _SCM_PD_PASSTHROUGH_INVDIMM_OUTPUT {
+  WORD GeneralStatus;
+  WORD ExtendedStatus;
+  DWORD OutputDataLength;
+  BYTE OutputData[1];
+} SCM_PD_PASSTHROUGH_INVDIMM_OUTPUT, *PSCM_PD_PASSTHROUGH_INVDIMM_OUTPUT;
+
+typedef struct _SCM_PD_PASSTHROUGH_OUTPUT {
+  DWORD Version;
+  DWORD Size;
+  GUID ProtocolGuid;
+  DWORD DataSize;
+  BYTE Data[1];
+} SCM_PD_PASSTHROUGH_OUTPUT, *PSCM_PD_PASSTHROUGH_OUTPUT;
+
+typedef struct _SCM_PD_PROPERTY_QUERY {
+  DWORD Version;
+  DWORD Size;
+  SCM_PD_PROPERTY_ID PropertyId;
+  SCM_PD_QUERY_TYPE QueryType;
+  BYTE AdditionalParameters[1];
+} SCM_PD_PROPERTY_QUERY, *PSCM_PD_PROPERTY_QUERY;
+
+typedef struct _SCM_PD_PROPERTY_SET {
+  DWORD Version;
+  DWORD Size;
+  SCM_PD_PROPERTY_ID PropertyId;
+  SCM_PD_SET_TYPE SetType;
+  BYTE AdditionalParameters[1];
+} SCM_PD_PROPERTY_SET, *PSCM_PD_PROPERTY_SET;
+
+typedef struct _SCM_PD_REINITIALIZE_MEDIA_OUTPUT {
+  DWORD Version;
+  DWORD Size;
+  SCM_PD_MEDIA_REINITIALIZATION_STATUS Status;
+} SCM_PD_REINITIALIZE_MEDIA_OUTPUT, *PSCM_PD_REINITIALIZE_MEDIA_OUTPUT;
+
+typedef struct _SCM_PD_RUNTIME_FW_ACTIVATION_ARM_STATE {
+  BOOLEAN ArmState;
+} SCM_PD_RUNTIME_FW_ACTIVATION_ARM_STATE, *PSCM_PD_RUNTIME_FW_ACTIVATION_ARM_STATE;
+
+typedef struct _SCM_PD_RUNTIME_FW_ACTIVATION_INFO {
+  DWORD Version;
+  DWORD Size;
+  SCM_PD_LAST_FW_ACTIVATION_STATUS LastFirmwareActivationStatus;
+  SCM_PD_FIRMWARE_ACTIVATION_STATE FirmwareActivationState;
+} SCM_PD_RUNTIME_FW_ACTIVATION_INFO, *PSCM_PD_RUNTIME_FW_ACTIVATION_INFO;
+
+typedef struct _SCM_PHYSICAL_DEVICE_INSTANCE {
+  DWORD Version;
+  DWORD Size;
+  DWORD NfitHandle;
+  WCHAR SymbolicLink[256];
+} SCM_PHYSICAL_DEVICE_INSTANCE, *PSCM_PHYSICAL_DEVICE_INSTANCE;
+
+typedef struct _SCM_PHYSICAL_DEVICES {
+  DWORD Version;
+  DWORD Size;
+  DWORD DeviceCount;
+  SCM_PHYSICAL_DEVICE_INSTANCE Devices[1];
+} SCM_PHYSICAL_DEVICES, *PSCM_PHYSICAL_DEVICES;
+
+typedef struct _SCM_REGION {
+  DWORD Version;
+  DWORD Size;
+  DWORD Flags;
+  DWORD NfitHandle;
+  GUID LogicalDeviceGuid;
+  GUID AddressRangeType;
+  DWORD AssociatedId;
+  DWORD64 Length;
+  DWORD64 StartingDPA;
+  DWORD64 BaseSPA;
+  DWORD64 SPAOffset;
+  DWORD64 RegionOffset;
+} SCM_REGION, *PSCM_REGION;
+
+typedef struct _SCM_REGIONS {
+  DWORD Version;
+  DWORD Size;
+  DWORD RegionCount;
+  SCM_REGION Regions[1];
+} SCM_REGIONS, *PSCM_REGIONS;
+
+#define FSCTL_CIMFS_QUERY_BACKING_REGION_NAMES 0x904A0
+#define IOCTL_SCM_BUS_GET_LOGICAL_DEVICES 0x590000
+#define IOCTL_SCM_BUS_GET_PHYSICAL_DEVICES 0x590004
+#define IOCTL_SCM_BUS_GET_REGIONS 0x590008
+#define IOCTL_SCM_BUS_QUERY_PROPERTY 0x59000C
+#define IOCTL_SCM_BUS_REFRESH_NAMESPACE 0x590018
+#define IOCTL_SCM_BUS_RUNTIME_FW_ACTIVATE 0x598010
+#define IOCTL_SCM_BUS_SET_PROPERTY 0x598014
+#define IOCTL_SCM_LD_GET_INTERLEAVE_SET 0x590C00
+#define IOCTL_SCM_PD_FIRMWARE_ACTIVATE 0x599808
+#define IOCTL_SCM_PD_FIRMWARE_DOWNLOAD 0x599804
+#define IOCTL_SCM_PD_PASSTHROUGH 0x59D80C
+#define IOCTL_SCM_PD_QUERY_PROPERTY 0x591800
+#define IOCTL_SCM_PD_REINITIALIZE_MEDIA 0x599814
+#define IOCTL_SCM_PD_SET_PROPERTY 0x599818
+#define IOCTL_SCM_PD_UPDATE_MANAGEMENT_STATUS 0x591810
+#define IOCTL_SCMBUS_BASE 0x59
+#define SCM_PD_MEMORY_SIZE_UNKNOWN (-1)
+#define SCM_REGION_SPA_UNKNOWN (-1)
+
+struct _SCM_BUS_DEDICATED_MEMORY_DEVICE_INFO
+{
+    GUID DeviceGuid;
+    DWORD DeviceNumber;
+    struct
+    {
+        DWORD ForcedByRegistry : 1;
+        DWORD Initialized : 1;
+        DWORD Reserved : 30;
+    } Flags;
+    DWORDLONG DeviceSize;
+};
+
+struct _SCM_BUS_RUNTIME_FW_ACTIVATION_INFO
+{
+    DWORD Version;
+    DWORD Size;
+    BOOLEAN RuntimeFwActivationSupported;
+    SCM_BUS_FIRMWARE_ACTIVATION_STATE FirmwareActivationState;
+    struct
+    {
+        DWORD FwManagedIoQuiesceFwActivationSupported : 1;
+        DWORD OsManagedIoQuiesceFwActivationSupported : 1;
+        DWORD WarmResetBasedFwActivationSupported : 1;
+        DWORD Reserved : 29;
+    } FirmwareActivationCapability;
+    DWORDLONG EstimatedFirmwareActivationTimeInUSecs;
+    DWORDLONG EstimatedProcessorAccessQuiesceTimeInUSecs;
+    DWORDLONG EstimatedIOAccessQuiesceTimeInUSecs;
+    DWORDLONG PlatformSupportedMaxIOAccessQuiesceTimeInUSecs;
+};
+
+struct _SCM_PD_REINITIALIZE_MEDIA_INPUT
+{
+    DWORD Version;
+    DWORD Size;
+    struct
+    {
+        DWORD Overwrite : 1;
+    } Options;
+};
+
+typedef struct _SCM_BUS_DEDICATED_MEMORY_DEVICE_INFO *PSCM_BUS_DEDICATED_MEMORY_DEVICE_INFO;
+
+typedef struct _SCM_BUS_RUNTIME_FW_ACTIVATION_INFO *PSCM_BUS_RUNTIME_FW_ACTIVATION_INFO;
+
+typedef struct _SCM_PD_REINITIALIZE_MEDIA_INPUT *PSCM_PD_REINITIALIZE_MEDIA_INPUT;
+
+typedef struct _SCM_BUS_DEDICATED_MEMORY_DEVICE_INFO SCM_BUS_DEDICATED_MEMORY_DEVICE_INFO;
+
+struct _SCM_BUS_DEDICATED_MEMORY_DEVICES_INFO
+{
+    DWORD Version;
+    DWORD Size;
+    DWORD DeviceCount;
+    SCM_BUS_DEDICATED_MEMORY_DEVICE_INFO Devices[1];
+};
+
+typedef struct _SCM_BUS_DEDICATED_MEMORY_DEVICES_INFO *PSCM_BUS_DEDICATED_MEMORY_DEVICES_INFO;
+
+typedef struct _SCM_BUS_DEDICATED_MEMORY_DEVICES_INFO SCM_BUS_DEDICATED_MEMORY_DEVICES_INFO;
+
+typedef struct _SCM_BUS_RUNTIME_FW_ACTIVATION_INFO SCM_BUS_RUNTIME_FW_ACTIVATION_INFO;
+
+typedef struct _SCM_PD_REINITIALIZE_MEDIA_INPUT SCM_PD_REINITIALIZE_MEDIA_INPUT;
+
+#define SCM_LOGICAL_DEVICE_FUNCTION(x) (IOCTL_SCM_LOGICAL_DEVICE_FUNCTION_BASE + x)
+#define SCM_PHYSICAL_DEVICE_FUNCTION(x) (IOCTL_SCM_PHYSICAL_DEVICE_FUNCTION_BASE + x)
+#define SCMBUS_FUNCTION(x) (IOCTL_SCMBUS_DEVICE_FUNCTION_BASE + x)
+
 #endif /* _WINIOCTL_ */

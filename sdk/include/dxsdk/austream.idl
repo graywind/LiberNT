@@ -50,7 +50,6 @@ interface IAudioMediaStream : IMediaStream
 	);
 }
 
-
 [
 object,
 local,
@@ -63,7 +62,6 @@ interface IAudioStreamSample : IStreamSample
 		[out] IAudioData **ppAudio
 	);
 }
-
 
 [
 object,
@@ -89,7 +87,6 @@ interface IMemoryData : IUnknown
 	);
 }
 
-
 [
 object,
 local,
@@ -106,3 +103,7 @@ interface IAudioData : IMemoryData
 		[in] const WAVEFORMATEX *lpWaveFormat
 	);
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

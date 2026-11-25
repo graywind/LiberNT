@@ -316,7 +316,7 @@ NotifyIME(
     _In_ HIMC hIMC,
     _In_ DWORD dwAction,
     _In_ DWORD dwIndex,
-    _In_ DWORD_PTR dwValue);
+    _In_ DWORD dwValue);
 
 BOOL WINAPI
 ImeSetCompositionString(
@@ -368,5 +368,66 @@ ImeGetImeMenuItems(
 /* dwSystemInfoFlags bits */
 #define IME_SYSINFO_WINLOGON            0x0001
 #define IME_SYSINFO_WOW16               0x0002
+
+#ifndef IME_ESC_STRING_BUFFER_SIZE
+#define IME_ESC_STRING_BUFFER_SIZE 80
+#endif
+#ifndef IME_UI_CLASS_NAME_SIZE
+#define IME_UI_CLASS_NAME_SIZE 16
+#endif
+
+#define GCS_COMP 0x38
+#define GCS_COMPREAD 7
+#define GCS_RESULT 0x1800
+#define GCS_RESULTREAD 0x600
+
+struct tagIMEINFO
+{
+    DWORD dwPrivateDataSize;
+    DWORD fdwProperty;
+    DWORD fdwConversionCaps;
+    DWORD fdwSentenceCaps;
+    DWORD fdwUICaps;
+    DWORD fdwSCSCaps;
+    DWORD fdwSelectCaps;
+};
+
+struct tagINPUTCONTEXT
+{
+    HWND hWnd;
+    BOOL fOpen;
+    POINT ptStatusWndPos;
+    POINT ptSoftKbdPos;
+    DWORD fdwConversion;
+    DWORD fdwSentence;
+    union
+    {
+        LOGFONTA A;
+        LOGFONTW W;
+    } lfFont;
+    COMPOSITIONFORM cfCompForm;
+    CANDIDATEFORM cfCandForm[4];
+    HIMCC hCompStr;
+    HIMCC hCandInfo;
+    HIMCC hGuideLine;
+    HIMCC hPrivate;
+    DWORD dwNumMsgBuf;
+    HIMCC hMsgBuf;
+    DWORD fdwInit;
+    DWORD dwReserve[3];
+};
+
+struct tagTRANSMSG
+{
+    UINT message;
+    WPARAM wParam;
+    LPARAM lParam;
+};
+
+struct tagTRANSMSGLIST
+{
+    UINT uMsgCount;
+    TRANSMSG TransMsg[1];
+};
 
 #endif  /* ndef _IMMDEV_ */

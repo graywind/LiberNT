@@ -717,3 +717,29 @@ interface ID3D10InfoQueue : IUnknown
     );
     BOOL GetMuteDebugOutput();
 }
+
+cpp_quote("#ifndef D3D10_INFO_QUEUE_DEFAULT_MESSAGE_COUNT_LIMIT")
+cpp_quote("#define D3D10_INFO_QUEUE_DEFAULT_MESSAGE_COUNT_LIMIT 1024")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D10_SDK_LAYERS_VERSION")
+cpp_quote("#define D3D10_SDK_LAYERS_VERSION 11")
+cpp_quote("#endif")
+
+cpp_quote("#define D3D10_APPNAME_STRING __TEXT(\"Name\")")
+cpp_quote("#define D3D10_APPSIZE_STRING __TEXT(\"Size\")")
+cpp_quote("#define D3D10_BREAKON_CATEGORY __TEXT(\"BreakOn_CATEGORY_%s\")")
+cpp_quote("#define D3D10_BREAKON_ID_DECIMAL __TEXT(\"BreakOn_ID_%d\")")
+cpp_quote("#define D3D10_BREAKON_ID_STRING __TEXT(\"BreakOn_ID_%s\")")
+cpp_quote("#define D3D10_BREAKON_SEVERITY __TEXT(\"BreakOn_SEVERITY_%s\")")
+cpp_quote("#define D3D10_ENABLE_BREAK_ON_MESSAGE __TEXT(\"EnableBreakOnMessage\")")
+cpp_quote("#define D3D10_INFOQUEUE_STORAGE_FILTER_OVERRIDE __TEXT(\"InfoQueueStorageFilterOverride\")")
+cpp_quote("#define D3D10_MUTE_CATEGORY __TEXT(\"Mute_CATEGORY_%s\")")
+cpp_quote("#define D3D10_MUTE_DEBUG_OUTPUT __TEXT(\"MuteDebugOutput\")")
+cpp_quote("#define D3D10_MUTE_ID_DECIMAL __TEXT(\"Mute_ID_%d\")")
+cpp_quote("#define D3D10_MUTE_ID_STRING __TEXT(\"Mute_ID_%s\")")
+cpp_quote("#define D3D10_MUTE_SEVERITY __TEXT(\"Mute_SEVERITY_%s\")")
+cpp_quote("#define D3D10_REGKEY_PATH __TEXT(\"Software\\\\Microsoft\\\\Direct3D\")")
+cpp_quote("#define D3D10_UNMUTE_SEVERITY_INFO __TEXT(\"Unmute_SEVERITY_INFO\")")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

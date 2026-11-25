@@ -13,8 +13,8 @@ include_directories(BEFORE include)
 include_directories(
     ${REACTOS_SOURCE_DIR}/ntos/include
     ${REACTOS_SOURCE_DIR}/sdk/lib/cmlib
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/edk2)
+    ${REACTOS_SOURCE_DIR}/sdk/include/libernt/libs
+    ${REACTOS_SOURCE_DIR}/sdk/include/libernt/edk2)
 
 add_definitions(-D_NTHAL_ -D_BLDR_ -D_NTSYSTEM_ -DNTDDI_VERSION=${REACTOS_TARGET_NTDDI})
 
@@ -137,10 +137,16 @@ if(ARCH STREQUAL "amd64" OR ARCH STREQUAL "i386")
 endif()
 add_dependencies(bootlib bugcodes asm xdk)
 
-add_library(bootntfs lib/ntfsenv.cpp $<TARGET_PROPERTY:ntfslib_new,SOURCES>)
+add_library(bootntfs lib/ntfsenv.cpp $<TARGET_PROPERTY:ntfslib_new,SOURCES>
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/src/format/bootsect.cpp
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/src/format/format.cpp
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/src/format/record.cpp
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/src/format/sysfiles.cpp
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/src/format/tables.cpp)
 target_include_directories(bootntfs PRIVATE
     ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/include/public
-    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/include/internal)
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/include/internal
+    ${REACTOS_SOURCE_DIR}/sdk/lib/fslib/ntfslib_new/src/format)
 add_dependencies(bootntfs bugcodes xdk psdk)
 
 foreach(_asset font mono icons logo)
@@ -180,10 +186,11 @@ add_dependencies(bootgui bugcodes asm xdk)
 add_library(bootwim
     ${REACTOS_SOURCE_DIR}/sdk/lib/libwim/lzx.c
     ${REACTOS_SOURCE_DIR}/sdk/lib/libwim/sha1.c
+    ${REACTOS_SOURCE_DIR}/sdk/lib/libwim/wimboot.c
     ${REACTOS_SOURCE_DIR}/sdk/lib/libwim/wimcore.c
     ${REACTOS_SOURCE_DIR}/sdk/lib/libwim/xpress_huff.c)
 set_property(TARGET bootwim PROPERTY C_STANDARD 11)
-target_include_directories(bootwim PRIVATE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/libwim)
+target_include_directories(bootwim PRIVATE ${REACTOS_SOURCE_DIR}/sdk/include/libernt/libs/libwim)
 target_compile_definitions(bootwim PRIVATE XPRESS_HUFF_DECOMPRESS_ONLY=1)
 add_dependencies(bootwim xdk)
 
@@ -317,7 +324,6 @@ list(APPEND WINLOAD_COMMON_SOURCE
     winload/memory.c
     ramdisk/fatformat.c
     ramdisk/fatwrite.c
-    ramdisk/wim.c
     winload/options.c
     winload/ramdisk.c
     winload/registry.c

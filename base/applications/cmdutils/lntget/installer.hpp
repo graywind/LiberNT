@@ -35,10 +35,11 @@ public:
     Status Download(const PackageRecord &package, const InstallerEntry &installer, const std::wstring *directory,
                     std::wstring &path, DownloadProgressCallback *progress = nullptr, InstallerStageCallback *stage = nullptr);
     Status Install(const PackageRecord &package, const InstallerEntry &installer, const std::wstring &path, InstallMode mode,
-                   DWORD &exitCode, TrackedPackage *tracked = nullptr);
+                   DWORD &exitCode, TrackedPackage *tracked = nullptr, InstallLockWait *wait = nullptr);
 
 private:
     std::wstring DefaultPackageDirectory(const PackageRecord &package) const;
+    void RemoveInstaller(const PackageRecord &package, const std::wstring &path) const;
     Status Execute(const std::wstring &commandLine, const std::wstring &workingDirectory, DWORD &exitCode) const;
 
     HttpClient http_;

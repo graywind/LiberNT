@@ -111,6 +111,7 @@ typedef enum D3D_FEATURE_LEVEL
     D3D_FEATURE_LEVEL_12_0 = 0xc000,
     D3D_FEATURE_LEVEL_12_1 = 0xc100,
     D3D_FEATURE_LEVEL_12_2 = 0xc200,
+    D3D_FEATURE_LEVEL_1_0_GENERIC = 0x100,
 } D3D_FEATURE_LEVEL;
 
 cpp_quote("#define D3D_FL9_1_REQ_TEXTURE1D_U_DIMENSION          2048")
@@ -276,6 +277,11 @@ typedef enum _D3D_SHADER_VARIABLE_TYPE
     D3D11_SVT_APPEND_STRUCTURED_BUFFER,
     D3D11_SVT_CONSUME_STRUCTURED_BUFFER,
     D3D_SVT_FORCE_DWORD = 0x7fffffff,
+    D3D_SVT_INT16 = 0x3A,
+    D3D_SVT_UINT16 = 0x3B,
+    D3D_SVT_FLOAT16 = 0x3C,
+    D3D_SVT_INT64 = 0x3D,
+    D3D_SVT_UINT64 = 0x3E,
 } D3D_SHADER_VARIABLE_TYPE;
 
 typedef enum _D3D_SHADER_INPUT_FLAGS
@@ -531,7 +537,7 @@ typedef enum D3D_MIN_PRECISION
     D3D_MIN_PRECISION_ANY_10 = 0xf1,
 } D3D_MIN_PRECISION;
 
-typedef enum D3D_CBUFFER_TYPE
+typedef enum _D3D_CBUFFER_TYPE
 {
     D3D_CT_CBUFFER,
     D3D_CT_TBUFFER,
@@ -604,6 +610,18 @@ typedef enum D3D_REGISTER_COMPONENT_TYPE
     D3D10_REGISTER_COMPONENT_UINT32,
     D3D10_REGISTER_COMPONENT_SINT32,
     D3D10_REGISTER_COMPONENT_FLOAT32,
+    D3D_REGISTER_COMPONENT_UINT16 = 4,
+    D3D_REGISTER_COMPONENT_SINT16 = 5,
+    D3D_REGISTER_COMPONENT_FLOAT16 = 6,
+    D3D_REGISTER_COMPONENT_UINT64 = 7,
+    D3D_REGISTER_COMPONENT_SINT64 = 8,
+    D3D_REGISTER_COMPONENT_FLOAT64 = 9,
+    D3D10_REGISTER_COMPONENT_UINT16 = 4,
+    D3D10_REGISTER_COMPONENT_SINT16 = 5,
+    D3D10_REGISTER_COMPONENT_FLOAT16 = 6,
+    D3D10_REGISTER_COMPONENT_UINT64 = 7,
+    D3D10_REGISTER_COMPONENT_SINT64 = 8,
+    D3D10_REGISTER_COMPONENT_FLOAT64 = 9,
 } D3D_REGISTER_COMPONENT_TYPE;
 
 typedef enum D3D_RESOURCE_RETURN_TYPE
@@ -748,3 +766,173 @@ typedef enum _D3D_INTERPOLATION_MODE
 } D3D_INTERPOLATION_MODE;
 
 cpp_quote("DEFINE_GUID(WKPDID_D3DDebugObjectName,0x429b8c22,0x9188,0x4b0c,0x87,0x42,0xac,0xb0,0xbf,0x85,0xc2,0x00);")
+
+cpp_quote("#ifndef D3D_COMPONENT_MASK_W")
+cpp_quote("#define D3D_COMPONENT_MASK_W 8")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_COMPONENT_MASK_Y")
+cpp_quote("#define D3D_COMPONENT_MASK_Y 2")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_COMPONENT_MASK_Z")
+cpp_quote("#define D3D_COMPONENT_MASK_Z 4")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_OPT_SHADER_FEATURE_REQUIRES_GROUP")
+cpp_quote("#define D3D_OPT_SHADER_FEATURE_REQUIRES_GROUP 0x0000020000000000ull")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_OPT_SHADER_FEATURE_USES_DERIVATIVES")
+cpp_quote("#define D3D_OPT_SHADER_FEATURE_USES_DERIVATIVES 0x0000010000000000ull")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_11_1_DOUBLE_EXTENSIONS")
+cpp_quote("#define D3D_SHADER_FEATURE_11_1_DOUBLE_EXTENSIONS 0x00020")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_11_1_SHADER_EXTENSIONS")
+cpp_quote("#define D3D_SHADER_FEATURE_11_1_SHADER_EXTENSIONS 0x00040")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_64_UAVS")
+cpp_quote("#define D3D_SHADER_FEATURE_64_UAVS 0x00008")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_ADVANCED_TEXTURE_OPS")
+cpp_quote("#define D3D_SHADER_FEATURE_ADVANCED_TEXTURE_OPS 0x20000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_ATOMIC_INT64_ON_DESCRIPTOR_HEAP_RESOURCE")
+cpp_quote("#define D3D_SHADER_FEATURE_ATOMIC_INT64_ON_DESCRIPTOR_HEAP_RESOURCE 0x10000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_ATOMIC_INT64_ON_GROUP_SHARED")
+cpp_quote("#define D3D_SHADER_FEATURE_ATOMIC_INT64_ON_GROUP_SHARED 0x800000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_ATOMIC_INT64_ON_TYPED_RESOURCE")
+cpp_quote("#define D3D_SHADER_FEATURE_ATOMIC_INT64_ON_TYPED_RESOURCE 0x400000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_BARYCENTRICS")
+cpp_quote("#define D3D_SHADER_FEATURE_BARYCENTRICS 0x20000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_COMPUTE_SHADERS_PLUS_RAW_AND_STRUCTURED_BUFFERS_VIA_SHADER_4_X")
+cpp_quote("#define D3D_SHADER_FEATURE_COMPUTE_SHADERS_PLUS_RAW_AND_STRUCTURED_BUFFERS_VIA_SHADER_4_X 0x00002")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_DERIVATIVES_IN_MESH_AND_AMPLIFICATION_SHADERS")
+cpp_quote("#define D3D_SHADER_FEATURE_DERIVATIVES_IN_MESH_AND_AMPLIFICATION_SHADERS 0x1000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_DOUBLES")
+cpp_quote("#define D3D_SHADER_FEATURE_DOUBLES 0x00001")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_EXTENDED_COMMAND_INFO")
+cpp_quote("#define D3D_SHADER_FEATURE_EXTENDED_COMMAND_INFO 0x100000000ull")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_INNER_COVERAGE")
+cpp_quote("#define D3D_SHADER_FEATURE_INNER_COVERAGE 0x00400")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_INT64_OPS")
+cpp_quote("#define D3D_SHADER_FEATURE_INT64_OPS 0x08000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_LEVEL_9_COMPARISON_FILTERING")
+cpp_quote("#define D3D_SHADER_FEATURE_LEVEL_9_COMPARISON_FILTERING 0x00080")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_MINIMUM_PRECISION")
+cpp_quote("#define D3D_SHADER_FEATURE_MINIMUM_PRECISION 0x00010")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_NATIVE_16BIT_OPS")
+cpp_quote("#define D3D_SHADER_FEATURE_NATIVE_16BIT_OPS 0x40000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_RAYTRACING_TIER_1_1")
+cpp_quote("#define D3D_SHADER_FEATURE_RAYTRACING_TIER_1_1 0x100000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_RESOURCE_DESCRIPTOR_HEAP_INDEXING")
+cpp_quote("#define D3D_SHADER_FEATURE_RESOURCE_DESCRIPTOR_HEAP_INDEXING 0x2000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_ROVS")
+cpp_quote("#define D3D_SHADER_FEATURE_ROVS 0x01000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_SAMPLER_DESCRIPTOR_HEAP_INDEXING")
+cpp_quote("#define D3D_SHADER_FEATURE_SAMPLER_DESCRIPTOR_HEAP_INDEXING 0x4000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_SAMPLER_FEEDBACK")
+cpp_quote("#define D3D_SHADER_FEATURE_SAMPLER_FEEDBACK 0x200000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_SAMPLE_CMP_GRADIENT_OR_BIAS")
+cpp_quote("#define D3D_SHADER_FEATURE_SAMPLE_CMP_GRADIENT_OR_BIAS 0x80000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_SHADING_RATE")
+cpp_quote("#define D3D_SHADER_FEATURE_SHADING_RATE 0x80000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_STENCIL_REF")
+cpp_quote("#define D3D_SHADER_FEATURE_STENCIL_REF 0x00200")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_TILED_RESOURCES")
+cpp_quote("#define D3D_SHADER_FEATURE_TILED_RESOURCES 0x00100")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_TYPED_UAV_LOAD_ADDITIONAL_FORMATS")
+cpp_quote("#define D3D_SHADER_FEATURE_TYPED_UAV_LOAD_ADDITIONAL_FORMATS 0x00800")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_UAVS_AT_EVERY_STAGE")
+cpp_quote("#define D3D_SHADER_FEATURE_UAVS_AT_EVERY_STAGE 0x00004")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_VIEWPORT_AND_RT_ARRAY_INDEX_FROM_ANY_SHADER_FEEDING_RASTERIZER")
+cpp_quote("#define D3D_SHADER_FEATURE_VIEWPORT_AND_RT_ARRAY_INDEX_FROM_ANY_SHADER_FEEDING_RASTERIZER 0x02000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_VIEW_ID")
+cpp_quote("#define D3D_SHADER_FEATURE_VIEW_ID 0x10000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_WAVE_MMA")
+cpp_quote("#define D3D_SHADER_FEATURE_WAVE_MMA 0x8000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_WAVE_OPS")
+cpp_quote("#define D3D_SHADER_FEATURE_WAVE_OPS 0x04000")
+cpp_quote("#endif")
+cpp_quote("#ifndef D3D_SHADER_FEATURE_WRITEABLE_MSAA_TEXTURES")
+cpp_quote("#define D3D_SHADER_FEATURE_WRITEABLE_MSAA_TEXTURES 0x40000000")
+cpp_quote("#endif")
+
+cpp_quote("#define D3D_COMPONENT_MASK_X 1")
+cpp_quote("")
+cpp_quote("enum D3D_FORMAT_COMPONENT_INTERPRETATION")
+cpp_quote("{")
+cpp_quote("    D3DFCI_TYPELESS = 0,")
+cpp_quote("    D3DFCI_FLOAT = (-4),")
+cpp_quote("    D3DFCI_SNORM = (-3),")
+cpp_quote("    D3DFCI_UNORM = (-2),")
+cpp_quote("    D3DFCI_SINT = (-1),")
+cpp_quote("    D3DFCI_UINT = 1,")
+cpp_quote("    D3DFCI_UNORM_SRGB = 2,")
+cpp_quote("    D3DFCI_BIASED_FIXED_2_8 = 3,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum D3D_FORMAT_COMPONENT_INTERPRETATION D3D_FORMAT_COMPONENT_INTERPRETATION;")
+cpp_quote("")
+cpp_quote("enum D3D_FORMAT_COMPONENT_NAME")
+cpp_quote("{")
+cpp_quote("    D3DFCN_R = (-4),")
+cpp_quote("    D3DFCN_G = (-3),")
+cpp_quote("    D3DFCN_B = (-2),")
+cpp_quote("    D3DFCN_A = (-1),")
+cpp_quote("    D3DFCN_D = 0,")
+cpp_quote("    D3DFCN_S = 1,")
+cpp_quote("    D3DFCN_X = 2,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum D3D_FORMAT_COMPONENT_NAME D3D_FORMAT_COMPONENT_NAME;")
+cpp_quote("")
+cpp_quote("enum D3D_FORMAT_LAYOUT")
+cpp_quote("{")
+cpp_quote("    D3DFL_STANDARD = 0,")
+cpp_quote("    D3DFL_CUSTOM = (-1),")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum D3D_FORMAT_LAYOUT D3D_FORMAT_LAYOUT;")
+cpp_quote("")
+cpp_quote("enum D3D_FORMAT_TYPE_LEVEL")
+cpp_quote("{")
+cpp_quote("    D3DFTL_NO_TYPE = 0,")
+cpp_quote("    D3DFTL_PARTIAL_TYPE = (-2),")
+cpp_quote("    D3DFTL_FULL_TYPE = (-1),")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum D3D_FORMAT_TYPE_LEVEL D3D_FORMAT_TYPE_LEVEL;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+
+cpp_quote("")
+
+cpp_quote("#define D3D_SET_OBJECT_NAME_A(pObject, pName) D3D_SET_OBJECT_NAME_N_A(pObject, lstrlenA(pName), pName)")
+cpp_quote("#define D3D_SET_OBJECT_NAME_N_A(pObject, Chars, pName) (pObject) -> SetPrivateData(WKPDID_D3DDebugObjectName, Chars, pName)")
+

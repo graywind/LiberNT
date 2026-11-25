@@ -40,3 +40,20 @@ interface IMixerOCX : IUnknown
     HRESULT Advise([in] IMixerOCXNotify *pmdns);
     HRESULT UnAdvise();
 };
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("void HDC_UserFree64(unsigned long *, HDC *);")
+cpp_quote("unsigned char * HDC_UserMarshal64(unsigned long *, unsigned char *, HDC *);")
+cpp_quote("unsigned long HDC_UserSize64(unsigned long *, unsigned long, HDC *);")
+cpp_quote("unsigned char * HDC_UserUnmarshal64(unsigned long *, unsigned char *, HDC *);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

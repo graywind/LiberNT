@@ -605,12 +605,6 @@ typedef ULONG_PTR HDRV_CALL;
 #define LINETRANSLATERESULT_NOTRANSLATION 0x00000800
 #endif
 
-typedef struct _NDIS_VAR_DATA_DESC {
-  USHORT Length;
-  USHORT MaximumLength;
-  LONG Offset;
-} NDIS_VAR_DATA_DESC, *PNDIS_VAR_DATA_DESC;
-
 typedef struct _LINE_DIAL_PARAMS {
   ULONG ulDialPause;
   ULONG ulDialSpeed;
@@ -1056,9 +1050,9 @@ typedef struct _NDIS_TAPI_EVENT {
   _In_ HTAPI_LINE htLine;
   _In_ HTAPI_CALL htCall;
   _In_ ULONG ulMsg;
-  _In_ ULONG ulParam1;
-  _In_ ULONG ulParam2;
-  _In_ ULONG ulParam3;
+  _In_ ULONG_PTR ulParam1;
+  _In_ ULONG_PTR ulParam2;
+  _In_ ULONG_PTR ulParam3;
 } NDIS_TAPI_EVENT, *PNDIS_TAPI_EVENT;
 
 typedef struct _NDIS_TAPI_OPEN {
@@ -1208,7 +1202,7 @@ typedef struct _NDIS_TAPI_PROVIDER_INITIALIZE {
   _In_ ULONG ulRequestID;
   _In_ ULONG ulDeviceIDBase;
   _Out_ ULONG ulNumLineDevs;
-  _Out_ ULONG ulProviderID;
+  _Out_ ULONG_PTR ulProviderID;
 } NDIS_TAPI_PROVIDER_INITIALIZE, *PNDIS_TAPI_PROVIDER_INITIALIZE;
 
 #define CO_TAPI_VERSION                   NDIS_TAPI_CURRENT_VERSION
@@ -1278,6 +1272,12 @@ typedef struct _CO_TAPI_TRANSLATE_SAP {
   _In_ ULONG Reserved;
   _Out_ ULONG NumberOfSaps;
   _Out_ NDIS_VAR_DATA_DESC NdisSapParams[1];
+} CO_TAPI_TRANSLATE_SAP, *PCO_TAPI_TRANSLATE_SAP;
+
+typedef struct _CO_AF_TAPI_SAP {
+  _In_ ULONG ulLineID;
+  _In_ ULONG ulAddressID;
+  _In_ ULONG ulMediaModes;
 } CO_AF_TAPI_SAP, *PCO_AF_TAPI_SAP;
 
 typedef struct _CO_AF_TAPI_INCOMING_CALL_PARAMETERS {
@@ -1298,5 +1298,32 @@ typedef struct _CO_AF_TAPI_MAKE_CALL_PARAMETERS {
 #ifdef __cplusplus
 }
 #endif
+
+typedef struct _NDIS_TAPI_GATHER_DIGITS {
+  ULONG ulRequestID;
+  HDRV_CALL hdCall;
+  ULONG ulEndToEndID;
+  ULONG ulDigitModes;
+  LPWSTR lpsOrigDigitsBuffer;
+  ULONG ulDigitsBufferOffset;
+  ULONG ulNumDigitsNeeded;
+  ULONG ulNumDigitsRead;
+  ULONG ulTickCount;
+  ULONG ulTerminationReason;
+  ULONG ulTerminationDigitsMask;
+  ULONG ulFirstDigitTimeout;
+  ULONG ulInterDigitTimeout;
+} NDIS_TAPI_GATHER_DIGITS, *PNDIS_TAPI_GATHER_DIGITS;
+
+typedef struct _NDIS_TAPI_MONITOR_DIGITS {
+  HDRV_CALL hdCall;
+  ULONG ulDigitModes;
+} NDIS_TAPI_MONITOR_DIGITS, *PNDIS_TAPI_MONITOR_DIGITS;
+
+typedef struct _NDISTAPI_CHARACTERISTICS {
+  PVOID RequestProc;
+  GUID Guid;
+  NDIS_WAN_MEDIUM_SUBTYPE MediaType;
+} NDISTAPI_CHARACTERISTICS, *PNDISTAPI_CHARACTERISTICS;
 
 #endif /* _NDIS_TAPI_ */

@@ -398,7 +398,8 @@ typedef enum tagREGCLS
     REGCLS_MULTIPLEUSE = 1,
     REGCLS_MULTI_SEPARATE = 2,
     REGCLS_SUSPENDED = 4,
-    REGCLS_SURROGATE = 8
+    REGCLS_SURROGATE = 8,
+    REGCLS_AGILE = 0x10,
 } REGCLS;
 
 _Check_return_
@@ -735,7 +736,8 @@ typedef enum tagCOWAIT_FLAGS
     COWAIT_DEFAULT        = 0x00000000,
     COWAIT_WAITALL        = 0x00000001,
     COWAIT_ALERTABLE      = 0x00000002,
-    COWAIT_INPUTAVAILABLE = 0x00000004
+    COWAIT_INPUTAVAILABLE = 0x00000004,
+    COWAIT_DISPATCH_WINDOW_MESSAGES = 0x10,
 } COWAIT_FLAGS;
 
 _Check_return_
@@ -1096,4 +1098,60 @@ StgSetTimes(
 
 #endif /* __WINESRC__ */
 
+typedef enum tagCOMSD {
+    SD_LAUNCHPERMISSIONS = 0,
+    SD_ACCESSPERMISSIONS = 1,
+    SD_LAUNCHRESTRICTIONS = 2,
+    SD_ACCESSRESTRICTIONS = 3
+} COMSD;
+
+#define COM_SUPPORT_MALLOC_SPIES
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: Windows includes urlmon.h here; only the interface used below is declared */
+#ifndef __IBindStatusCallback_FWD_DEFINED__
+#define __IBindStatusCallback_FWD_DEFINED__
+typedef interface IBindStatusCallback IBindStatusCallback;
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+HRESULT STDAPICALLTYPE CoCreateStandardMalloc(DWORD memctx, IMalloc **ppMalloc);
+HRESULT STDAPICALLTYPE CoGetSystemSecurityPermissions(COMSD comSDType, PSECURITY_DESCRIPTOR *ppSD);
+HRESULT STDAPICALLTYPE CoInstall(IBindCtx *pbc, DWORD dwFlags, uCLSSPEC *pClassSpec, QUERYCONTEXT *pQuery, LPWSTR pszCodeBase);
+HRESULT STDAPICALLTYPE CreateStdProgressIndicator(HWND hwndParent, LPCOLESTR pszTitle, IBindStatusCallback *pIbscCaller, IBindStatusCallback **ppIbsc);
+HRESULT STDAPICALLTYPE DcomChannelSetHResult(LPVOID pvReserved, ULONG *pulReserved, HRESULT appsHR);
+HRESULT STDAPICALLTYPE StgGetIFillLockBytesOnFile(const OLECHAR *pwcsName, IFillLockBytes **ppflb);
+HRESULT STDAPICALLTYPE StgGetIFillLockBytesOnILockBytes(ILockBytes *pilb, IFillLockBytes **ppflb);
+HRESULT STDAPICALLTYPE StgOpenAsyncDocfileOnIFillLockBytes(IFillLockBytes *pflb, DWORD grfMode, DWORD asyncFlags, IStorage **ppstgOpen);
+HRESULT STDAPICALLTYPE StgOpenLayoutDocfile(const OLECHAR *pwcsDfName, DWORD grfMode, DWORD reserved, IStorage **ppstgOpen);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _OBJBASE_H_ */
+
+#ifndef ASYNC_MODE_COMPATIBILITY
+#define ASYNC_MODE_COMPATIBILITY 0x00000001L
+#endif
+#ifndef ASYNC_MODE_DEFAULT
+#define ASYNC_MODE_DEFAULT 0x00000000L
+#endif
+#ifndef MARSHALINTERFACE_MIN
+#define MARSHALINTERFACE_MIN 500
+#endif
+#ifndef STGTY_REPEAT
+#define STGTY_REPEAT 0x00000100L
+#endif
+#ifndef STG_LAYOUT_INTERLEAVED
+#define STG_LAYOUT_INTERLEAVED 0x00000001L
+#endif
+#ifndef STG_LAYOUT_SEQUENTIAL
+#define STG_LAYOUT_SEQUENTIAL 0x00000000L
+#endif
+#ifndef STG_TOEND
+#define STG_TOEND 0xFFFFFFFFL
+#endif

@@ -42,4 +42,22 @@
 #define TM_STATE(value, prefix, name)          prefix##_##name = (value),
 #define END_TM_PART_STATES()               };
 
+#ifndef SCHEMADEF_VERSION
+#define SCHEMADEF_VERSION 1
+#endif
+
+struct TMPROPINFO {
+  LPCWSTR pszName;
+  SHORT sEnumVal;
+  BYTE bPrimVal;
+};
+
+struct TMSCHEMAINFO {
+  DWORD dwSize;
+  int iSchemaDefVersion;
+  int iThemeMgrVersion;
+  int iPropCount;
+  const struct TMPROPINFO * pPropTable;
+};
+
 #endif

@@ -28,3 +28,4 @@ interface IDragDropManagerInterop : IInspectable
 {
     HRESULT GetForWindow([in] HWND hwnd, [in] REFIID riid, [out, iid_is(riid)] void **ppv);
 }
+

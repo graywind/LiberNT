@@ -1509,6 +1509,7 @@ ClassScanForSpecial(
 
 SCSIPORT_API
 ULONG
+NTAPI
 ClassModeSenseEx(
     _In_ PDEVICE_OBJECT Fdo,
     _In_reads_bytes_(Length) PCHAR ModeSenseBuffer,
@@ -1519,6 +1520,7 @@ ClassModeSenseEx(
 
 SCSIPORT_API
 NTSTATUS
+NTAPI
 ClassModeSelect(
     _In_ PDEVICE_OBJECT Fdo,
     _In_reads_bytes_(Length) PCHAR ModeSelectBuffer,
@@ -1528,3 +1530,31 @@ ClassModeSelect(
 
 #endif
 
+#ifndef DEV_BYPASS_IO
+#define DEV_BYPASS_IO 0x00000100
+#endif
+typedef struct _FAILURE_PREDICTION_INFO * PFAILURE_PREDICTION_INFO;
+
+#define CLASS_TAG_ZONE_INFO 0x5A496353
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+NTSTATUS NTAPI ClassModeSenseTranslate(PDEVICE_OBJECT DeviceObject, PMODE_PARAMETER_HEADER ModeSenseData, PULONG ModeSenseBufferSize);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define CLEAR_FLAG_NOFENCE(Flags, Bit) WriteUShortNoFence(& (Flags), (ReadUShortNoFence(& (Flags)) & ~(Bit)))
+#define SET_FLAG_NOFENCE(Flags, Bit) WriteUShortNoFence(& (Flags), (ReadUShortNoFence(& (Flags)) | (Bit)))
+#define TEST_FLAG_NOFENCE(Flags, Bit) (((ReadUShortNoFence(& (Flags))) & (Bit)) != 0)
+
+#ifndef DEV_FORWARD_IO
+#define DEV_FORWARD_IO 0x00000040
+#endif
+#ifndef DEV_SPLIT_LARGE_WRITE
+#define DEV_SPLIT_LARGE_WRITE 0x00000080
+#endif

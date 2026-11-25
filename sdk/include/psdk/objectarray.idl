@@ -45,3 +45,5 @@ interface IObjectCollection : IObjectArray
     HRESULT RemoveObjectAt([in] UINT uiIndex);
     HRESULT Clear();
 }
+
+cpp_quote("")

@@ -623,16 +623,22 @@ NtGdiSetDIBitsToDeviceInternal(
     BOOL bTopDown;
     LONGLONG llHeight, llSrcY;
     LONG lHeight, lBandHeight;
+    ULONGLONG cjNeeded;
+    HANDLE hSecureBits = NULL;
+    ULONG_PTR Page;
+    BOOL bCompressed;
 
     if (!Bits) return 0;
+    if (cjMaxInfo < sizeof(BITMAPCOREHEADER)) return 0;
 
-    pbmiSafe = ExAllocatePoolWithTag(PagedPool, cjMaxInfo, 'pmTG');
+    pbmiSafe = ExAllocatePoolZero(PagedPool, sizeof(BITMAPV5HEADER) + 256 * sizeof(RGBQUAD), 'pmTG');
     if (!pbmiSafe) return 0;
 
     _SEH2_TRY
     {
         ProbeForRead(bmi, cjMaxInfo, 1);
         ProbeForRead(Bits, cjMaxBits, 1);
+        cjMaxInfo = min(cjMaxInfo, sizeof(BITMAPV5HEADER) + 256 * sizeof(RGBQUAD));
         RtlCopyMemory(pbmiSafe, bmi, cjMaxInfo);
         bmi = pbmiSafe;
     }
@@ -642,6 +648,12 @@ NtGdiSetDIBitsToDeviceInternal(
         goto Exit;
     }
     _SEH2_END;
+
+    if (bmi->bmiHeader.biSize < sizeof(BITMAPCOREHEADER) || bmi->bmiHeader.biSize > cjMaxInfo)
+    {
+        ret = 0;
+        goto Exit;
+    }
 
     DPRINT("StartScan %d ScanLines %d Bits %p bmi %p ColorUse %d\n"
            "    Height %d Width %d biSizeImage %d\n"
@@ -798,6 +810,48 @@ NtGdiSetDIBitsToDeviceInternal(
        IntUpdateBoundsRect(pDC, &rcDest);
     }
 
+    bCompressed = (bmi->bmiHeader.biCompression == BI_RLE8) ||
+                  (bmi->bmiHeader.biCompression == BI_RLE4) ||
+                  (bmi->bmiHeader.biCompression == BI_JPEG) ||
+                  (bmi->bmiHeader.biCompression == BI_PNG);
+    if (bCompressed)
+    {
+        cjNeeded = bmi->bmiHeader.biSizeImage;
+    }
+    else
+    {
+        cjNeeded = (((ULONGLONG)(ULONG)bmi->bmiHeader.biWidth * bmi->bmiHeader.biBitCount + 31) & ~31ULL) >> 3;
+        cjNeeded *= (ULONG)lBandHeight;
+    }
+    if (cjNeeded == 0 || cjNeeded > cjMaxBits)
+    {
+        ret = 0;
+        goto Exit;
+    }
+
+    hSecureBits = MmSecureVirtualMemory(Bits, (SIZE_T)cjNeeded, PAGE_READONLY);
+    if (!hSecureBits)
+    {
+        ret = 0;
+        goto Exit;
+    }
+    _SEH2_TRY
+    {
+        for (Page = (ULONG_PTR)PAGE_ALIGN(Bits); Page < (ULONG_PTR)Bits + cjNeeded; Page += PAGE_SIZE)
+            (VOID)*(volatile const UCHAR *)max(Page, (ULONG_PTR)Bits);
+        bResult = TRUE;
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        bResult = FALSE;
+    }
+    _SEH2_END;
+    if (!bResult)
+    {
+        ret = 0;
+        goto Exit;
+    }
+
     SourceSize.cx = bmi->bmiHeader.biWidth;
     SourceSize.cy = lBandHeight;
 
@@ -809,7 +863,7 @@ NtGdiSetDIBitsToDeviceInternal(
                                       BitmapFormat(bmi->bmiHeader.biBitCount,
                                                    bmi->bmiHeader.biCompression),
                                       bTopDown ? BMF_TOPDOWN : 0,
-                                      bmi->bmiHeader.biSizeImage,
+                                      bCompressed ? (ULONG)cjNeeded : bmi->bmiHeader.biSizeImage,
                                       Bits,
                                       0);
 
@@ -834,7 +888,7 @@ NtGdiSetDIBitsToDeviceInternal(
             lBandHeight,
             bmi->bmiHeader.biCompression,
             Bits,
-            cjMaxBits);
+            (ULONG)cjNeeded);
         if (!hMaskBitmap)
         {
             EngSetLastError(ERROR_NO_SYSTEM_RESOURCES);
@@ -916,6 +970,7 @@ Exit:
     if (pMaskSurf) EngUnlockSurface(pMaskSurf);
     if (hMaskBitmap) EngDeleteSurface((HSURF)hMaskBitmap);
     if (pDC) DC_UnlockDc(pDC);
+    if (hSecureBits) MmUnsecureVirtualMemory(hSecureBits);
     ExFreePoolWithTag(pbmiSafe, 'pmTG');
 
     return ret;
@@ -2002,6 +2057,8 @@ NtGdiCreateDIBitmapInternal(
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PBYTE safeBits = NULL;
+    PBITMAPINFO pbmiSafe = NULL;
+    UINT cjInfo = 0;
     HBITMAP hbmResult = NULL;
 
     if (pjInit == NULL)
@@ -2009,21 +2066,37 @@ NtGdiCreateDIBitmapInternal(
         fInit &= ~CBM_INIT;
     }
 
-    if(pjInit && (fInit & CBM_INIT))
+    if (pbmi)
     {
-        if (cjMaxBits == 0) return NULL;
-        safeBits = ExAllocatePoolWithTag(PagedPool, cjMaxBits, TAG_DIB);
-        if(!safeBits)
+        if (cjMaxInitInfo < sizeof(BITMAPCOREHEADER)) return NULL;
+        cjInfo = min(cjMaxInitInfo, sizeof(BITMAPV5HEADER) + 256 * sizeof(RGBQUAD));
+        pbmiSafe = ExAllocatePoolZero(PagedPool, sizeof(BITMAPV5HEADER) + 256 * sizeof(RGBQUAD), 'imBG');
+        if (!pbmiSafe)
         {
-            DPRINT1("Failed to allocate %lu bytes\n", cjMaxBits);
             EngSetLastError(ERROR_NOT_ENOUGH_MEMORY);
             return NULL;
         }
     }
 
+    if(pjInit && (fInit & CBM_INIT))
+    {
+        if (cjMaxBits == 0) goto cleanup;
+        safeBits = ExAllocatePoolWithTag(PagedPool, cjMaxBits, TAG_DIB);
+        if(!safeBits)
+        {
+            DPRINT1("Failed to allocate %lu bytes\n", cjMaxBits);
+            EngSetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            goto cleanup;
+        }
+    }
+
     _SEH2_TRY
     {
-        if(pbmi) ProbeForRead(pbmi, cjMaxInitInfo, 1);
+        if (pbmi)
+        {
+            ProbeForRead(pbmi, cjMaxInitInfo, 1);
+            RtlCopyMemory(pbmiSafe, pbmi, cjInfo);
+        }
         if(pjInit && (fInit & CBM_INIT))
         {
             ProbeForRead(pjInit, cjMaxBits, 1);
@@ -2043,12 +2116,18 @@ NtGdiCreateDIBitmapInternal(
         goto cleanup;
     }
 
+    if (pbmiSafe &&
+        (pbmiSafe->bmiHeader.biSize < sizeof(BITMAPCOREHEADER) || pbmiSafe->bmiHeader.biSize > cjInfo))
+    {
+        goto cleanup;
+    }
+
     hbmResult =  GreCreateDIBitmapInternal(hDc,
                                            cx,
                                            cy,
                                            fInit,
                                            safeBits,
-                                           pbmi,
+                                           pbmiSafe,
                                            iUsage,
                                            fl,
                                            cjMaxBits,
@@ -2056,6 +2135,7 @@ NtGdiCreateDIBitmapInternal(
 
 cleanup:
     if (safeBits) ExFreePoolWithTag(safeBits, TAG_DIB);
+    if (pbmiSafe) ExFreePoolWithTag(pbmiSafe, 'imBG');
     return hbmResult;
 }
 
@@ -2223,54 +2303,81 @@ NtGdiCreateDIBSection(
     BOOL bTemporaryDC = FALSE;
     UINT cjExpected, cjMax = 0;
     ULONG ulError = EngGetLastError();
+    BITMAPINFOHEADER Header;
+    PBITMAPINFO pbmiSafe;
+    PVOID pvBits = NULL;
+    DWORD biSize;
+    NTSTATUS Status = STATUS_SUCCESS;
 
     if (!bmi) return hbitmap; // Make sure.
 
     if (!Bits)
     {
         /* Header-size validation precedes output-pointer validation. */
-        if (!MmIsAddressValid(bmi))
+        if (!IntIsMappedUserRange(bmi, 1))
             return NULL;
     }
 
-    if (!MmIsAddressValid(bmi) ||
-        !MmIsAddressValid((PBYTE)bmi + sizeof(DWORD) - 1))
+    if (!IntIsMappedUserRange(bmi, sizeof(DWORD)))
     {
         EngSetLastError(ERROR_INVALID_PARAMETER);
         return NULL;
     }
 
-    if ((bmi->bmiHeader.biSize < sizeof(BITMAPINFOHEADER)) ||
-        (bmi->bmiHeader.biSize & (sizeof(DWORD) - 1)) ||
-        !MmIsAddressValid((PBYTE)bmi + bmi->bmiHeader.biSize - 1))
+    _SEH2_TRY
+    {
+        biSize = bmi->bmiHeader.biSize;
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        _SEH2_YIELD(return NULL);
+    }
+    _SEH2_END;
+
+    if ((biSize < sizeof(BITMAPINFOHEADER)) ||
+        (biSize & (sizeof(DWORD) - 1)) ||
+        !IntIsMappedUserRange(bmi, biSize))
     {
         return NULL;
     }
 
-    cjExpected = bmi->bmiHeader.biSize;
-    if (bmi->bmiHeader.biBitCount <= 8)
+    _SEH2_TRY
     {
-        UINT cColors = bmi->bmiHeader.biClrUsed;
+        Header = bmi->bmiHeader;
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        _SEH2_YIELD(return NULL);
+    }
+    _SEH2_END;
+
+    if (Header.biSize != biSize)
+        return NULL;
+
+    cjExpected = biSize;
+    if (Header.biBitCount <= 8)
+    {
+        UINT cColors = Header.biClrUsed;
         if (!cColors)
-            cColors = 1U << bmi->bmiHeader.biBitCount;
+            cColors = 1U << Header.biBitCount;
         cjExpected += min(cColors, 256U) *
                       ((Usage == DIB_PAL_COLORS) ? sizeof(WORD) : sizeof(RGBQUAD));
     }
     else
     {
-        if ((bmi->bmiHeader.biCompression == BI_BITFIELDS) &&
-            (bmi->bmiHeader.biSize < sizeof(BITMAPV4HEADER)))
+        if ((Header.biCompression == BI_BITFIELDS) &&
+            (biSize < sizeof(BITMAPV4HEADER)))
         {
             cjExpected += 3 * sizeof(DWORD);
         }
-        cjMax = cjExpected + min(bmi->bmiHeader.biClrUsed, 256U) * sizeof(RGBQUAD);
+        cjMax = cjExpected + min(Header.biClrUsed, 256U) * sizeof(RGBQUAD);
     }
 
     if (cjMax < cjExpected)
         cjMax = cjExpected;
 
     if ((cjHeader < cjExpected) || (cjHeader > cjMax) ||
-        !MmIsAddressValid((PBYTE)bmi + cjHeader - 1))
+        !IntIsMappedUserRange(bmi, cjHeader))
     {
         return NULL;
     }
@@ -2284,10 +2391,33 @@ NtGdiCreateDIBSection(
     if (Usage == DIB_PAL_INDICES)
         return NULL;
 
-    if (!Bits || !MmIsAddressValid(Bits) ||
-        !MmIsAddressValid((PBYTE)Bits + sizeof(*Bits) - 1))
+    if (!Bits || !IntIsMappedUserRange(Bits, sizeof(*Bits)))
     {
         EngSetLastError(ERROR_INVALID_PARAMETER);
+        return NULL;
+    }
+
+    pbmiSafe = ExAllocatePoolWithTag(PagedPool, cjHeader, 'pmTG');
+    if (!pbmiSafe)
+    {
+        EngSetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return NULL;
+    }
+
+    _SEH2_TRY
+    {
+        RtlCopyMemory(pbmiSafe, bmi, cjHeader);
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = _SEH2_GetExceptionCode();
+    }
+    _SEH2_END;
+
+    if (!NT_SUCCESS(Status) ||
+        (RtlCompareMemory(&pbmiSafe->bmiHeader, &Header, sizeof(Header)) != sizeof(Header)))
+    {
+        ExFreePoolWithTag(pbmiSafe, 'pmTG');
         return NULL;
     }
 
@@ -2302,20 +2432,40 @@ NtGdiCreateDIBSection(
     if (dc)
     {
         hbitmap = DIB_CreateDIBSection(dc,
-                                       bmi,
+                                       pbmiSafe,
                                        Usage,
-                                       Bits,
+                                       &pvBits,
                                        hSection,
                                        dwOffset,
                                        0);
         DC_UnlockDc(dc);
     }
 
+    ExFreePoolWithTag(pbmiSafe, 'pmTG');
+
     if (bTemporaryDC && hDC)
         NtGdiDeleteObjectApp(hDC);
 
     if (hbitmap)
+    {
+        _SEH2_TRY
+        {
+            *Bits = pvBits;
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            Status = _SEH2_GetExceptionCode();
+        }
+        _SEH2_END;
+
+        if (!NT_SUCCESS(Status))
+        {
+            GreDeleteObject(hbitmap);
+            return NULL;
+        }
+
         EngSetLastError(ulError);
+    }
 
     return hbitmap;
 }

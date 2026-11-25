@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+#include <basetsd.h>
 #include "ws2def.h"
 #include "ws2ipdef.h"
 #include "mswsockdef.h"
@@ -49,7 +50,6 @@ extern "C" {
 typedef UINT8 HANDLE8, *PHANDLE8;
 typedef UINT16 HANDLE16, *PHANDLE16;
 typedef UINT32 HANDLE32, *PHANDLE32;
-typedef UINT64 HANDLE64, *PHANDLE64;
 
 #define MAKE_DD_DEVICE_NAME(x)  (L"\\Device\\" x)
 #define MAKE_WIN_DEVICE_NAME(x) (L"\\\\.\\" x)
@@ -983,6 +983,9 @@ typedef enum {
   ND_OPT_SOURCE_ADDR_LIST = 9,
   ND_OPT_TARGET_ADDR_LIST = 10,
   ND_OPT_ROUTE_INFO = 24,
+  ND_OPT_RDNSS = 0x19,
+  ND_OPT_DNSSL = 0x1F,
+  ND_OPT_PREF64 = 0x26,
 } ND_OPTION_TYPE, *PND_OPTION_TYPE;
 
 typedef struct nd_opt_prefix_info {
@@ -1167,7 +1170,8 @@ C_ASSERT(DL_ADDRESS_LENGTH_MAXIMUM >= DL_SIZEOF_IPV6_TUNNEL_ADDRESS);
 typedef enum _TUNNEL_SUB_TYPE {
   TUNNEL_SUB_TYPE_NONE = 0,
   TUNNEL_SUB_TYPE_CP = 1,
-  TUNNEL_SUB_TYPE_IPTLS = 2
+  TUNNEL_SUB_TYPE_IPTLS = 2,
+  TUNNEL_SUB_TYPE_HA = 3,
 } TUNNEL_SUB_TYPE, *PTUNNEL_SUB_TYPE;
 
 #pragma pack(push, 1)
@@ -1277,5 +1281,130 @@ extern CONST NPI_MODULEID NPI_MS_TCP_MODULEID;
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef ETHERNET_TYPE_802_1AD
+#define ETHERNET_TYPE_802_1AD 0x88a8
+#endif
+#ifndef ICMP6_PARAMPROB_FIRSTFRAGMENT
+#define ICMP6_PARAMPROB_FIRSTFRAGMENT 3
+#endif
+#ifndef IN6_EMBEDDEDV4_BITS_IN_BYTE
+#define IN6_EMBEDDEDV4_BITS_IN_BYTE 8
+#endif
+#ifndef IPV4_MIN_MINIMUM_MTU
+#define IPV4_MIN_MINIMUM_MTU 352
+#endif
+#ifndef IPV6_FULL_TRAFFIC_CLASS_MASK
+#define IPV6_FULL_TRAFFIC_CLASS_MASK 0x0000F00F
+#endif
+#ifndef ND_OPT_DNSSL_MIN_LEN
+#define ND_OPT_DNSSL_MIN_LEN 16
+#endif
+#ifndef ND_OPT_RDNSS_MIN_LEN
+#define ND_OPT_RDNSS_MIN_LEN 24
+#endif
+#ifndef TH_OPT_FASTOPEN
+#define TH_OPT_FASTOPEN 0x22
+#endif
+
+typedef enum FALLBACK_INDEX {
+    FallbackIndexTcpFastopen = 0,
+    FallbackIndexMax = 1
+} FALLBACK_INDEX;
+
+typedef enum ND_OPT_PREF64_PREFIX_LENGTH_CODE {
+    ND_OPT_PREF64_PREFIX_LENGTH_96 = 0,
+    ND_OPT_PREF64_PREFIX_LENGTH_64 = 1,
+    ND_OPT_PREF64_PREFIX_LENGTH_56 = 2,
+    ND_OPT_PREF64_PREFIX_LENGTH_48 = 3,
+    ND_OPT_PREF64_PREFIX_LENGTH_40 = 4,
+    ND_OPT_PREF64_PREFIX_LENGTH_32 = 5
+} ND_OPT_PREF64_PREFIX_LENGTH_CODE;
+
+typedef struct nd_opt_dnssl {
+  UINT8 nd_opt_dnssl_type;
+  UINT8 nd_opt_dnssl_len;
+  UINT16 nd_opt_dnssl_reserved;
+  UINT32 nd_opt_dnssl_lifetime;
+} ND_OPTION_DNSSL, *PND_OPTION_DNSSL;
+
+typedef struct nd_opt_rdnss {
+  UINT8 nd_opt_rdnss_type;
+  UINT8 nd_opt_rdnss_len;
+  UINT16 nd_opt_rdnss_reserved;
+  UINT32 nd_opt_rdnss_lifetime;
+} ND_OPTION_RDNSS, *PND_OPTION_RDNSS;
+
+typedef struct tcp_opt_fastopen {
+  UINT8 Kind;
+  UINT8 Length;
+  UINT8 Cookie[0];
+} TCP_OPT_FASTOPEN;
+
+#define IN6_EMBEDDEDV4_UOCTET_POSITION 8
+#define IPV4_MAX_MINIMUM_MTU 0x240
+#define IPV4_VERSION_BYTE 0x40
+#define NMR_REG_KEY_PATH L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\NMR\\providers"
+
+typedef struct DL_TEREDO_ADDRESS_PRV DL_TEREDO_ADDRESS_PRV;
+
+struct DL_TEREDO_ADDRESS_PRV
+{
+    UINT8 Reserved[6];
+    union
+    {
+        DL_EUI64 Eui64;
+        struct
+        {
+            USHORT Flags;
+            USHORT MappedPort;
+            IN_ADDR MappedAddress;
+            IN_ADDR LocalAddress;
+            IF_INDEX InterfaceIndex;
+            USHORT LocalPort;
+            DL_EUI48 DlDestination;
+        };
+    };
+};
+
+struct nd_opt_pref64_info
+{
+    UINT8 nd_opt_p64_type;
+    UINT8 nd_opt_p64_len;
+    union
+    {
+        UINT16 nd_opt_p64_lifetime_plc;
+        struct
+        {
+            UINT16 nd_opt_p64_prefix_length_code : 3;
+            UINT16 nd_opt_p64_scaled_lifetime : 13;
+        };
+    };
+    UINT8 nd_opt_p64_prefix[12];
+};
+
+typedef struct nd_opt_pref64_info ND_OPTION_PREF64;
+
+typedef struct DL_TEREDO_ADDRESS_PRV *PDL_TEREDO_ADDRESS_PRV;
+
+typedef struct nd_opt_pref64_info *PND_OPTION_PREF64;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+UINT32 In6ExtractEmbeddedV4AddrFromV6(const IN6_ADDR *Ipv6Address, ULONG PrefixLength, IN_ADDR *Ipv4Address);
+UINT32 In6IsEmbeddedV4AddrPrefixLengthValid(ULONG PrefixLength);
+UINT32 In6SetAddrV4Embedded(const IN6_ADDR *Prefix, ULONG PrefixLength, IN_ADDR *Ipv4Address, IN6_ADDR *Ipv6Address);
+#if (defined(_NTDDK_) || defined(_NTRTL_))
+UINT32 Ipv6pGetVersionClassEcnFlow(UINT8 Class, UINT8 EcnField, UINT32 Flow);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#define IPV6_FULL_TRAFFIC_CLASS(VersionClassFlow) ((UCHAR) ((((VersionClassFlow) & IPV6_FULL_TRAFFIC_CLASS_MASK) >> 12) + (((VersionClassFlow) & IPV6_FULL_TRAFFIC_CLASS_MASK) << 4)))
 
 #endif /* _NETIODEF_ */

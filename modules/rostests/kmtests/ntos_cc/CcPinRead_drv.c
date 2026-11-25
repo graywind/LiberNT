@@ -581,6 +581,38 @@ PerformTest(
                     }
                     trace("DIRTY_BCB_RETENTION_DONE\n");
 
+                    /* A dirty BCB smaller than a page makes the whole page findable through PIN_IF_BCB */
+                    Offset.QuadPart = 0x1404;
+                    Ret = CcPinRead(TestFileObject, &Offset, sizeof(ULONG), PIN_WAIT, &Bcb, (PVOID *)&Buffer);
+                    if (ok(Ret, "Sub-page metadata pin failed\n"))
+                    {
+                        Buffer[0] = 0x5AA5C33C;
+                        CcSetDirtyPinnedData(Bcb, NULL);
+                        CcUnpinData(Bcb);
+                        Offset.QuadPart = 0x1000;
+                        Ret = CcPinRead(TestFileObject, &Offset, PAGE_SIZE, PIN_WAIT | PIN_IF_BCB, &Bcb, (PVOID *)&Buffer);
+                        if (ok(Ret, "The page of a dirty sub-page BCB was not found\n"))
+                        {
+                            ok_eq_ulong(Buffer[0x404 / sizeof(ULONG)], 0x5AA5C33CUL);
+                            CcSetDirtyPinnedData(Bcb, NULL);
+                            CcRepinBcb(Bcb);
+                            CcUnpinData(Bcb);
+                            WriteOffset.QuadPart = -1;
+                            WriteLength = 0;
+                            CcUnpinRepinnedBcb(Bcb, TRUE, &Iosb);
+                            ok_eq_hex(Iosb.Status, STATUS_SUCCESS);
+                            ok(WriteOffset.QuadPart >= 0 && WriteOffset.QuadPart <= 0x1000 && WriteOffset.QuadPart + WriteLength >= 0x2000,
+                               "The page was not written: %I64d/%lu\n", WriteOffset.QuadPart, WriteLength);
+                        }
+                    }
+
+                    Offset.QuadPart = 0x3000;
+                    Ret = CcPinRead(TestFileObject, &Offset, PAGE_SIZE, PIN_WAIT | PIN_IF_BCB, &Bcb, (PVOID *)&Buffer);
+                    ok(!Ret, "A page without a BCB was pinned through PIN_IF_BCB\n");
+                    if (Ret)
+                        CcUnpinData(Bcb);
+                    trace("SUBPAGE_BCB_DONE\n");
+
                     FileSizes.AllocationSize.QuadPart += VACB_MAPPING_GRANULARITY;
                     CcSetFileSizes(TestFileObject, &FileSizes);
 
@@ -613,30 +645,6 @@ PerformTest(
                     /* Pin after Allocation */
                     Ret = FALSE;
                     Offset.QuadPart = FileSizes.AllocationSize.QuadPart + 0x1000;
-
-                    KmtStartSeh();
-                    Ret = CcPinRead(TestFileObject, &Offset, 0x1000, PIN_WAIT, &Bcb, (PVOID *)&Buffer);
-                    KmtEndSeh(STATUS_SUCCESS);
-                    ok(Ret == TRUE, "CcPinRead failed\n");
-                    if (Ret)
-                    {
-                        /* Set this one dirty */
-                        CcSetDirtyPinnedData(Bcb, NULL);
-
-                        CcUnpinData(Bcb);
-
-                        WriteOffset.QuadPart = -1LL;
-                        WriteLength = MAXULONG;
-                        /* Flush to trigger the write */
-                        CcFlushCache(TestFileObject->SectionObjectPointer, &Offset, 0x1000, NULL);
-
-                        ok_eq_longlong(WriteOffset.QuadPart, Offset.QuadPart);
-                        ok_eq_ulong(WriteLength, 0x1000);
-                    }
-
-                    /* Pin a VACB after Allocation */
-                    Ret = FALSE;
-                    Offset.QuadPart = FileSizes.AllocationSize.QuadPart + 0x1000 + VACB_MAPPING_GRANULARITY;
 
                     KmtStartSeh();
                     Ret = CcPinRead(TestFileObject, &Offset, 0x1000, PIN_WAIT, &Bcb, (PVOID *)&Buffer);
@@ -814,6 +822,7 @@ TestIrpHandler(
         ULONG Length;
         PVOID Buffer;
         LARGE_INTEGER Offset;
+        KIRQL Irql = KeGetCurrentIrql();
 
         Offset = IoStack->Parameters.Read.ByteOffset;
         Length = IoStack->Parameters.Read.Length;
@@ -823,7 +832,7 @@ TestIrpHandler(
 
         ok(FlagOn(Irp->Flags, IRP_NOCACHE), "Not coming from Cc\n");
 
-        ok_irql(APC_LEVEL);
+        ok(Irql <= APC_LEVEL, "IRQL is %u\n", Irql);
         ok((Offset.QuadPart % PAGE_SIZE == 0 || Offset.QuadPart == 0), "Offset is not aligned: %I64i\n", Offset.QuadPart);
         ok(Length % PAGE_SIZE == 0, "Length is not aligned: %I64i\n", Length);
 

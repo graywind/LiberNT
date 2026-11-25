@@ -312,17 +312,17 @@ typedef struct joyreghwconfig_tag {
 
 /* joystick calibration info structure */
 typedef struct joycalibrate_tag {
-    UINT    wXbase;
-    UINT    wXdelta;
-    UINT    wYbase;
-    UINT    wYdelta;
-    UINT    wZbase;
-    UINT    wZdelta;
+    WORD    wXbase;
+    WORD    wXdelta;
+    WORD    wYbase;
+    WORD    wYdelta;
+    WORD    wZbase;
+    WORD    wZdelta;
 } JOYCALIBRATE;
 typedef JOYCALIBRATE *LPJOYCALIBRATE;
 
 /* prototype for joystick message function */
-typedef UINT (CALLBACK * JOYDEVMSGPROC)(DWORD dwID, UINT uMessage, LPARAM lParam1, LPARAM lParam2);
+typedef DWORD (JOYDEVMSGPROC)(DWORD dwID, UINT uMessage, LONG lParam1, LONG lParam2);
 typedef JOYDEVMSGPROC *LPJOYDEVMSGPROC;
 
 /* messages sent to joystick driver's DriverProc() function */
@@ -373,7 +373,7 @@ typedef JOYDEVMSGPROC *LPJOYDEVMSGPROC;
 #define MCI_INTEGER_RETURNED        0x00080000  /* integer conversion needed */
 #define MCI_RESOURCE_DRIVER         0x00100000  /* driver owns returned resource */
 
-#define MCI_NO_COMMAND_TABLE    0xFFFF
+#define MCI_NO_COMMAND_TABLE    ((UINT)(-1))
 
 #define MCI_COMMAND_HEAD        0
 #define MCI_STRING              1
@@ -413,7 +413,7 @@ typedef struct {
 
 typedef struct {
         DWORD  			dwStreamID;
-        WORD   			wDeviceID;
+        UINT   			uDeviceID;
 } MIDIOPENSTRMID;
 
 typedef struct {
@@ -422,7 +422,7 @@ typedef struct {
 	DWORD_PTR		dwInstance;
 	DWORD_PTR		dnDevNode;
         DWORD          		cIds;
-        MIDIOPENSTRMID 		rgIds;
+        MIDIOPENSTRMID 		rgIds[1];
 } MIDIOPENDESC, *LPMIDIOPENDESC;
 
 typedef struct tMIXEROPENDESC
@@ -487,5 +487,137 @@ DWORD   WINAPI mmGetCurrentTask(void);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#ifndef DRVM_INIT_EX
+#define DRVM_INIT_EX 104
+#endif
+#ifndef DRVM_MAPPER_PREFERRED_FLAGS_PREFERREDONLY
+#define DRVM_MAPPER_PREFERRED_FLAGS_PREFERREDONLY 0x00000001
+#endif
+#ifndef MIDI_IO_COOKED
+#define MIDI_IO_COOKED 0x00000002L
+#endif
+#ifndef MIDI_IO_PACKED
+#define MIDI_IO_PACKED 0x00000000L
+#endif
+#ifndef MODM_GETPOS
+#define MODM_GETPOS 17
+#endif
+#ifndef MODM_PAUSE
+#define MODM_PAUSE 18
+#endif
+#ifndef MODM_PREFERRED
+#define MODM_PREFERRED 22
+#endif
+#ifndef MODM_PROPERTIES
+#define MODM_PROPERTIES 21
+#endif
+#ifndef MODM_RESTART
+#define MODM_RESTART 19
+#endif
+#ifndef MODM_STOP
+#define MODM_STOP 20
+#endif
+#ifndef MODM_STRMDATA
+#define MODM_STRMDATA 14
+#endif
+#ifndef MXDM_BASE
+#define MXDM_BASE 1
+#endif
+#ifndef VADMAD_Device_ID
+#define VADMAD_Device_ID 0X0444
+#endif
+
+typedef struct tMIXEROPENDESC * PMIXEROPENDESC;
+
+#pragma pack(push, 1)
+typedef struct MCI_OPEN_DRIVER_PARMS {
+  MCIDEVICEID wDeviceID;
+  LPCWSTR lpstrParams;
+  UINT wCustomCommandTable;
+  UINT wType;
+} MCI_OPEN_DRIVER_PARMS;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct MDEVICECAPSEX {
+  DWORD cbSize;
+  LPVOID pCaps;
+} MDEVICECAPSEX;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct timerevent_tag {
+  WORD wDelay;
+  WORD wResolution;
+  LPTIMECALLBACK lpFunction;
+  DWORD dwUser;
+  WORD wFlags;
+  WORD wReserved1;
+} TIMEREVENT;
+#pragma pack(pop)
+
+#define _INC_MMDDK
+#define AUXM_INIT_EX 0x68
+#define DRIVERS_SECTION TEXT("DRIVERS32")
+#define DRV_QUERYFUNCTIONINSTANCEIDSIZE 0x812
+#define JOY_CONFIGCHANGED_MSGSTRING "MSJSTICK_VJOYD_MSGSTR"
+#define MCI_SECTION TEXT("MCI32")
+#define MCI_TABLE_NOT_PRESENT ((UINT)0xFFFFFFFF)
+#define MIDM_INIT_EX 0x68
+#define MIDM_MAPPER 0x2000
+#define MIDM_USER 0x4000
+#define MMDDKINC
+#define MODM_INIT_EX 0x68
+#define MODM_MAPPER 0x2000
+#define MODM_RECONFIGURE 0x4768
+#define MODM_USER 0x4000
+#define MXDM_INIT_EX 0x68
+#define TDD_BEGINMINPERIOD 0x810
+#define TDD_ENDMINPERIOD 0x814
+#define TDD_GETDEVCAPS 0x80C
+#define TDD_GETSYSTEMTIME 0x808
+#define TDD_KILLTIMEREVENT 0x800
+#define TDD_SETTIMEREVENT 0x804
+#define WIDM_INIT_EX 0x68
+#define WODM_INIT_EX 0x68
+
+typedef MCI_OPEN_DRIVER_PARMS *LPMCI_OPEN_DRIVER_PARMS;
+
+typedef TIMEREVENT *LPTIMEREVENT;
+
+#pragma pack(push, 1)
+struct midiopendesc_tag
+{
+    HMIDI hMidi;
+    DWORD_PTR dwCallback;
+    DWORD_PTR dwInstance;
+    DWORD_PTR dnDevNode;
+    DWORD cIds;
+    MIDIOPENSTRMID rgIds[1];
+};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+struct midiopenstrmid_tag
+{
+    DWORD dwStreamID;
+    UINT uDeviceID;
+};
+#pragma pack(pop)
+
+typedef void TASKCALLBACK(DWORD_PTR);
+
+#pragma pack(push, 1)
+struct waveopendesc_tag
+{
+    HWAVE hWave;
+    LPWAVEFORMAT lpFormat;
+    DWORD_PTR dwCallback;
+    DWORD_PTR dwInstance;
+    UINT uMappedDeviceID;
+    DWORD_PTR dnDevNode;
+};
+#pragma pack(pop)
 
 #endif /* __MMDDK_H */

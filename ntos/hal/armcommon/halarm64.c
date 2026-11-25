@@ -15,9 +15,9 @@
 #include <ioaccess.h>
 #include <halfuncs.h>
 #include <halefi.h>
-#include <reactos/hal/acpi_pci.h>
-#include <reactos/hal/acpi_cstate.h>
-#include <reactos/drivers/acpi/acpi.h>
+#include <libernt/hal/acpi_pci.h>
+#include <libernt/hal/acpi_cstate.h>
+#include <libernt/drivers/acpi/acpi.h>
 #include <halacpip.h>
 #include <halacpi_arm64.h>
 #include <bugcodes.h>
@@ -4946,7 +4946,8 @@ HalpArm64InitializeDmaOperations(VOID)
     if (InterlockedCompareExchange(&HalpArm64DmaOperationsState, 1, 0) == 0)
     {
         RtlZeroMemory(&HalpArm64DmaOperations, sizeof(HalpArm64DmaOperations));
-        HalpArm64DmaOperations.Size = sizeof(DMA_OPERATIONS);
+        /* TODO: CreateCommonBufferFromMdl is not implemented; report the table up to it */
+        HalpArm64DmaOperations.Size = FIELD_OFFSET(DMA_OPERATIONS, CreateCommonBufferFromMdl);
         HalpArm64DmaOperations.PutDmaAdapter = HalpArm64PutDmaAdapter;
         HalpArm64DmaOperations.AllocateCommonBuffer = HalpArm64AllocateCommonBuffer;
         HalpArm64DmaOperations.FreeCommonBuffer = HalpArm64FreeCommonBuffer;

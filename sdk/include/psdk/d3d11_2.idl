@@ -171,3 +171,5 @@ interface ID3D11Device2 : ID3D11Device1
         UINT *quality_level_count
     );
 }
+
+cpp_quote("")

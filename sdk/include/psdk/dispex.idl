@@ -170,7 +170,6 @@ interface IVariantChangeType : IUnknown
             [in] VARTYPE vtNew);
 }
 
-
 [
 object,
 uuid(CA04B7E6-0D21-11d1-8CC5-00C04FC2B085),
@@ -205,3 +204,21 @@ interface IProvideRuntimeContext : IUnknown
             [out] DWORD_PTR *pdwContext,
             [out] VARIANT_BOOL *pfExecutingGlobalCode);
 }
+
+cpp_quote("#define SID_GetScriptSite IID_IActiveScriptSite")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

@@ -213,4 +213,48 @@ BOOL WINAPI CryptSIPGetCaps(SIP_SUBJECTINFO *,SIP_CAP_SET *);
 } /* extern "C" */
 #endif /* defined(__cplusplus) */
 
+#ifndef MSSIP_ADDINFO_DETACHEDSIG
+#define MSSIP_ADDINFO_DETACHEDSIG 4
+#endif
+#ifndef MSSIP_FLAGS_MULTI_HASH
+#define MSSIP_FLAGS_MULTI_HASH 0x00040000
+#endif
+#ifndef SPC_DIGEST_GENERATE_FLAG
+#define SPC_DIGEST_GENERATE_FLAG 0x200
+#endif
+#ifndef SPC_DIGEST_SIGN_EX_FLAG
+#define SPC_DIGEST_SIGN_EX_FLAG 0x4000
+#endif
+#ifndef SPC_DIGEST_SIGN_FLAG
+#define SPC_DIGEST_SIGN_FLAG 0x400
+#endif
+#ifndef SPC_MARKER_CHECK_SKIP_SIP_INDIRECT_DATA_FLAG
+#define SPC_MARKER_CHECK_SKIP_SIP_INDIRECT_DATA_FLAG 0x00000001
+#endif
+#ifndef SPC_RELAXED_PE_MARKER_CHECK
+#define SPC_RELAXED_PE_MARKER_CHECK 0x800
+#endif
+
+typedef struct MS_ADDINFO_DETACHEDSIG_ {
+  DWORD cbStruct;
+  HANDLE hSignatureFile;
+  DWORD cbSignatureObject;
+  BYTE * pbSignatureObject;
+} MS_ADDINFO_DETACHEDSIG, *PMS_ADDINFO_DETACHEDSIG;
+
+#define SPC_MARKER_CHECK_CURRENTLY_SUPPORTED_FLAGS 1
+
+typedef BOOL (WINAPI *pCryptSIPGetSealedDigest)(SIP_SUBJECTINFO *, const BYTE *, DWORD, BYTE *, DWORD *);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL WINAPI CryptSIPGetSealedDigest(SIP_SUBJECTINFO *pSubjectInfo, const BYTE *pSig, DWORD dwSig, BYTE *pbDigest, DWORD *pcbDigest);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* __WINE_MSSIP_H */

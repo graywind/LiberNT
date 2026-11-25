@@ -173,9 +173,6 @@ add_livecd_shortcut("Command Prompt"
     "shell:system\\cmd.exe" ICON_INDEX 0
     WORKDIR "${envvar_homedrive}${envvar_homepath}"
     DESTINATION "${dir_startmenu_accessories}")
-add_livecd_shortcut("Applications Manager"
-    "shell:system\\rapps.exe" ICON_INDEX 0
-    DESTINATION "${dir_startmenu_programs}")
 add_livecd_shortcut("Device Manager"
     "shell:system\\devmgmt.exe" ICON_INDEX 0
     DESTINATION "${dir_startmenu_admintools}")
@@ -232,7 +229,7 @@ add_livecd_shortcut("Task Manager 11"
     DESTINATION "${dir_startmenu_systemtools}")
 add_livecd_shortcut("LntGet"
     "shell:system\\lntget.exe" ICON_INDEX 0 CMDLINE_ARGS "gui"
-    DESTINATION "${dir_startmenu_systemtools}")
+    DESTINATION "${dir_startmenu_programs}" "${dir_quicklaunch}")
 add_livecd_shortcut("LiberNT Driver Installer"
     "shell:system\\lntdrv.exe" ICON_INDEX 0
     DESTINATION "${dir_startmenu_systemtools}")

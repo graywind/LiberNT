@@ -88,3 +88,13 @@ interface IClassFactory : IUnknown
   HRESULT RemoteLockServer(
     [in] BOOL fLock);
 }
+
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

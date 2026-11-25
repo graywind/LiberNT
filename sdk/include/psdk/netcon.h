@@ -30,7 +30,10 @@ typedef enum
     NCCF_QUARANTINED            = 0x4000,
     NCCF_RESERVED               = 0x8000,
     NCCF_BLUETOOTH_MASK         = 0xf0000,
-    NCCF_LAN_MASK               = 0xf00000
+    NCCF_LAN_MASK               = 0xf00000,
+    NCCF_HOSTED_NETWORK = 0x10000,
+    NCCF_VIRTUAL_STATION = 0x20000,
+    NCCF_WIFI_DIRECT = 0x40000,
 }NETCON_CHARACTERISTIC_FLAGS;
 
 
@@ -48,7 +51,10 @@ typedef enum
     NCS_AUTHENTICATION_SUCCEEDED= NCS_AUTHENTICATING + 1,
     NCS_AUTHENTICATION_FAILED   = NCS_AUTHENTICATION_SUCCEEDED + 1,
     NCS_INVALID_ADDRESS         = NCS_AUTHENTICATION_FAILED + 1,
-    NCS_CREDENTIALS_REQUIRED    = NCS_INVALID_ADDRESS + 1
+    NCS_CREDENTIALS_REQUIRED    = NCS_INVALID_ADDRESS + 1,
+    NCS_ACTION_REQUIRED = 0xD,
+    NCS_ACTION_REQUIRED_RETRY = 0xE,
+    NCS_CONNECT_FAILED = 0xF,
 }NETCON_STATUS;
 
 typedef enum
@@ -257,5 +263,244 @@ VOID WINAPI NcFreeNetconProperties (NETCON_PROPERTIES* pProps);
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef NETCON_MAX_NAME_LEN
+#define NETCON_MAX_NAME_LEN 256
+#endif
+
+#define S_OBJECT_NO_LONGER_VALID ((HRESULT)2)
+
+typedef struct IEnumNetSharingEveryConnection IEnumNetSharingEveryConnection;
+
+struct IEnumNetSharingEveryConnectionVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(IEnumNetSharingEveryConnection *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(IEnumNetSharingEveryConnection *);
+    ULONG (WINAPI *Release)(IEnumNetSharingEveryConnection *);
+    HRESULT (WINAPI *Next)(IEnumNetSharingEveryConnection *, ULONG, VARIANT *, ULONG *);
+    HRESULT (WINAPI *Skip)(IEnumNetSharingEveryConnection *, ULONG);
+    HRESULT (WINAPI *Reset)(IEnumNetSharingEveryConnection *);
+    HRESULT (WINAPI *Clone)(IEnumNetSharingEveryConnection *, IEnumNetSharingEveryConnection **);
+};
+
+typedef struct IEnumNetSharingPortMapping IEnumNetSharingPortMapping;
+
+struct IEnumNetSharingPortMappingVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(IEnumNetSharingPortMapping *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(IEnumNetSharingPortMapping *);
+    ULONG (WINAPI *Release)(IEnumNetSharingPortMapping *);
+    HRESULT (WINAPI *Next)(IEnumNetSharingPortMapping *, ULONG, VARIANT *, ULONG *);
+    HRESULT (WINAPI *Skip)(IEnumNetSharingPortMapping *, ULONG);
+    HRESULT (WINAPI *Reset)(IEnumNetSharingPortMapping *);
+    HRESULT (WINAPI *Clone)(IEnumNetSharingPortMapping *, IEnumNetSharingPortMapping **);
+};
+
+typedef struct IEnumNetSharingPrivateConnection IEnumNetSharingPrivateConnection;
+
+struct IEnumNetSharingPrivateConnectionVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(IEnumNetSharingPrivateConnection *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(IEnumNetSharingPrivateConnection *);
+    ULONG (WINAPI *Release)(IEnumNetSharingPrivateConnection *);
+    HRESULT (WINAPI *Next)(IEnumNetSharingPrivateConnection *, ULONG, VARIANT *, ULONG *);
+    HRESULT (WINAPI *Skip)(IEnumNetSharingPrivateConnection *, ULONG);
+    HRESULT (WINAPI *Reset)(IEnumNetSharingPrivateConnection *);
+    HRESULT (WINAPI *Clone)(IEnumNetSharingPrivateConnection *, IEnumNetSharingPrivateConnection **);
+};
+
+typedef struct IEnumNetSharingPublicConnection IEnumNetSharingPublicConnection;
+
+struct IEnumNetSharingPublicConnectionVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(IEnumNetSharingPublicConnection *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(IEnumNetSharingPublicConnection *);
+    ULONG (WINAPI *Release)(IEnumNetSharingPublicConnection *);
+    HRESULT (WINAPI *Next)(IEnumNetSharingPublicConnection *, ULONG, VARIANT *, ULONG *);
+    HRESULT (WINAPI *Skip)(IEnumNetSharingPublicConnection *, ULONG);
+    HRESULT (WINAPI *Reset)(IEnumNetSharingPublicConnection *);
+    HRESULT (WINAPI *Clone)(IEnumNetSharingPublicConnection *, IEnumNetSharingPublicConnection **);
+};
+
+typedef struct INetConnectionProps INetConnectionProps;
+
+struct INetConnectionPropsVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetConnectionProps *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetConnectionProps *);
+    ULONG (WINAPI *Release)(INetConnectionProps *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetConnectionProps *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetConnectionProps *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetConnectionProps *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetConnectionProps *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get_Guid)(INetConnectionProps *, BSTR *);
+    HRESULT (WINAPI *get_Name)(INetConnectionProps *, BSTR *);
+    HRESULT (WINAPI *get_DeviceName)(INetConnectionProps *, BSTR *);
+    HRESULT (WINAPI *get_Status)(INetConnectionProps *, NETCON_STATUS *);
+    HRESULT (WINAPI *get_MediaType)(INetConnectionProps *, NETCON_MEDIATYPE *);
+    HRESULT (WINAPI *get_Characteristics)(INetConnectionProps *, DWORD *);
+};
+
+typedef struct INetSharingPortMapping INetSharingPortMapping;
+
+typedef struct INetSharingPortMappingCollection INetSharingPortMappingCollection;
+
+typedef struct INetSharingConfiguration INetSharingConfiguration;
+
+typedef enum tagSHARINGCONNECTIONTYPE
+{
+    ICSSHARINGTYPE_PUBLIC = 0,
+    ICSSHARINGTYPE_PRIVATE = 1
+} SHARINGCONNECTIONTYPE;
+
+typedef enum tagSHARINGCONNECTIONTYPE *LPSHARINGCONNECTIONTYPE;
+
+typedef enum tagSHARINGCONNECTION_ENUM_FLAGS
+{
+    ICSSC_DEFAULT = 0,
+    ICSSC_ENABLED = 1
+} SHARINGCONNECTION_ENUM_FLAGS;
+
+typedef enum tagICS_TARGETTYPE
+{
+    ICSTT_NAME = 0,
+    ICSTT_IPADDRESS = 1
+} ICS_TARGETTYPE;
+
+struct INetSharingConfigurationVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingConfiguration *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingConfiguration *);
+    ULONG (WINAPI *Release)(INetSharingConfiguration *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingConfiguration *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingConfiguration *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingConfiguration *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingConfiguration *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get_SharingEnabled)(INetSharingConfiguration *, VARIANT_BOOL *);
+    HRESULT (WINAPI *get_SharingConnectionType)(INetSharingConfiguration *, SHARINGCONNECTIONTYPE *);
+    HRESULT (WINAPI *DisableSharing)(INetSharingConfiguration *);
+    HRESULT (WINAPI *EnableSharing)(INetSharingConfiguration *, SHARINGCONNECTIONTYPE);
+    HRESULT (WINAPI *get_InternetFirewallEnabled)(INetSharingConfiguration *, VARIANT_BOOL *);
+    HRESULT (WINAPI *DisableInternetFirewall)(INetSharingConfiguration *);
+    HRESULT (WINAPI *EnableInternetFirewall)(INetSharingConfiguration *);
+    HRESULT (WINAPI *get_EnumPortMappings)(INetSharingConfiguration *, SHARINGCONNECTION_ENUM_FLAGS, INetSharingPortMappingCollection **);
+    HRESULT (WINAPI *AddPortMapping)(INetSharingConfiguration *, BSTR, UCHAR, USHORT, USHORT, DWORD, BSTR, ICS_TARGETTYPE, INetSharingPortMapping **);
+    HRESULT (WINAPI *RemovePortMapping)(INetSharingConfiguration *, INetSharingPortMapping *);
+};
+
+typedef struct INetSharingEveryConnectionCollection INetSharingEveryConnectionCollection;
+
+struct INetSharingEveryConnectionCollectionVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingEveryConnectionCollection *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingEveryConnectionCollection *);
+    ULONG (WINAPI *Release)(INetSharingEveryConnectionCollection *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingEveryConnectionCollection *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingEveryConnectionCollection *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingEveryConnectionCollection *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingEveryConnectionCollection *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get__NewEnum)(INetSharingEveryConnectionCollection *, IUnknown **);
+    HRESULT (WINAPI *get_Count)(INetSharingEveryConnectionCollection *, long *);
+};
+
+typedef struct INetSharingPublicConnectionCollection INetSharingPublicConnectionCollection;
+
+typedef struct INetSharingPrivateConnectionCollection INetSharingPrivateConnectionCollection;
+
+typedef struct INetSharingManager INetSharingManager;
+
+struct INetSharingManagerVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingManager *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingManager *);
+    ULONG (WINAPI *Release)(INetSharingManager *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingManager *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingManager *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingManager *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingManager *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get_SharingInstalled)(INetSharingManager *, VARIANT_BOOL *);
+    HRESULT (WINAPI *get_EnumPublicConnections)(INetSharingManager *, SHARINGCONNECTION_ENUM_FLAGS, INetSharingPublicConnectionCollection **);
+    HRESULT (WINAPI *get_EnumPrivateConnections)(INetSharingManager *, SHARINGCONNECTION_ENUM_FLAGS, INetSharingPrivateConnectionCollection **);
+    HRESULT (WINAPI *get_INetSharingConfigurationForINetConnection)(INetSharingManager *, INetConnection *, INetSharingConfiguration **);
+    HRESULT (WINAPI *get_EnumEveryConnection)(INetSharingManager *, INetSharingEveryConnectionCollection **);
+    HRESULT (WINAPI *get_NetConnectionProps)(INetSharingManager *, INetConnection *, INetConnectionProps **);
+};
+
+struct INetSharingPortMappingCollectionVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingPortMappingCollection *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingPortMappingCollection *);
+    ULONG (WINAPI *Release)(INetSharingPortMappingCollection *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingPortMappingCollection *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingPortMappingCollection *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingPortMappingCollection *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingPortMappingCollection *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get__NewEnum)(INetSharingPortMappingCollection *, IUnknown **);
+    HRESULT (WINAPI *get_Count)(INetSharingPortMappingCollection *, long *);
+};
+
+typedef struct INetSharingPortMappingProps INetSharingPortMappingProps;
+
+struct INetSharingPortMappingPropsVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingPortMappingProps *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingPortMappingProps *);
+    ULONG (WINAPI *Release)(INetSharingPortMappingProps *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingPortMappingProps *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingPortMappingProps *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingPortMappingProps *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingPortMappingProps *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get_Name)(INetSharingPortMappingProps *, BSTR *);
+    HRESULT (WINAPI *get_IPProtocol)(INetSharingPortMappingProps *, UCHAR *);
+    HRESULT (WINAPI *get_ExternalPort)(INetSharingPortMappingProps *, long *);
+    HRESULT (WINAPI *get_InternalPort)(INetSharingPortMappingProps *, long *);
+    HRESULT (WINAPI *get_Options)(INetSharingPortMappingProps *, long *);
+    HRESULT (WINAPI *get_TargetName)(INetSharingPortMappingProps *, BSTR *);
+    HRESULT (WINAPI *get_TargetIPAddress)(INetSharingPortMappingProps *, BSTR *);
+    HRESULT (WINAPI *get_Enabled)(INetSharingPortMappingProps *, VARIANT_BOOL *);
+};
+
+struct INetSharingPortMappingVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingPortMapping *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingPortMapping *);
+    ULONG (WINAPI *Release)(INetSharingPortMapping *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingPortMapping *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingPortMapping *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingPortMapping *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingPortMapping *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *Disable)(INetSharingPortMapping *);
+    HRESULT (WINAPI *Enable)(INetSharingPortMapping *);
+    HRESULT (WINAPI *get_Properties)(INetSharingPortMapping *, INetSharingPortMappingProps **);
+    HRESULT (WINAPI *Delete)(INetSharingPortMapping *);
+};
+
+struct INetSharingPrivateConnectionCollectionVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingPrivateConnectionCollection *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingPrivateConnectionCollection *);
+    ULONG (WINAPI *Release)(INetSharingPrivateConnectionCollection *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingPrivateConnectionCollection *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingPrivateConnectionCollection *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingPrivateConnectionCollection *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingPrivateConnectionCollection *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get__NewEnum)(INetSharingPrivateConnectionCollection *, IUnknown **);
+    HRESULT (WINAPI *get_Count)(INetSharingPrivateConnectionCollection *, long *);
+};
+
+struct INetSharingPublicConnectionCollectionVtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetSharingPublicConnectionCollection *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetSharingPublicConnectionCollection *);
+    ULONG (WINAPI *Release)(INetSharingPublicConnectionCollection *);
+    HRESULT (WINAPI *GetTypeInfoCount)(INetSharingPublicConnectionCollection *, UINT *);
+    HRESULT (WINAPI *GetTypeInfo)(INetSharingPublicConnectionCollection *, UINT, LCID, ITypeInfo **);
+    HRESULT (WINAPI *GetIDsOfNames)(INetSharingPublicConnectionCollection *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);
+    HRESULT (WINAPI *Invoke)(INetSharingPublicConnectionCollection *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);
+    HRESULT (WINAPI *get__NewEnum)(INetSharingPublicConnectionCollection *, IUnknown **);
+    HRESULT (WINAPI *get_Count)(INetSharingPublicConnectionCollection *, long *);
+};
+
+typedef struct NetSharingManager NetSharingManager;
 
 #endif

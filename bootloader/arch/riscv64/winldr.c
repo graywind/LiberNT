@@ -8,7 +8,7 @@
 #include <bl.h>
 #include <riscv64.h>
 #include <blefi.h>
-#include <Fdt.h>
+#include <edk2/Fdt.h>
 #include <RiscVBoot.h>
 #include <ndk/ketypes.h>
 #include <libernt/fdt.h>
@@ -1246,7 +1246,7 @@ RiscvProtectBootImages(
 
     while (Link != Head)
     {
-        PLDR_DATA_TABLE_ENTRY Entry = CONTAINING_RECORD(Link, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        PKLDR_DATA_TABLE_ENTRY Entry = CONTAINING_RECORD(Link, KLDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
         ULONGLONG ImageBase = (ULONG_PTR)Entry->DllBase;
         ULONGLONG Pages = ((ULONGLONG)Entry->SizeOfImage + RISCV64_PAGE_SIZE - 1) >> RISCV64_PAGE_SHIFT;
         PIMAGE_NT_HEADERS NtHeaders;

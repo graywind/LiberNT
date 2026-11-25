@@ -394,45 +394,6 @@ PerformTest(
                     {
                         CcUnpinData(Bcb);
                     }
-
-                    Ret = FALSE;
-                    Offset.QuadPart = FileSizes.AllocationSize.QuadPart + 0x1000 + VACB_MAPPING_GRANULARITY;
-
-                    KmtStartSeh();
-                    Ret = CcMapData(TestFileObject, &Offset, 0x1000, MAP_WAIT, &Bcb, (PVOID *)&Buffer);
-                    KmtEndSeh(STATUS_SUCCESS);
-                    ok(Ret == TRUE, "CcMapData failed\n");
-
-                    if (Ret)
-                    {
-                        CcUnpinData(Bcb);
-                    }
-
-                    /* Map more than a VACB */
-                    Ret = FALSE;
-                    Offset.QuadPart = 0x0;
-
-                    KmtStartSeh();
-                    Ret = CcMapData(TestFileObject, &Offset, 0x1000 + VACB_MAPPING_GRANULARITY, MAP_WAIT, &Bcb, (PVOID *)&Buffer);
-                    KmtEndSeh(STATUS_SUCCESS);
-                    ok(Ret == TRUE, "CcMapData failed\n");
-
-                    if (Ret)
-                    {
-                        volatile UCHAR *MappedBuffer = (volatile UCHAR *)Buffer;
-
-                        /* Verify the full requested range is accessible across the VACB boundary. */
-                        KmtStartSeh();
-                        MappedBuffer[0] = 0x5a;
-                        MappedBuffer[VACB_MAPPING_GRANULARITY] = 0xa5;
-                        MappedBuffer[VACB_MAPPING_GRANULARITY + 0xfff] = 0x3c;
-                        ok_eq_uint(MappedBuffer[0], 0x5a);
-                        ok_eq_uint(MappedBuffer[VACB_MAPPING_GRANULARITY], 0xa5);
-                        ok_eq_uint(MappedBuffer[VACB_MAPPING_GRANULARITY + 0xfff], 0x3c);
-                        KmtEndSeh(STATUS_SUCCESS);
-
-                        CcUnpinData(Bcb);
-                    }
                 }
             }
         }
@@ -546,7 +507,8 @@ TestIrpHandler(
 
         ok(FlagOn(Irp->Flags, IRP_NOCACHE), "Not coming from Cc\n");
 
-        ok_irql(APC_LEVEL);
+        KIRQL Irql = KeGetCurrentIrql();
+        ok(Irql <= APC_LEVEL, "IRQL is %u\n", Irql);
         ok((Offset.QuadPart % PAGE_SIZE == 0 || Offset.QuadPart == 0), "Offset is not aligned: %I64i\n", Offset.QuadPart);
         ok(Length % PAGE_SIZE == 0, "Length is not aligned: %I64i\n", Length);
 

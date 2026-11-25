@@ -188,7 +188,7 @@ typedef struct {
 
 #define SNMP_MAX_OID_LEN 128
 
-#define SNMP_MEM_ALLOC_ERROR          0
+#define SNMP_MEM_ALLOC_ERROR          1
 #define SNMP_BERAPI_INVALID_LENGTH    10
 #define SNMP_BERAPI_INVALID_TAG       11
 #define SNMP_BERAPI_OVERFLOW          12
@@ -294,5 +294,48 @@ VOID WINAPIV SnmpUtilDbgPrint(INT nLogLevel, LPSTR szFormat, ...);
 #ifdef __cplusplus
 }
 #endif
+
+#define _INC_SNMP
+#define ASN_CONTEXTSPECIFIC 0x80
+#define ASN_PRIMATIVE 0
+#define ASN_RFC1155_COUNTER 0x41
+#define ASN_RFC1155_GAUGE 0x42
+#define ASN_RFC1155_IPADDRESS ASN_IPADDRESS
+#define ASN_RFC1155_OPAQUE 0x44
+#define ASN_RFC1155_TIMETICKS 0x43
+#define ASN_RFC1157_GETNEXTREQUEST 0xA1
+#define ASN_RFC1157_GETREQUEST 0xA0
+#define ASN_RFC1157_GETRESPONSE 0xA2
+#define ASN_RFC1157_SETREQUEST 0xA3
+#define ASN_RFC1157_TRAP 0xA4
+#define ASN_RFC1213_DISPSTRING 4
+#define ASN_RFC2578_UNSIGNED32 0x42
+#define ASN_UINTEGER32 0x47
+#define AsnCounter AsnCounter32
+#define AsnGauge AsnGauge32
+#define AsnInteger AsnInteger32
+#define RFC1157VarBind SnmpVarBind
+#define RFC1157VarBindList SnmpVarBindList
+#define SNMP_CopyVarBind SnmpUtilVarBindCpy
+#define SNMP_CopyVarBindList SnmpUtilVarBindListCpy
+#define SNMP_DBG_free SnmpUtilMemFree
+#define SNMP_DBG_malloc SnmpUtilMemAlloc
+#define SNMP_DBG_realloc SnmpUtilMemReAlloc
+#define SNMP_free SnmpUtilMemFree
+#define SNMP_FreeVarBind SnmpUtilVarBindFree
+#define SNMP_FreeVarBindList SnmpUtilVarBindListFree
+#define SNMP_FUNC_TYPE WINAPI
+#define SNMP_malloc SnmpUtilMemAlloc
+#define SNMP_oidappend SnmpUtilOidAppend
+#define SNMP_oidcmp SnmpUtilOidCmp
+#define SNMP_oidcpy SnmpUtilOidCpy
+#define SNMP_oidfree SnmpUtilOidFree
+#define SNMP_oidncmp SnmpUtilOidNCmp
+#define SNMP_printany SnmpUtilPrintAsnAny
+#define SNMP_realloc SnmpUtilMemReAlloc
+#define SNMPAPI INT
+
+#define DEFINE_NULLOCTETS() { NULL, 0, FALSE }
+#define SNMPDBG(_x_) SnmpUtilDbgPrint _x_
 
 #endif /* _WINE_SNMP_H */

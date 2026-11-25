@@ -47,6 +47,7 @@
 #define _Interlocked_
 #ifndef _Interlocked_operand_
 #define _Interlocked_operand_ _Pre_ _SA_annotes0(SAL_interlocked)
+
 #endif
 #define _Internal_lock_level_order_(a,b)
 #define _Lock_level_order_(a,b)
@@ -120,3 +121,17 @@ const char _Lock_kind_critical_section_[] = "";
 #define _Internal_set_lock_count_to_zero_(lock)
 #define _Internal_set_lock_count_to_one_(lock)
 #endif // 0
+
+#if (!(!defined(__midl) && defined(_PREFAST_) && !defined(_SDV_)))
+#define BENIGN_RACE_BEGIN __pragma(warning(push))
+#define BENIGN_RACE_END __pragma(warning(pop))
+#define NO_COMPETING_THREAD_BEGIN __pragma(warning(push))
+#define NO_COMPETING_THREAD_END __pragma(warning(pop))
+
+#define _Detaches_lock_(detached, lock)
+#define _Moves_lock_(target, source)
+#define _Replaces_lock_(target, source)
+#define _Swaps_locks_(left, right)
+#define CSALCAT1(x, y)
+#define CSALCAT2(x, y)
+#endif

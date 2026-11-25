@@ -203,4 +203,12 @@ extern "C" {
 #endif
 
 #include <sec_api/stralign_s.h>
+
+#if (!defined(__STRALIGN_H_) && !defined(MIDL_PASS))
+#define _WINDOWS_INSECURE_DEPRECATE __declspec(deprecated)
+#endif
+#if (!defined(__STRALIGN_H_) && !defined(MIDL_PASS)) && (!(defined(UNICODE)))
+#define ua_tcscpy_s strcpy_s
+#endif
+
 #endif

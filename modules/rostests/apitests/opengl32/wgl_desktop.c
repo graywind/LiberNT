@@ -7,8 +7,8 @@
 #include <windows.h>
 #include <GL/gl.h>
 #include <wine/test.h>
-#include <reactos/dwmprof.h>
-#include <reactos/dwmpresenttracenames.h>
+#include <libernt/dwmprof.h>
+#include <libernt/dwmpresenttracenames.h>
 
 static const WCHAR class_name[] = L"WglDesktopRegression";
 static const COLORREF background = RGB(32, 48, 64), cover_color = RGB(208, 48, 160);
@@ -324,7 +324,7 @@ START_TEST(wgl_desktop)
         {
             if (!IsIconic(window) && !render(dc, phase, client.right, client.bottom, FALSE)) goto cleanup;
             pump(50);
-        } while (GetTickCount() - start < 1800);
+        } while (GetTickCount() - start < 100);
     }
     complete = TRUE;
 

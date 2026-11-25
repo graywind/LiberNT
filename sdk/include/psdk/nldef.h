@@ -85,6 +85,21 @@ typedef enum {
   MAKE_ROUTE_PROTOCOL(NT_AUTOSTATIC, 10002),
   MAKE_ROUTE_PROTOCOL(NT_STATIC, 10006),
   MAKE_ROUTE_PROTOCOL(NT_STATIC_NON_DOD, 10007),
+  RouteProtocolIdpr = 0xF,
+  RouteProtocolEigrp = 0x10,
+  RouteProtocolDvmrp = 0x11,
+  RouteProtocolRpl = 0x12,
+  RouteProtocolDhcp = 0x13,
+  MIB_IPPROTO_IDPR = 0xF,
+  PROTO_IP_IDPR = 0xF,
+  MIB_IPPROTO_EIGRP = 0x10,
+  PROTO_IP_EIGRP = 0x10,
+  MIB_IPPROTO_DVMRP = 0x11,
+  PROTO_IP_DVMRP = 0x11,
+  MIB_IPPROTO_RPL = 0x12,
+  PROTO_IP_RPL = 0x12,
+  MIB_IPPROTO_DHCP = 0x13,
+  PROTO_IP_DHCP = 0x13,
 } NL_ROUTE_PROTOCOL, *PNL_ROUTE_PROTOCOL;
 
 typedef enum {
@@ -161,6 +176,44 @@ typedef enum _NL_NETWORK_CATEGORY {
 } NL_NETWORK_CATEGORY, *PNL_NETWORK_CATEGORY;
 
 #define NET_IF_CURRENT_SESSION ((ULONG)-1)
+
+typedef enum _NL_INTERFACE_NETWORK_CATEGORY_STATE {
+    NlincCategoryUnknown = 0,
+    NlincPublic = 1,
+    NlincPrivate = 2,
+    NlincDomainAuthenticated = 3,
+    NlincCategoryStateMax = 4
+} NL_INTERFACE_NETWORK_CATEGORY_STATE, *PNL_INTERFACE_NETWORK_CATEGORY_STATE;
+
+typedef enum _NL_NETWORK_CONNECTIVITY_COST_HINT {
+    NetworkConnectivityCostHintUnknown = 0,
+    NetworkConnectivityCostHintUnrestricted = 1,
+    NetworkConnectivityCostHintFixed = 2,
+    NetworkConnectivityCostHintVariable = 3
+} NL_NETWORK_CONNECTIVITY_COST_HINT;
+
+typedef enum _NL_NETWORK_CONNECTIVITY_LEVEL_HINT {
+    NetworkConnectivityLevelHintUnknown = 0,
+    NetworkConnectivityLevelHintNone = 1,
+    NetworkConnectivityLevelHintLocalAccess = 2,
+    NetworkConnectivityLevelHintInternetAccess = 3,
+    NetworkConnectivityLevelHintConstrainedInternetAccess = 4,
+    NetworkConnectivityLevelHintHidden = 5
+} NL_NETWORK_CONNECTIVITY_LEVEL_HINT;
+
+typedef struct _NL_BANDWIDTH_INFORMATION {
+  ULONG64 Bandwidth;
+  ULONG64 Instability;
+  BOOLEAN BandwidthPeaked;
+} NL_BANDWIDTH_INFORMATION, *PNL_BANDWIDTH_INFORMATION;
+
+typedef struct _NL_NETWORK_CONNECTIVITY_HINT {
+  NL_NETWORK_CONNECTIVITY_LEVEL_HINT ConnectivityLevel;
+  NL_NETWORK_CONNECTIVITY_COST_HINT ConnectivityCost;
+  BOOLEAN ApproachingDataLimit;
+  BOOLEAN OverDataLimit;
+  BOOLEAN Roaming;
+} NL_NETWORK_CONNECTIVITY_HINT;
 
 #endif /* _NLDEF_ */
 

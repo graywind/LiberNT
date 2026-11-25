@@ -8,6 +8,7 @@ extern "C" {
 
 #ifndef WS2IPDEF_ASSERT
 #define WS2IPDEF_ASSERT(exp) ((VOID) 0)
+
 #endif
 
 #ifdef _MSC_VER
@@ -605,3 +606,116 @@ C_ASSERT(sizeof(IN6_PKTINFO) == 20);
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef IPV6_GET_IFLIST
+#define IPV6_GET_IFLIST 33
+#endif
+#ifndef IPV6_MTU
+#define IPV6_MTU 72
+#endif
+#ifndef IPV6_MTU_DISCOVER
+#define IPV6_MTU_DISCOVER 71
+#endif
+#ifndef IPV6_NRT_INTERFACE
+#define IPV6_NRT_INTERFACE 74
+#endif
+#ifndef IPV6_PKTINFO_EX
+#define IPV6_PKTINFO_EX 51
+#endif
+#ifndef IPV6_RECVERR
+#define IPV6_RECVERR 75
+#endif
+#ifndef IPV6_WFP_REDIRECT_CONTEXT
+#define IPV6_WFP_REDIRECT_CONTEXT 70
+#endif
+#ifndef IPV6_WFP_REDIRECT_RECORDS
+#define IPV6_WFP_REDIRECT_RECORDS 60
+#endif
+#ifndef IP_GET_IFLIST
+#define IP_GET_IFLIST 33
+#endif
+#ifndef IP_MTU
+#define IP_MTU 73
+#endif
+#ifndef IP_MTU_DISCOVER
+#define IP_MTU_DISCOVER 71
+#endif
+#ifndef IP_NRT_INTERFACE
+#define IP_NRT_INTERFACE 74
+#endif
+#ifndef IP_PKTINFO_EX
+#define IP_PKTINFO_EX 51
+#endif
+#ifndef IP_RECVERR
+#define IP_RECVERR 75
+#endif
+#ifndef IP_WFP_REDIRECT_CONTEXT
+#define IP_WFP_REDIRECT_CONTEXT 70
+#endif
+#ifndef IP_WFP_REDIRECT_RECORDS
+#define IP_WFP_REDIRECT_RECORDS 60
+#endif
+#ifndef TCP_FASTOPEN
+#define TCP_FASTOPEN 15
+#endif
+#ifndef TCP_KEEPCNT
+#define TCP_KEEPCNT 16
+#endif
+#ifndef TCP_KEEPINTVL
+#define TCP_KEEPINTVL 17
+#endif
+#ifndef TCP_MAXRTMS
+#define TCP_MAXRTMS 14
+#endif
+
+typedef enum _PMTUD_STATE {
+    IP_PMTUDISC_NOT_SET = 0,
+    IP_PMTUDISC_DO = 1,
+    IP_PMTUDISC_DONT = 2,
+    IP_PMTUDISC_PROBE = 3,
+    IP_PMTUDISC_MAX = 4
+} PMTUD_STATE, *PPMTUD_STATE;
+
+#define IN6ADDR_6BONETESTPREFIX_INIT { 0x3f, 0xfe }
+#define IN6ADDR_SITELOCALPREFIX_INIT { 0xfe, 0xc0 }
+#define IN6ADDR_ULAPREFIX_INIT { 0xfc }
+
+struct in6_pktinfo_ex
+{
+    IN6_PKTINFO pkt_info;
+    int scope_id;
+};
+
+typedef struct in6_pktinfo_ex IN6_PKTINFO_EX;
+
+struct in_pktinfo_ex
+{
+    IN_PKTINFO pkt_info;
+    int scope_id;
+};
+
+typedef struct in_pktinfo_ex IN_PKTINFO_EX;
+
+struct in_recverr
+{
+    int protocol;
+    ULONG info;
+    UINT8 type;
+    UINT8 code;
+};
+
+typedef struct in_recverr IN_RECVERR;
+
+typedef struct in6_pktinfo_ex *PIN6_PKTINFO_EX;
+
+typedef struct in_pktinfo_ex *PIN_PKTINFO_EX;
+
+typedef struct in_recverr *PIN_RECVERR;
+
+typedef struct icmp_error_info {
+    SOCKADDR_INET srcaddress;
+    IPPROTO protocol;
+    UINT8 type;
+    UINT8 code;
+} ICMP_ERROR_INFO, *PICMP_ERROR_INFO;
+

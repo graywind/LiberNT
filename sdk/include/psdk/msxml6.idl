@@ -201,6 +201,7 @@ typedef enum _SOMITEMTYPE
     SOMITEM_NULL_ANY                    = 0x4801,
     SOMITEM_NULL_ANYATTRIBUTE           = 0x4802,
     SOMITEM_NULL_ELEMENT                = 0x4803,
+    SOMITEM_ANNOTATION = 0x1004,
 } SOMITEMTYPE;
 
 typedef enum _SCHEMAUSE
@@ -245,7 +246,6 @@ typedef enum _SCHEMAWHITESPACE
     SCHEMAWHITESPACE_REPLACE    =  1,
     SCHEMAWHITESPACE_COLLAPSE   =  2,
 } SCHEMAWHITESPACE;
-
 
 typedef enum _SCHEMATYPEVARIETY
 {
@@ -3213,3 +3213,71 @@ cpp_quote("#define E_XML_NOTWF              0xC00CE223")
 cpp_quote("#define E_XML_NODTD              0xC00CE224")
 cpp_quote("#define E_XML_INVALID            0xC00CE225")
 cpp_quote("#define E_XML_BUFFERTOOSMALL     0xC00CE226")
+
+cpp_quote("#ifndef __msxml6_cpp_quote_1_DEFINED__")
+cpp_quote("#define __msxml6_cpp_quote_1_DEFINED__")
+cpp_quote("#ifndef XHR_PROP_ONDATA_ALWAYS")
+cpp_quote("#define XHR_PROP_ONDATA_ALWAYS 0x0")
+cpp_quote("#endif")
+cpp_quote("#ifndef XHR_PROP_ONDATA_NEVER")
+cpp_quote("#define XHR_PROP_ONDATA_NEVER 0xFFFFFFFFFFFFFFFF")
+cpp_quote("#endif")
+
+cpp_quote("#define CLSID_XmlHttpRequest CLSID_FreeThreadedXMLHTTP60")
+cpp_quote("")
+cpp_quote("enum _XHR_CERT_ERROR_FLAG")
+cpp_quote("{")
+cpp_quote("    XHR_CERT_ERROR_REVOCATION_FAILED = 0x800000,")
+cpp_quote("    XHR_CERT_ERROR_UNKNOWN_CA = 0x1000000,")
+cpp_quote("    XHR_CERT_ERROR_CERT_CN_INVALID = 0x2000000,")
+cpp_quote("    XHR_CERT_ERROR_CERT_DATE_INVALID = 0x4000000,")
+cpp_quote("    XHR_CERT_ERROR_ALL_SERVER_ERRORS = 0x7800000,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("enum _XHR_CERT_IGNORE_FLAG")
+cpp_quote("{")
+cpp_quote("    XHR_CERT_IGNORE_REVOCATION_FAILED = 0x80,")
+cpp_quote("    XHR_CERT_IGNORE_UNKNOWN_CA = 0x100,")
+cpp_quote("    XHR_CERT_IGNORE_CERT_CN_INVALID = 0x1000,")
+cpp_quote("    XHR_CERT_IGNORE_CERT_DATE_INVALID = 0x2000,")
+cpp_quote("    XHR_CERT_IGNORE_ALL_SERVER_ERRORS = 0x3180,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("enum _XHR_COOKIE_FLAG")
+cpp_quote("{")
+cpp_quote("    XHR_COOKIE_IS_SECURE = 1,")
+cpp_quote("    XHR_COOKIE_IS_SESSION = 2,")
+cpp_quote("    XHR_COOKIE_THIRD_PARTY = 0x10,")
+cpp_quote("    XHR_COOKIE_PROMPT_REQUIRED = 0x20,")
+cpp_quote("    XHR_COOKIE_EVALUATE_P3P = 0x40,")
+cpp_quote("    XHR_COOKIE_APPLY_P3P = 0x80,")
+cpp_quote("    XHR_COOKIE_P3P_ENABLED = 0x100,")
+cpp_quote("    XHR_COOKIE_IS_RESTRICTED = 0x200,")
+cpp_quote("    XHR_COOKIE_IE6 = 0x400,")
+cpp_quote("    XHR_COOKIE_IS_LEGACY = 0x800,")
+cpp_quote("    XHR_COOKIE_NON_SCRIPT = 0x1000,")
+cpp_quote("    XHR_COOKIE_HTTPONLY = 0x2000,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("enum _XHR_COOKIE_STATE")
+cpp_quote("{")
+cpp_quote("    XHR_COOKIE_STATE_UNKNOWN = 0,")
+cpp_quote("    XHR_COOKIE_STATE_ACCEPT = 1,")
+cpp_quote("    XHR_COOKIE_STATE_PROMPT = 2,")
+cpp_quote("    XHR_COOKIE_STATE_LEASH = 3,")
+cpp_quote("    XHR_COOKIE_STATE_DOWNGRADE = 4,")
+cpp_quote("    XHR_COOKIE_STATE_REJECT = 5,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef enum _XHR_CERT_ERROR_FLAG XHR_CERT_ERROR_FLAG;")
+cpp_quote("")
+cpp_quote("typedef enum _XHR_CERT_IGNORE_FLAG XHR_CERT_IGNORE_FLAG;")
+cpp_quote("")
+cpp_quote("typedef enum _XHR_COOKIE_FLAG XHR_COOKIE_FLAG;")
+cpp_quote("")
+cpp_quote("typedef enum _XHR_COOKIE_STATE XHR_COOKIE_STATE;")
+cpp_quote("#endif")

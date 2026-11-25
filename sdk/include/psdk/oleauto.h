@@ -771,4 +771,24 @@ WINOLEAUTAPI void WINAPI ClearCustData(LPCUSTDATA);
 #endif
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+void STDAPICALLTYPE OaEnablePerUserTLibRegistration(void);
+HRESULT STDAPICALLTYPE SafeArrayAddRef(SAFEARRAY *psa, PVOID *ppDataToRelease);
+void STDAPICALLTYPE SafeArrayReleaseData(PVOID pData);
+void STDAPICALLTYPE SafeArrayReleaseDescriptor(SAFEARRAY *psa);
+HRESULT STDAPICALLTYPE SysAddRefString(BSTR bstrString);
+void STDAPICALLTYPE SysReleaseString(BSTR bstrString);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define VarI8FromI8(in, pOut) (* (pOut) = (in))
+#define VarUI8FromUI8(in, pOut) (* (pOut) = (in))
+#define WINOLEAUTAPI_(type) EXTERN_C DECLSPEC_IMPORT type STDAPICALLTYPE
+
 #endif /*__WINE_OLEAUTO_H*/

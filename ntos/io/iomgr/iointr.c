@@ -8,7 +8,7 @@
 #include <ntoskrnl.h>
 #include "../ioint.h"
 #include "../pnpio.h"
-#include <reactos/hal/msi.h>
+#include <libernt/hal/msi.h>
 #define NDEBUG
 #include <debug.h>
 
@@ -571,6 +571,7 @@ IoConnectInterruptEx(
         case CONNECT_MESSAGE_BASED:
             return IopConnectInterruptExMessageBased(Parameters);
 
+        /* TODO: CONNECT_MESSAGE_BASED_PASSIVE (passive-level message-based ISRs) is not implemented; it is rejected */
         default:
             return STATUS_INVALID_PARAMETER;
     }

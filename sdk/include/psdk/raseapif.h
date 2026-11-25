@@ -138,8 +138,22 @@ typedef enum _RAS_AUTH_ATTRIBUTE_TYPE_
     raatPEAPEmbeddedEAPTypeId,
     raatPEAPFastRoamedSession,
     raatEAPTLV = 8102,
-    raatReserved = 0xFFFFFFFF
-
+    raatReserved = 0xFFFFFFFF,
+    raatNASIPv6Address = 0x5F,
+    raatFramedInterfaceId = 0x60,
+    raatFramedIPv6Prefix = 0x61,
+    raatLoginIPv6Host = 0x62,
+    raatFramedIPv6Route = 0x63,
+    raatFramedIPv6Pool = 0x64,
+    raatInnerEAPTypeId = 0x1FA3,
+    raatFastRoamedSession = 0x1FA4,
+    raatCredentialsChanged = 0x1FA7,
+    raatCertificateThumbprint = 0x203A,
+    raatPeerId = 0x2328,
+    raatServerId = 0x2329,
+    raatMethodId = 0x232A,
+    raatEMSK = 0x232B,
+    raatSessionId = 0x232C,
 }RAS_AUTH_ATTRIBUTE_TYPE;
 
 typedef struct _RAS_AUTH_ATTRIBUTE
@@ -159,6 +173,21 @@ typedef struct _PPP_EAP_PACKET
 }PPP_EAP_PACKET, *PPPP_EAP_PACKET;
 
 #define PPP_EAP_PACKET_HDR_LEN (sizeof(PPP_EAP_PACKET) - 1)
+
+#ifndef _NGCTICKETCONTEXT_
+#define _NGCTICKETCONTEXT_
+#ifndef NCRYPT_PIN_CACHE_PIN_BYTE_LENGTH
+#define NCRYPT_PIN_CACHE_PIN_BYTE_LENGTH 90
+#endif
+#define NGC_TICKET_PROPERTY_STRING_LENGTH (NCRYPT_PIN_CACHE_PIN_BYTE_LENGTH / sizeof(WCHAR))
+
+typedef struct _NgcTicketContext
+{
+    WCHAR wszTicket[NGC_TICKET_PROPERTY_STRING_LENGTH];
+    ULONG_PTR hKey;
+    HANDLE hImpersonateToken;
+} NgcTicketContext;
+#endif
 
 typedef struct _PPP_EAP_INPUT
 {
@@ -181,6 +210,8 @@ typedef struct _PPP_EAP_INPUT
     OPTIONAL PBYTE pUserData;
     DWORD dwSizeOfUserData;
     HANDLE hReserved;
+    GUID guidConnectionId;
+    BOOL isVpn;
 }PPP_EAP_INPUT, *PPPP_EAP_INPUT;
 
 typedef enum _PPP_EAP_ACTION
@@ -211,6 +242,8 @@ typedef struct _PPP_EAP_OUTPUT
     BOOL fSaveUserData;
     OPTIONAL PBYTE pUserData;
     DWORD dwSizeOfUserData;
+    NgcTicketContext *pNgcKerbTicket;
+    BOOL fSaveToCredMan;
 }PPP_EAP_OUTPUT, *PPPP_EAP_OUTPUT;
 
 typedef struct _PPP_EAP_INFO
@@ -267,6 +300,53 @@ RasEapGetIdentity(IN DWORD dwEapTypeId,
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef NCRYPT_PIN_CACHE_PIN_BYTE_LENGTH
+#define NCRYPT_PIN_CACHE_PIN_BYTE_LENGTH 90
+#endif
+#ifndef RAS_EAP_FLAG_CONFG_READONLY
+#define RAS_EAP_FLAG_CONFG_READONLY 0x00080000
+#endif
+#ifndef RAS_EAP_FLAG_PEAP_FORCE_FULL_AUTH
+#define RAS_EAP_FLAG_PEAP_FORCE_FULL_AUTH 0x00001000
+#endif
+#ifndef RAS_EAP_FLAG_PRE_LOGON
+#define RAS_EAP_FLAG_PRE_LOGON 0x00020000
+#endif
+#ifndef RAS_EAP_FLAG_RESERVED
+#define RAS_EAP_FLAG_RESERVED 0x00100000
+#endif
+#ifndef RAS_EAP_FLAG_SAVE_CREDMAN
+#define RAS_EAP_FLAG_SAVE_CREDMAN 0x00200000
+#endif
+#ifndef RAS_EAP_FLAG_SERVER_VALIDATION_REQUIRED
+#define RAS_EAP_FLAG_SERVER_VALIDATION_REQUIRED 0x02000000
+#endif
+
+typedef struct _LEGACY_IDENTITY_UI_PARAMS {
+  DWORD eapType;
+  DWORD dwFlags;
+  DWORD dwSizeofConnectionData;
+  BYTE * pConnectionData;
+  DWORD dwSizeofUserData;
+  BYTE * pUserData;
+  DWORD dwSizeofUserDataOut;
+  BYTE * pUserDataOut;
+  LPWSTR pwszIdentity;
+  DWORD dwError;
+} LEGACY_IDENTITY_UI_PARAMS;
+
+typedef struct _LEGACY_INTERACTIVE_UI_PARAMS {
+  DWORD eapType;
+  DWORD dwSizeofContextData;
+  BYTE * pContextData;
+  DWORD dwSizeofInteractiveUIData;
+  BYTE * pInteractiveUIData;
+  DWORD dwError;
+} LEGACY_INTERACTIVE_UI_PARAMS;
+
+#define RAS_EAP_VALUENAME_FILTER_INNERMETHODS TEXT("FilterInnerMethods")
+#define RAS_EAP_VALUENAME_ISTUNNEL_METHOD TEXT("IsTunnelMethod")
 
 #endif /* _RASEAPIF_ */
 

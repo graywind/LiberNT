@@ -1,5 +1,5 @@
 include_directories(
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/zlib
+    ${REACTOS_SOURCE_DIR}/sdk/include/libernt/libs/zlib
     ${REACTOS_SOURCE_DIR}/sdk/lib/3rdparty/zlib/contrib)
 
 list(APPEND SOURCE
@@ -18,7 +18,8 @@ list(APPEND SOURCE
     source.cpp
     source_trust.cpp
     sqlite_index.cpp
-    util.cpp)
+    util.cpp
+    yaml.cpp)
 
 add_rc_deps(lntget.rc
     ${CMAKE_CURRENT_SOURCE_DIR}/res/lntget.ico

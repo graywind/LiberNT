@@ -14,9 +14,9 @@
 #include <arm64.h>
 #include <blefi.h>
 #include <drivers/acpi/acpi.h>
-#include <reactos/arm64/acpi.h>
-#include <reactos/arm64/early_uart.h>
-#include <Fdt.h>
+#include <libernt/arm64/acpi.h>
+#include <libernt/arm64/early_uart.h>
+#include <edk2/Fdt.h>
 #include <libernt/fdtlib.h>
 extern EFI_SYSTEM_TABLE *GlobalSystemTable;
 DBG_DEFAULT_CHANNEL(WINDOWS);
@@ -787,7 +787,7 @@ BOOLEAN
 WinLdrCheckForLoadedDll(
     IN PLOADER_PARAMETER_BLOCK LoaderBlock,
     IN PCH DllName,
-    OUT PLDR_DATA_TABLE_ENTRY *LoadedEntry)
+    OUT PKLDR_DATA_TABLE_ENTRY *LoadedEntry)
 {
     /* Delegate to the generic PE loader helper which performs
        proper case-insensitive comparison against UNICODE names. */

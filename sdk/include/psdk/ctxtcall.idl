@@ -47,3 +47,4 @@ interface IContextCallback : IUnknown
             [in] int iMethod,
             [in] IUnknown *pUnk);
 }
+

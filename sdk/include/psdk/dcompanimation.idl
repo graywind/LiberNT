@@ -34,3 +34,4 @@ interface IDCompositionAnimation : IUnknown
     HRESULT AddRepeat([in] double offset, [in] double duration);
     HRESULT End([in] double offset, [in] float value);
 };
+

@@ -102,6 +102,7 @@ enum _DMO_INPUT_DATA_BUFFER_FLAGS
     DMO_INPUT_DATA_BUFFERF_SYNCPOINT    = 0x00000001,
     DMO_INPUT_DATA_BUFFERF_TIME         = 0x00000002,
     DMO_INPUT_DATA_BUFFERF_TIMELENGTH   = 0x00000004,
+    DMO_INPUT_DATA_BUFFERF_DISCONTINUITY = 8,
 };
 
 enum _DMO_PROCESS_OUTPUT_FLAGS
@@ -306,3 +307,32 @@ interface IDMOVideoOutputOptimizations : IUnknown
     HRESULT GetCurrentOperationMode(ULONG index, DWORD *flags);
     HRESULT GetCurrentSampleRequirements(ULONG index, DWORD *flags);
 }
+
+cpp_quote("enum _DMO_INPUT_STREAM_INFO_FLAGS")
+cpp_quote("{")
+cpp_quote("    DMO_INPUT_STREAMF_WHOLE_SAMPLES = 1,")
+cpp_quote("    DMO_INPUT_STREAMF_SINGLE_SAMPLE_PER_BUFFER = 2,")
+cpp_quote("    DMO_INPUT_STREAMF_FIXED_SAMPLE_SIZE = 4,")
+cpp_quote("    DMO_INPUT_STREAMF_HOLDS_BUFFERS = 8,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("enum _DMO_OUTPUT_STREAM_INFO_FLAGS")
+cpp_quote("{")
+cpp_quote("    DMO_OUTPUT_STREAMF_WHOLE_SAMPLES = 1,")
+cpp_quote("    DMO_OUTPUT_STREAMF_SINGLE_SAMPLE_PER_BUFFER = 2,")
+cpp_quote("    DMO_OUTPUT_STREAMF_FIXED_SAMPLE_SIZE = 4,")
+cpp_quote("    DMO_OUTPUT_STREAMF_DISCARDABLE = 8,")
+cpp_quote("    DMO_OUTPUT_STREAMF_OPTIONAL = 0x10,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+
+cpp_quote("enum _DMO_OUTPUT_DATA_BUFFER_FLAGS")
+cpp_quote("{")
+cpp_quote("    DMO_OUTPUT_DATA_BUFFERF_DISCONTINUITY = 8,")
+cpp_quote("};")
+

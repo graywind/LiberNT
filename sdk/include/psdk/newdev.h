@@ -77,12 +77,14 @@ UpdateDriverForPlugAndPlayDevicesW(
 #define DIIRFLAG_HW_USING_THE_INF         0x00000004
 #define DIIRFLAG_HOTPATCH                 0x00000008
 #define DIIRFLAG_NOBACKUP                 0x00000010
-#define DIIRFLAG_BITS ( DIIRFLAG_FORCE_INF | DIIRFLAG_HOTPATCH)
+#define DIIRFLAG_BITS ( DIIRFLAG_FORCE_INF | DIIRFLAG_HOTPATCH | DIIRFLAG_PRE_CONFIGURE_INF | DIIRFLAG_INSTALL_AS_SET )
 #define DIIRFLAG_SYSTEM_BITS ( DIIRFLAG_INF_ALREADY_COPIED |\
                                DIIRFLAG_FORCE_INF |\
                                DIIRFLAG_HW_USING_THE_INF |\
                                DIIRFLAG_HOTPATCH |\
-                               DIIRFLAG_NOBACKUP )
+                               DIIRFLAG_NOBACKUP |\
+                               DIIRFLAG_PRE_CONFIGURE_INF |\
+                               DIIRFLAG_INSTALL_AS_SET )
 
 #define ROLLBACK_FLAG_NO_UI               0x00000001
 #define ROLLBACK_BITS                     0x00000001
@@ -151,8 +153,69 @@ DiUninstallDevice(
   PBOOL NeedReboot OPTIONAL);
 #endif /* (WINVER >= _WIN32_WINNT_WIN7) */
 
+#if (WINVER >= _WIN32_WINNT_WIN10)
+#define DIURFLAG_NO_REMOVE_INF            0x00000001
+#define DIURFLAG_RESERVED                 0x00000002
+#define DIURFLAG_VALID                    (DIURFLAG_NO_REMOVE_INF | DIURFLAG_RESERVED)
+
+BOOL
+WINAPI
+DiUninstallDriverW(
+  HWND hwndParent OPTIONAL,
+  LPCWSTR InfPath,
+  DWORD Flags,
+  PBOOL NeedReboot OPTIONAL);
+
+BOOL
+WINAPI
+DiUninstallDriverA(
+  HWND hwndParent OPTIONAL,
+  LPCSTR InfPath,
+  DWORD Flags,
+  PBOOL NeedReboot OPTIONAL);
+
+#ifdef UNICODE
+#define DiUninstallDriver DiUninstallDriverW
+#else
+#define DiUninstallDriver DiUninstallDriverA
+#endif
+#endif /* (WINVER >= _WIN32_WINNT_WIN10) */
+
 #pragma pack(pop)
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifndef DIIRFLAG_INSTALL_AS_SET
+#define DIIRFLAG_INSTALL_AS_SET 0x00000040
+#endif
+
+#define _INC_NEWDEV
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define DiUninstallDriver DiUninstallDriverW
+#else
+#define DiUninstallDriver DiUninstallDriverA
+#endif
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL WINAPI DiShowUpdateDriver(HWND hwndParent, PCWSTR FilePath, DWORD Flags, PBOOL NeedReboot);
+BOOL WINAPI DiUninstallDriverA(HWND hwndParent, LPCSTR InfPath, DWORD Flags, PBOOL NeedReboot);
+BOOL WINAPI DiUninstallDriverW(HWND hwndParent, LPCWSTR InfPath, DWORD Flags, PBOOL NeedReboot);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef DIIRFLAG_PRE_CONFIGURE_INF
+#define DIIRFLAG_PRE_CONFIGURE_INF 0x00000020
+#endif
+#ifndef DIURFLAG_RESERVED
+#define DIURFLAG_RESERVED 0x00000002
 #endif

@@ -25,3 +25,4 @@ interface IHolographicSpaceInterop : IInspectable
 {
     HRESULT CreateForWindow( [in] HWND window, [in] REFIID iid, [out, iid_is(iid)] void **holographic_space);
 }
+

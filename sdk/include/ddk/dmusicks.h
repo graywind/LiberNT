@@ -264,4 +264,37 @@ DEFINE_GUIDSTRUCT("c096df9e-fb09-11d1-81b0-0060083316c1", IID_IMXF);
 #define SET_PACKAGE_EVT(evt)    ((evt)->usFlags |= DMUS_KEF_PACKAGE_EVENT)
 #define CLEAR_PACKAGE_EVT(evt)  ((evt)->usFlags &= (~DMUS_KEF_PACKAGE_EVENT))
 
+#define IID_ISynthSinkDMus DEFINE_GUIDNAMED(IID_ISynthSinkDMus)
+#define STATIC_CLSID_MiniportDriverDMusUART 0xd3f0ce1c, 0xfffc, 0x11d1, 0x81, 0xb0, 0x00, 0x60, 0x08, 0x33, 0x16, 0xc1
+#define STATIC_CLSID_MiniportDriverDMusUARTCapture 0xd3f0ce1d, 0xfffc, 0x11d1, 0x81, 0xb0, 0x00, 0x60, 0x08, 0x33, 0x16, 0xc1
+#define STATIC_CLSID_PortDMus 0xb7902fe9, 0xfb0a, 0x11d1, 0x81, 0xb0, 0x00, 0x60, 0x08, 0x33, 0x16, 0xc1
+#define STATIC_IID_IMiniportDMus 0xc096df9d, 0xfb09, 0x11d1, 0x81, 0xb0, 0x00, 0x60, 0x08, 0x33, 0x16, 0xc1
+#define STATIC_IID_IPortDMus 0xc096df9c, 0xfb09, 0x11d1, 0x81, 0xb0, 0x00, 0x60, 0x08, 0x33, 0x16, 0xc1
+#define STATIC_IID_ISynthSinkDMus 0x1f476974, 0x679b, 0x11d2, 0x8f, 0x7d, 0x00, 0xc0, 0x4f, 0xbf, 0x8f, 0xef
+
+typedef struct IAllocatorMXFVtbl IAllocatorMXFVtbl;
+
+typedef struct IMasterClockVtbl IMasterClockVtbl;
+
+typedef struct IMiniportDMusVtbl IMiniportDMusVtbl;
+
+typedef struct IMXFVtbl IMXFVtbl;
+
+typedef struct IPortDMusVtbl IPortDMusVtbl;
+
+typedef struct ISynthSinkDMusVtbl ISynthSinkDMusVtbl;
+
+typedef struct ISynthSinkDMus ISynthSinkDMus;
+
+struct ISynthSinkDMus
+{
+    struct ISynthSinkDMusVtbl *lpVtbl;
+};
+
+#define IMP_ISynthSinkDMus IMP_IMXF; STDMETHODIMP_(void) Render(_In_ PBYTE pBuffer, _In_ DWORD dwLength, _In_ LONGLONG llPosition); STDMETHODIMP_(NTSTATUS) SyncToMaster(_In_ REFERENCE_TIME rfTime, _In_ BOOL fStart); STDMETHODIMP_(NTSTATUS) SampleToRefTime(_In_ LONGLONG llSampleTime, _Out_ REFERENCE_TIME * prfTime); STDMETHODIMP_(NTSTATUS) RefTimeToSample(_In_ REFERENCE_TIME rfTime, _Out_ LONGLONG * pllSampleTime)
+
+typedef ISynthSinkDMus *PSYNTHSINKDMUS;
+
+#define DEFINE_ABSTRACT_MXF() STDMETHOD_(NTSTATUS, SetState) (THIS_ _In_ KSSTATE State) PURE; STDMETHOD_(NTSTATUS, PutMessage) (THIS_ _In_ PDMUS_KERNEL_EVENT pDMKEvt) PURE; STDMETHOD_(NTSTATUS, ConnectOutput) (THIS_ _In_ PMXF sinkMXF) PURE; STDMETHOD_(NTSTATUS, DisconnectOutput) (THIS_ _In_ PMXF sinkMXF) PURE;
+
 #endif /* _DMUSICKS_ */

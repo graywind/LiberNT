@@ -98,3 +98,5 @@ library BackgroundCopyManager2_0
 }
 
 cpp_quote("#include \"bits2_5.h\"")
+
+cpp_quote("")

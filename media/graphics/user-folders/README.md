@@ -17,6 +17,7 @@ records the icon name, design size, file and SHA-256 of each one.
 | Network Places | `places/network-workgroup` | shell32.dll, -18 |
 | Recycle Bin, empty and full | `places/user-trash`, `places/user-trash-full` | shell32.dll, -32 and -33 |
 | Desktop | `places/user-teal-home` | shell32.dll, -35 |
+| User's Files | `places/user-yellow-home` | windows.storage.dll, -123 |
 | Control Panel | `places/folder-blue-development` | shell32.dll, -137 |
 | Read Me | `mimetypes/text-x-readme` | shell32.dll, -152 |
 | Documents | `places/folder-blue-documents` | shell32.dll, -235; mydocs.dll, 100 |
@@ -28,7 +29,7 @@ records the icon name, design size, file and SHA-256 of each one.
 | Downloads | `places/folder-green-download` | shell32.dll, 16722 (`downloads.ico`) |
 | NT Object Namespace | `places/folder-blue-code` | ntobjshex.dll, 1 |
 | System Registry | `places/folder-blue-private` | ntobjshex.dll, -7 |
-| Applications Manager, LntGet | `apps/system-software-install` | rapps.exe, lntget.exe |
+| LntGet | `apps/system-software-install` | lntget.exe |
 | DWM Settings | `apps/preferences-system-windows` | dwmsettings.exe |
 | Command Prompt, Terminal | `apps/utilities-terminal` | cmd.exe, terminal.exe |
 | Task Manager | `devices/computer` with `apps/com.github.stsdc.monitor` centered on its screen | taskmgr.exe, taskmgr11.exe |

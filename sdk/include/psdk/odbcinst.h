@@ -143,4 +143,10 @@ BOOL INSTAPI SQLWriteFileDSNW(LPCWSTR,LPCWSTR,LPCWSTR,LPCWSTR);
 #ifdef __cplusplus
 }
 #endif
+#ifndef ODBC_ERROR_NOTRANINFO
+#define ODBC_ERROR_NOTRANINFO 23
+#endif
+
+#define ODBC_ERROR_MAX 0x17
+
 #endif /* _ODBCINST_H */

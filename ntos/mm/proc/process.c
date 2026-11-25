@@ -151,6 +151,7 @@ MiProcessCreate(
     NTSTATUS Status;
 
     RtlZeroMemory(Process, sizeof(*Process));
+    InitializeListHead(&Process->SecureRanges);
     Process->WorkingSetMinimum = MI_DEFAULT_WS_MINIMUM;
     Process->WorkingSetMaximum = MI_DEFAULT_WS_MAXIMUM;
 
@@ -184,6 +185,7 @@ MiProcessAdopt(
     NTSTATUS Status;
 
     RtlZeroMemory(Process, sizeof(*Process));
+    InitializeListHead(&Process->SecureRanges);
     Process->WorkingSetMinimum = MI_DEFAULT_WS_MINIMUM;
     Process->WorkingSetMaximum = MI_DEFAULT_WS_MAXIMUM;
 
@@ -272,6 +274,7 @@ MiProcessDeleteTeb(
 {
     ULONG64 Size = 0;
 
+    MiSetVadNoChange(&Process->Space, Teb, FALSE);
     return MiFreeVirtualMemory(&Process->Space, &Teb, &Size, MI_MEM_RELEASE);
 }
 

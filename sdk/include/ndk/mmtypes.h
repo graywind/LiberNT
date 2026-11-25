@@ -204,7 +204,8 @@ typedef enum _MEMORY_INFORMATION_CLASS
     MemoryRegionInformation,
     MemoryWorkingSetExList,
     MemorySharedCommitInformation,
-    MemoryImageInformation
+    MemoryImageInformation,
+    MemoryImageExtensionInformation = 14
 } MEMORY_INFORMATION_CLASS;
 
 typedef struct _MEMORY_IMAGE_INFORMATION
@@ -219,10 +220,26 @@ typedef struct _MEMORY_IMAGE_INFORMATION
             ULONG ImagePartialMap:1;
             ULONG ImageNotExecutable:1;
             ULONG ImageSigningLevel:4;
-            ULONG Reserved:26;
+            ULONG ImageExtensionPresent:1;
+            ULONG Reserved:25;
         };
     };
 } MEMORY_IMAGE_INFORMATION, *PMEMORY_IMAGE_INFORMATION;
+
+typedef enum _MEMORY_IMAGE_EXTENSION_TYPE
+{
+    MemoryImageExtensionCfgScp,
+    MemoryImageExtensionCfgEmulatedScp,
+    MemoryImageExtensionTypeMax
+} MEMORY_IMAGE_EXTENSION_TYPE;
+
+typedef struct _MEMORY_IMAGE_EXTENSION_INFORMATION
+{
+    MEMORY_IMAGE_EXTENSION_TYPE ExtensionType;
+    ULONG Flags;
+    PVOID ExtensionImageBaseRva;
+    SIZE_T ExtensionSize;
+} MEMORY_IMAGE_EXTENSION_INFORMATION, *PMEMORY_IMAGE_EXTENSION_INFORMATION;
 
 typedef struct _MEMORY_REGION_INFORMATION
 {
@@ -268,6 +285,18 @@ typedef struct _MEMORY_RANGE_ENTRY
     PVOID VirtualAddress;
     SIZE_T NumberOfBytes;
 } MEMORY_RANGE_ENTRY, *PMEMORY_RANGE_ENTRY;
+
+#ifndef CFG_CALL_TARGET_VALID
+#define CFG_CALL_TARGET_VALID 0x1
+#define CFG_CALL_TARGET_PROCESSED 0x2
+typedef struct _CFG_CALL_TARGET_INFO
+{
+    ULONG_PTR Offset;
+    ULONG_PTR Flags;
+} CFG_CALL_TARGET_INFO, *PCFG_CALL_TARGET_INFO;
+#endif
+
+#include <libernt/cfgtargets.h>
 
 #ifndef MEM_EXTENDED_PARAMETER_TYPE_BITS
 #define MEM_EXTENDED_PARAMETER_GRAPHICS            0x00000001
@@ -494,7 +523,6 @@ typedef struct _SECTION_IMAGE_INFORMATION
     USHORT DllCharacteristics;
     USHORT Machine;
     BOOLEAN ImageContainsCode;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     union
     {
         struct
@@ -507,16 +535,9 @@ typedef struct _SECTION_IMAGE_INFORMATION
         };
         UCHAR ImageFlags;
     };
-#else
-    BOOLEAN Spare1;
-#endif
     ULONG LoaderFlags;
     ULONG ImageFileSize;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     ULONG CheckSum;
-#else
-    ULONG Reserved[1];
-#endif
 } SECTION_IMAGE_INFORMATION, *PSECTION_IMAGE_INFORMATION;
 
 #ifndef NTOS_MODE_USER
@@ -1082,47 +1103,24 @@ typedef struct _MMSUPPORT_FLAGS
 //
 typedef struct _MMSUPPORT
 {
-#if (NTDDI_VERSION >= NTDDI_WS03)
     LIST_ENTRY WorkingSetExpansionLinks;
-#endif
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     USHORT LastTrimpStamp;
     USHORT NextPageColor;
-#else
-    LARGE_INTEGER LastTrimTime;
-#endif
     MMSUPPORT_FLAGS Flags;
     ULONG PageFaultCount;
     ULONG PeakWorkingSetSize;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     ULONG Spare0;
-#else
-    ULONG GrowthSinceLastEstimate;
-#endif
     ULONG MinimumWorkingSetSize;
     ULONG MaximumWorkingSetSize;
     PMMWSL VmWorkingSetList;
-#if (NTDDI_VERSION < NTDDI_WS03)
-    LIST_ENTRY WorkingSetExpansionLinks;
-#endif
     ULONG Claim;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     ULONG Spare;
     ULONG WorkingSetPrivateSize;
     ULONG WorkingSetSizeOverhead;
-#else
-    ULONG NextEstimationSlot;
-    ULONG NextAgingSlot;
-    ULONG EstimatedAvailable;
-#endif
     ULONG WorkingSetSize;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     PKEVENT ExitEvent;
-#endif
     EX_PUSH_LOCK WorkingSetMutex;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     PVOID AccessLog;
-#endif
 } MMSUPPORT, *PMMSUPPORT;
 
 typedef struct _MMSUPPORT_INSTANCE
@@ -1266,7 +1264,7 @@ typedef struct _MM_DRIVER_VERIFIER_DATA
 typedef struct _DRIVER_SPECIFIED_VERIFIER_THUNKS
 {
     LIST_ENTRY ListEntry;
-    struct _LDR_DATA_TABLE_ENTRY *DataTableEntry;
+    struct _KLDR_DATA_TABLE_ENTRY *DataTableEntry;
     ULONG NumberOfThunks;
 } DRIVER_SPECIFIED_VERIFIER_THUNKS, *PDRIVER_SPECIFIED_VERIFIER_THUNKS;
 

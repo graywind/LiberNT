@@ -15,7 +15,7 @@ DECLARE_HANDLE(HPSSWALK);
 
 #define PSS_PERF_RESOLUTION 1000000
 
-typedef enum
+typedef enum PSS_HANDLE_FLAGS
 {
     PSS_HANDLE_NONE                           = 0x00,
     PSS_HANDLE_HAVE_TYPE                      = 0x01,
@@ -25,7 +25,7 @@ typedef enum
 } PSS_HANDLE_FLAGS;
 DEFINE_ENUM_FLAG_OPERATORS(PSS_HANDLE_FLAGS);
 
-typedef enum
+typedef enum PSS_OBJECT_TYPE
 {
     PSS_OBJECT_TYPE_UNKNOWN   = 0,
     PSS_OBJECT_TYPE_PROCESS   = 1,
@@ -76,7 +76,7 @@ typedef enum
     PSS_QUERY_PERFORMANCE_COUNTERS = 7
 } PSS_QUERY_INFORMATION_CLASS;
 
-typedef enum
+typedef enum PSS_WALK_INFORMATION_CLASS
 {
     PSS_WALK_AUXILIARY_PAGES = 0,
     PSS_WALK_VA_SPACE = 1,
@@ -84,7 +84,7 @@ typedef enum
     PSS_WALK_THREADS = 3
 } PSS_WALK_INFORMATION_CLASS;
 
-typedef enum
+typedef enum PSS_DUPLICATE_FLAGS
 {
     PSS_DUPLICATE_NONE         = 0x00,
     PSS_DUPLICATE_CLOSE_SOURCE = 0x01
@@ -137,17 +137,17 @@ typedef struct
     HANDLE VaCloneHandle;
 } PSS_VA_CLONE_INFORMATION;
 
-typedef struct
+typedef struct PSS_AUXILIARY_PAGES_INFORMATION
 {
     DWORD AuxPagesCaptured;
 } PSS_AUXILIARY_PAGES_INFORMATION;
 
-typedef struct
+typedef struct PSS_VA_SPACE_INFORMATION
 {
     DWORD RegionCount;
 } PSS_VA_SPACE_INFORMATION;
 
-typedef struct
+typedef struct PSS_HANDLE_INFORMATION
 {
     DWORD HandlesCaptured;
 } PSS_HANDLE_INFORMATION;
@@ -158,13 +158,13 @@ typedef struct
     DWORD ContextLength;
 } PSS_THREAD_INFORMATION;
 
-typedef struct
+typedef struct PSS_HANDLE_TRACE_INFORMATION
 {
     HANDLE SectionHandle;
     DWORD Size;
 } PSS_HANDLE_TRACE_INFORMATION;
 
-typedef struct
+typedef struct PSS_PERFORMANCE_COUNTERS
 {
     UINT64 TotalCycleCount;
     UINT64 TotalWallClockPeriod;
@@ -180,7 +180,7 @@ typedef struct
     UINT64 ThreadsWallClockPeriod;
 } PSS_PERFORMANCE_COUNTERS;
 
-typedef struct
+typedef struct PSS_AUXILIARY_PAGE_ENTRY
 {
     void* Address;
     MEMORY_BASIC_INFORMATION BasicInformation;
@@ -189,7 +189,7 @@ typedef struct
     DWORD PageSize;
 } PSS_AUXILIARY_PAGE_ENTRY;
 
-typedef struct
+typedef struct PSS_VA_SPACE_ENTRY
 {
     void* BaseAddress;
     void* AllocationBase;
@@ -272,14 +272,14 @@ typedef struct
     } TypeSpecificInformation;
 } PSS_HANDLE_ENTRY;
 
-typedef enum
+typedef enum PSS_THREAD_FLAGS
 {
     PSS_THREAD_FLAGS_NONE       = 0x0000,
     PSS_THREAD_FLAGS_TERMINATED = 0x0001
 } PSS_THREAD_FLAGS;
 DEFINE_ENUM_FLAG_OPERATORS(PSS_THREAD_FLAGS);
 
-typedef struct
+typedef struct PSS_THREAD_ENTRY
 {
     DWORD ExitStatus;
     void* TebBaseAddress;
@@ -333,3 +333,13 @@ DWORD WINAPI PssWalkMarkerSeekToBeginning(_In_ HPSSWALK WalkMarkerHandle);
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef PSS_PERF_RESOLUTION
+#define PSS_PERF_RESOLUTION 1000000
+#endif
+typedef struct PSS_THREAD_NAME {
+  WORD ThreadNameSize;
+  const wchar_t * ThreadName;
+} PSS_THREAD_NAME;
+
+

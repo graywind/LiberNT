@@ -56,7 +56,6 @@ interface IOLETypes
       LINKSRCDESCRIPTOR, *PLINKSRCDESCRIPTOR,  *LPLINKSRCDESCRIPTOR;
 }
 
-
 /*****************************************************************************
  * IOleWindow interface
  */
@@ -75,7 +74,6 @@ interface IOleWindow : IUnknown
     HRESULT ContextSensitiveHelp(
         [in] BOOL fEnterMode);
 }
-
 
 /*****************************************************************************
  * IOleInPlaceObject interface
@@ -99,7 +97,6 @@ interface IOleInPlaceObject : IOleWindow
 
     HRESULT ReactivateAndUndo();
 }
-
 
 /*****************************************************************************
  * IOleInPlaceUIWindow interface
@@ -131,7 +128,6 @@ interface IOleInPlaceUIWindow : IOleWindow
         [in, unique] IOleInPlaceActiveObject *pActiveObject,
         [in, string, unique] LPCOLESTR pszObjName);
 }
-
 
 /* avoid conflict with Wine Unicode macros */
 cpp_quote("#ifdef WINE_NO_UNICODE_MACROS")
@@ -189,7 +185,6 @@ interface IOleInPlaceFrame : IOleInPlaceUIWindow
         [in] WORD wID);
 }
 
-
 /*****************************************************************************
  * IOleInPlaceActiveObject interface
  */
@@ -231,7 +226,6 @@ interface IOleInPlaceActiveObject : IOleWindow
         [in] BOOL fEnable);
 }
 
-
 /*****************************************************************************
  * IOleInPlaceSite interface
  */
@@ -269,7 +263,6 @@ interface IOleInPlaceSite : IOleWindow
         [in] LPCRECT lprcPosRect);
 }
 
-
 /*****************************************************************************
  * IParseDisplayName interface
  */
@@ -288,7 +281,6 @@ interface IParseDisplayName : IUnknown
         [out] ULONG *pchEaten,
         [out] IMoniker **ppmkOut);
 }
-
 
 /*****************************************************************************
  * IOleContainer interface
@@ -309,7 +301,6 @@ interface IOleContainer : IParseDisplayName
     HRESULT LockContainer(
         [in] BOOL fLock);
 }
-
 
 /*****************************************************************************
  * IOleItemContainer interface
@@ -358,7 +349,6 @@ cpp_quote("#endif")
     HRESULT IsRunning(
         [in] LPOLESTR pszItem);
 }
-
 
 /*****************************************************************************
  * IOleLink interface
@@ -416,7 +406,6 @@ interface IOleLink : IUnknown
         [in, unique] IBindCtx *pbc);
 }
 
-
 /*****************************************************************************
  * IOleClientSite interface
  */
@@ -446,7 +435,6 @@ interface IOleClientSite : IUnknown
 
     HRESULT RequestNewObjectLayout();
 }
-
 
 /*****************************************************************************
  * IOleCache interface
@@ -479,7 +467,6 @@ interface IOleCache : IUnknown
         [in, unique] STGMEDIUM *pmedium,
         [in] BOOL fRelease);
 }
-
 
 /*****************************************************************************
  * IOleCache2 interface
@@ -526,7 +513,6 @@ interface IOleCache2 : IOleCache
         [in] DWORD dwDiscardOptions);
 }
 
-
 /*****************************************************************************
  * IOleCacheControl interface
  */
@@ -543,7 +529,6 @@ interface IOleCacheControl : IUnknown
 
     HRESULT OnStop();
 }
-
 
 /*****************************************************************************
  *  IEnumOLEVERB interface
@@ -591,7 +576,6 @@ interface IEnumOLEVERB : IUnknown
     HRESULT Clone(
         [out] IEnumOLEVERB **ppenum);
 }
-
 
 /*****************************************************************************
  * IOleObject interface
@@ -739,7 +723,6 @@ interface IOleObject : IUnknown
         [in] LOGPALETTE *pLogpal);
 }
 
-
 /*****************************************************************************
  * IOleAdviseHolder interface
  */
@@ -769,7 +752,6 @@ interface IOleAdviseHolder : IUnknown
     HRESULT SendOnClose();
 }
 
-
 /*****************************************************************************
  * IContinue interface
  */
@@ -781,7 +763,6 @@ interface IContinue : IUnknown
 {
     HRESULT FContinue();
 }
-
 
 /*****************************************************************************
  * IViewObject interface
@@ -872,7 +853,6 @@ interface IViewObject : IUnknown
         [out] IAdviseSink **ppAdvSink);
 }
 
-
 /*****************************************************************************
  * IViewObject2 interface
  */
@@ -890,7 +870,6 @@ interface IViewObject2 : IViewObject
         [in, unique]  DVTARGETDEVICE* ptd,
         [out] LPSIZEL lpsizel);
 }
-
 
 /*****************************************************************************
  * IDropSource interface
@@ -911,7 +890,6 @@ interface IDropSource : IUnknown
     HRESULT GiveFeedback(
         [in] DWORD dwEffect);
 }
-
 
 /*****************************************************************************
  * IDropTarget interface
@@ -971,3 +949,73 @@ interface IDropSourceNotify : IUnknown
     HRESULT DragTargetEnter( [in] HWND hwnd );
     HRESULT DragTargetLeave( void );
 }
+
+cpp_quote("#ifndef __oleidl_cpp_quote_1_DEFINED__")
+cpp_quote("#define __oleidl_cpp_quote_1_DEFINED__")
+cpp_quote("#ifndef DROPEFFECT_BACKGROUNDTARGET")
+cpp_quote("#define DROPEFFECT_BACKGROUNDTARGET 0x20000000")
+cpp_quote("#endif")
+cpp_quote("#ifndef DROPEFFECT_NEWTARGET")
+cpp_quote("#define DROPEFFECT_NEWTARGET 0x40000000")
+cpp_quote("#endif")
+
+cpp_quote("#define CFSTR_ENTERPRISE_ID (TEXT(\"EnterpriseDataProtectionId\"))")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IEnterpriseDropTarget IEnterpriseDropTarget;")
+cpp_quote("")
+cpp_quote("struct IEnterpriseDropTargetVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IEnterpriseDropTarget *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IEnterpriseDropTarget *);")
+cpp_quote("    ULONG (WINAPI *Release)(IEnterpriseDropTarget *);")
+cpp_quote("    HRESULT (WINAPI *SetDropSourceEnterpriseId)(IEnterpriseDropTarget *, LPCWSTR);")
+cpp_quote("    HRESULT (WINAPI *IsEvaluatingEdpPolicy)(IEnterpriseDropTarget *, BOOL *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("struct tagOIFI")
+cpp_quote("{")
+cpp_quote("    UINT cb;")
+cpp_quote("    BOOL fMDIApp;")
+cpp_quote("    HWND hwndFrame;")
+cpp_quote("    HACCEL haccel;")
+cpp_quote("    UINT cAccelEntries;")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("void HGLOBAL_UserFree64(unsigned long *, HGLOBAL *);")
+cpp_quote("unsigned char * HGLOBAL_UserMarshal64(unsigned long *, unsigned char *, HGLOBAL *);")
+cpp_quote("unsigned long HGLOBAL_UserSize64(unsigned long *, unsigned long, HGLOBAL *);")
+cpp_quote("unsigned char * HGLOBAL_UserUnmarshal64(unsigned long *, unsigned char *, HGLOBAL *);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+cpp_quote("#endif")

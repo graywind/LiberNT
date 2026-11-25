@@ -263,6 +263,11 @@ Status ExtractArchive(const std::wstring &archivePath, const std::wstring &desti
     return Status::Ok();
 }
 
+bool SamePath(const std::wstring &left, const std::wstring &right)
+{
+    return _wcsicmp(left.c_str(), right.c_str()) == 0;
+}
+
 } // namespace
 
 Status ExtractArchiveInto(const std::wstring &archivePath, const std::wstring &destination)
@@ -317,6 +322,18 @@ Status InstallerService::Download(const PackageRecord &package, const InstallerE
     return Status::Ok();
 }
 
+void InstallerService::RemoveInstaller(const PackageRecord &package, const std::wstring &path) const
+{
+    const std::wstring versionDirectory = DefaultPackageDirectory(package);
+    if (!SamePath(ParentPath(path), versionDirectory))
+        return;
+    DeleteTree(path + L".extracted");
+    if (!DeleteFileW(path.c_str()))
+        TraceInstaller("cannot remove the installer " + Utf8FromWide(path) + ": " + WindowsErrorMessage(GetLastError()));
+    if (RemoveDirectoryW(versionDirectory.c_str()))
+        RemoveDirectoryW(ParentPath(versionDirectory).c_str());
+}
+
 Status InstallerService::Execute(const std::wstring &commandLine, const std::wstring &workingDirectory, DWORD &exitCode) const
 {
     STARTUPINFOW startup{};
@@ -342,7 +359,7 @@ Status InstallerService::Execute(const std::wstring &commandLine, const std::wst
 }
 
 Status InstallerService::Install(const PackageRecord &package, const InstallerEntry &installer, const std::wstring &path,
-                                 InstallMode mode, DWORD &exitCode, TrackedPackage *tracked)
+                                 InstallMode mode, DWORD &exitCode, TrackedPackage *tracked, InstallLockWait *wait)
 {
     const std::wstring ownedPath(path);
     HANDLE lockedInstaller = CreateFileW(ownedPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
@@ -358,6 +375,13 @@ Status InstallerService::Install(const PackageRecord &package, const InstallerEn
         CloseHandle(lockedInstaller);
         return Status::Fail(status.code, "installer changed after download verification: " + status.message);
     }
+    InstallLock lock;
+    status = lock.Acquire(wait);
+    if (!status)
+    {
+        CloseHandle(lockedInstaller);
+        return status;
+    }
 
     if (AsciiEquals(EffectiveInstallerType(installer), "portable"))
     {
@@ -369,6 +393,7 @@ Status InstallerService::Install(const PackageRecord &package, const InstallerEn
         if (!status)
             return status;
         TrackInstalledPackage(package, installer, before, tracked);
+        RemoveInstaller(package, path);
         return Status::Ok();
     }
 
@@ -431,6 +456,7 @@ Status InstallerService::Install(const PackageRecord &package, const InstallerEn
         return Status::Fail(exitCode, "installer returned exit code " + DecimalString(exitCode) + response);
     }
     TrackInstalledPackage(package, effective, before, tracked);
+    RemoveInstaller(package, path);
     return Status::Ok();
 }
 

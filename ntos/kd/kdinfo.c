@@ -8,8 +8,8 @@
 #include <ntoskrnl.h>
 #include "kd.h"
 #include <kdterm.h>
-#include <reactos/hal/acpifault.h>
-#include <reactos/buildno.h>
+#include <libernt/hal/acpifault.h>
+#include <libernt/buildno.h>
 
 #define KDP_INFO_TEXT_SIZE      0x8000
 #define KDP_INFO_MACHINE_SIZE   768
@@ -517,7 +517,7 @@ BOOLEAN
 KdpInfoBuildModules(VOID)
 {
     CHAR Name[KDP_INFO_NAME_SIZE];
-    PLDR_DATA_TABLE_ENTRY Entry;
+    PKLDR_DATA_TABLE_ENTRY Entry;
     PLIST_ENTRY Link;
     ULONG Length = 0, Count = 0, Characters, i;
     PWCHAR Buffer;
@@ -529,7 +529,7 @@ KdpInfoBuildModules(VOID)
          Link != &PsLoadedModuleList && Count < KDP_INFO_MODULE_COUNT;
          Link = Link->Flink, Count++)
     {
-        Entry = CONTAINING_RECORD(Link, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        Entry = CONTAINING_RECORD(Link, KLDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
         if (!MmIsAddressValid(Entry) || !MmIsAddressValid((PUCHAR)(Entry + 1) - 1))
             break;
 

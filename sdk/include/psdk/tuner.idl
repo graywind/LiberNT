@@ -121,7 +121,6 @@ interface ITuningSpaceContainer : IDispatch
         [in] long MaxCount);
 }
 
-
 [
     object,
     uuid(061C6E30-E622-11d2-9493-00C04F72D980),
@@ -555,7 +554,6 @@ interface IDigitalCableTuneRequest : IATSCChannelTuneRequest
         [in] long SourceID);
 }
 
-
 [
     object,
     nonextensible,
@@ -865,7 +863,6 @@ interface IMPEG2ComponentType : ILanguageComponentType
         [in] MPEG2StreamType MP2StreamType);
 };
 
-
 [
     object,
     hidden,
@@ -1051,8 +1048,6 @@ interface IEnumComponents : IUnknown
     HRESULT Clone(
         [out] IEnumComponents** ppEnum);
 }
-
-
 
 [
     object,
@@ -1382,35 +1377,6 @@ interface IDVBCLocator : IDigitalLocator
     object,
     hidden,
     nonextensible,
-    uuid(3B21263F-26E8-489d-AAC4-924F7EFD9511),
-    pointer_default(unique)
-]
-interface IBroadcastEvent : IUnknown
-{
-    HRESULT Fire([in] GUID EventID);
-};
-
-[
-    object,
-    hidden,
-    nonextensible,
-    uuid(3d9e3887-1929-423f-8021-43682de95448),
-    pointer_default(unique)
-]
-interface IBroadcastEventEx : IBroadcastEvent
-{
-    HRESULT FireEx(
-        [in] GUID EventID,
-        [in] ULONG Param1,
-        [in] ULONG Param2,
-        [in] ULONG Param3,
-        [in] ULONG Param4);
-};
-
-[
-    object,
-    hidden,
-    nonextensible,
     uuid(359B3901-572C-4854-BB49-CDEF66606A25),
     pointer_default(unique)
 ]
@@ -1486,7 +1452,6 @@ library TunerLib
     interface IBDAComparable;
 };
 
-
 [
     uuid(A2E30750-6C3D-11d3-B653-00C04F79498E)
 ]
@@ -1504,7 +1469,6 @@ library TunerLib
     [default] interface IDigitalCableTuningSpace;
     interface IBDAComparable;
 };
-
 
 [
     uuid(8A674B4C-1F63-11d3-B64C-00C04F79498E)
@@ -1553,7 +1517,6 @@ library TunerLib
     [default] interface IDVBSTuningSpace;
     interface IBDAComparable;
 };
-
 
 [
     uuid(A1A2B1C4-0E3A-11d3-9D8E-00C04F72D980)
@@ -1623,7 +1586,6 @@ library TunerLib
         [default] interface IMPEG2Component;
         };
 
-
 [
     hidden,
     uuid(28AB0005-E845-4FFA-AA9B-F4665236141C)
@@ -1643,7 +1605,6 @@ library TunerLib
     [default] interface ITuneRequest;
     interface IBDAComparable;
 };
-
 
 [
     hidden,
@@ -1675,7 +1636,6 @@ library TunerLib
     interface IBDAComparable;
 };
 
-
 [
     hidden,
     uuid(0955AC62-BF2E-4cba-A2B9-A63F772D46CF)
@@ -1693,7 +1653,6 @@ library TunerLib
 {
         [default] interface IMPEG2TuneRequestFactory;
 };
-
 
 [
     noncreatable,
@@ -1781,7 +1740,6 @@ library TunerLib
     interface IBDAComparable;
 };
 
-
 [
     hidden,
     uuid(8A674B49-1F63-11d3-B64C-00C04F79498E)
@@ -1815,3 +1773,452 @@ cpp_quote("#define SID_SContentTuneRequest IID_ITuner")
 cpp_quote("#define SID_ScanningTuner IID_IScanningTuner")
 cpp_quote("#define SID_ScanningTunerEx IID_IScanningTunerEx")
 }
+
+cpp_quote("#define SID_ESEventService CLSID_ESEventService")
+cpp_quote("")
+cpp_quote("typedef struct ChannelIDTuneRequest ChannelIDTuneRequest;")
+cpp_quote("")
+cpp_quote("typedef struct ChannelIDTuningSpace ChannelIDTuningSpace;")
+cpp_quote("")
+cpp_quote("typedef struct DVBTLocator2 DVBTLocator2;")
+cpp_quote("")
+cpp_quote("typedef struct ESEventFactory ESEventFactory;")
+cpp_quote("")
+cpp_quote("typedef struct ESEventService ESEventService;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IBDACreateTuneRequestEx IBDACreateTuneRequestEx;")
+cpp_quote("")
+cpp_quote("struct IBDACreateTuneRequestExVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IBDACreateTuneRequestEx *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IBDACreateTuneRequestEx *);")
+cpp_quote("    ULONG (WINAPI *Release)(IBDACreateTuneRequestEx *);")
+cpp_quote("    HRESULT (WINAPI *CreateTuneRequestEx)(IBDACreateTuneRequestEx *, const IID *const , ITuneRequest **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IChannelIDTuneRequest IChannelIDTuneRequest;")
+cpp_quote("")
+cpp_quote("struct IChannelIDTuneRequestVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IChannelIDTuneRequest *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IChannelIDTuneRequest *);")
+cpp_quote("    ULONG (WINAPI *Release)(IChannelIDTuneRequest *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IChannelIDTuneRequest *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IChannelIDTuneRequest *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IChannelIDTuneRequest *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IChannelIDTuneRequest *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_TuningSpace)(IChannelIDTuneRequest *, ITuningSpace **);")
+cpp_quote("    HRESULT (WINAPI *get_Components)(IChannelIDTuneRequest *, IComponents **);")
+cpp_quote("    HRESULT (WINAPI *Clone)(IChannelIDTuneRequest *, ITuneRequest **);")
+cpp_quote("    HRESULT (WINAPI *get_Locator)(IChannelIDTuneRequest *, ILocator **);")
+cpp_quote("    HRESULT (WINAPI *put_Locator)(IChannelIDTuneRequest *, ILocator *);")
+cpp_quote("    HRESULT (WINAPI *get_ChannelID)(IChannelIDTuneRequest *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *put_ChannelID)(IChannelIDTuneRequest *, BSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IDVBSLocator2 IDVBSLocator2;")
+cpp_quote("")
+cpp_quote("struct IDVBSLocator2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IDVBSLocator2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IDVBSLocator2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(IDVBSLocator2 *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IDVBSLocator2 *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IDVBSLocator2 *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IDVBSLocator2 *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IDVBSLocator2 *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_CarrierFrequency)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_CarrierFrequency)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_InnerFEC)(IDVBSLocator2 *, FECMethod *);")
+cpp_quote("    HRESULT (WINAPI *put_InnerFEC)(IDVBSLocator2 *, FECMethod);")
+cpp_quote("    HRESULT (WINAPI *get_InnerFECRate)(IDVBSLocator2 *, BinaryConvolutionCodeRate *);")
+cpp_quote("    HRESULT (WINAPI *put_InnerFECRate)(IDVBSLocator2 *, BinaryConvolutionCodeRate);")
+cpp_quote("    HRESULT (WINAPI *get_OuterFEC)(IDVBSLocator2 *, FECMethod *);")
+cpp_quote("    HRESULT (WINAPI *put_OuterFEC)(IDVBSLocator2 *, FECMethod);")
+cpp_quote("    HRESULT (WINAPI *get_OuterFECRate)(IDVBSLocator2 *, BinaryConvolutionCodeRate *);")
+cpp_quote("    HRESULT (WINAPI *put_OuterFECRate)(IDVBSLocator2 *, BinaryConvolutionCodeRate);")
+cpp_quote("    HRESULT (WINAPI *get_Modulation)(IDVBSLocator2 *, ModulationType *);")
+cpp_quote("    HRESULT (WINAPI *put_Modulation)(IDVBSLocator2 *, ModulationType);")
+cpp_quote("    HRESULT (WINAPI *get_SymbolRate)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_SymbolRate)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *Clone)(IDVBSLocator2 *, ILocator **);")
+cpp_quote("    HRESULT (WINAPI *get_SignalPolarisation)(IDVBSLocator2 *, Polarisation *);")
+cpp_quote("    HRESULT (WINAPI *put_SignalPolarisation)(IDVBSLocator2 *, Polarisation);")
+cpp_quote("    HRESULT (WINAPI *get_WestPosition)(IDVBSLocator2 *, VARIANT_BOOL *);")
+cpp_quote("    HRESULT (WINAPI *put_WestPosition)(IDVBSLocator2 *, VARIANT_BOOL);")
+cpp_quote("    HRESULT (WINAPI *get_OrbitalPosition)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_OrbitalPosition)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_Azimuth)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_Azimuth)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_Elevation)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_Elevation)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_DiseqLNBSource)(IDVBSLocator2 *, LNB_Source *);")
+cpp_quote("    HRESULT (WINAPI *put_DiseqLNBSource)(IDVBSLocator2 *, LNB_Source);")
+cpp_quote("    HRESULT (WINAPI *get_LocalOscillatorOverrideLow)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_LocalOscillatorOverrideLow)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_LocalOscillatorOverrideHigh)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_LocalOscillatorOverrideHigh)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_LocalLNBSwitchOverride)(IDVBSLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_LocalLNBSwitchOverride)(IDVBSLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_LocalSpectralInversionOverride)(IDVBSLocator2 *, SpectralInversion *);")
+cpp_quote("    HRESULT (WINAPI *put_LocalSpectralInversionOverride)(IDVBSLocator2 *, SpectralInversion);")
+cpp_quote("    HRESULT (WINAPI *get_SignalRollOff)(IDVBSLocator2 *, RollOff *);")
+cpp_quote("    HRESULT (WINAPI *put_SignalRollOff)(IDVBSLocator2 *, RollOff);")
+cpp_quote("    HRESULT (WINAPI *get_SignalPilot)(IDVBSLocator2 *, Pilot *);")
+cpp_quote("    HRESULT (WINAPI *put_SignalPilot)(IDVBSLocator2 *, Pilot);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IDVBTLocator2 IDVBTLocator2;")
+cpp_quote("")
+cpp_quote("struct IDVBTLocator2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IDVBTLocator2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IDVBTLocator2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(IDVBTLocator2 *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IDVBTLocator2 *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IDVBTLocator2 *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IDVBTLocator2 *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IDVBTLocator2 *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_CarrierFrequency)(IDVBTLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_CarrierFrequency)(IDVBTLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_InnerFEC)(IDVBTLocator2 *, FECMethod *);")
+cpp_quote("    HRESULT (WINAPI *put_InnerFEC)(IDVBTLocator2 *, FECMethod);")
+cpp_quote("    HRESULT (WINAPI *get_InnerFECRate)(IDVBTLocator2 *, BinaryConvolutionCodeRate *);")
+cpp_quote("    HRESULT (WINAPI *put_InnerFECRate)(IDVBTLocator2 *, BinaryConvolutionCodeRate);")
+cpp_quote("    HRESULT (WINAPI *get_OuterFEC)(IDVBTLocator2 *, FECMethod *);")
+cpp_quote("    HRESULT (WINAPI *put_OuterFEC)(IDVBTLocator2 *, FECMethod);")
+cpp_quote("    HRESULT (WINAPI *get_OuterFECRate)(IDVBTLocator2 *, BinaryConvolutionCodeRate *);")
+cpp_quote("    HRESULT (WINAPI *put_OuterFECRate)(IDVBTLocator2 *, BinaryConvolutionCodeRate);")
+cpp_quote("    HRESULT (WINAPI *get_Modulation)(IDVBTLocator2 *, ModulationType *);")
+cpp_quote("    HRESULT (WINAPI *put_Modulation)(IDVBTLocator2 *, ModulationType);")
+cpp_quote("    HRESULT (WINAPI *get_SymbolRate)(IDVBTLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_SymbolRate)(IDVBTLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *Clone)(IDVBTLocator2 *, ILocator **);")
+cpp_quote("    HRESULT (WINAPI *get_Bandwidth)(IDVBTLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_Bandwidth)(IDVBTLocator2 *, long);")
+cpp_quote("    HRESULT (WINAPI *get_LPInnerFEC)(IDVBTLocator2 *, FECMethod *);")
+cpp_quote("    HRESULT (WINAPI *put_LPInnerFEC)(IDVBTLocator2 *, FECMethod);")
+cpp_quote("    HRESULT (WINAPI *get_LPInnerFECRate)(IDVBTLocator2 *, BinaryConvolutionCodeRate *);")
+cpp_quote("    HRESULT (WINAPI *put_LPInnerFECRate)(IDVBTLocator2 *, BinaryConvolutionCodeRate);")
+cpp_quote("    HRESULT (WINAPI *get_HAlpha)(IDVBTLocator2 *, HierarchyAlpha *);")
+cpp_quote("    HRESULT (WINAPI *put_HAlpha)(IDVBTLocator2 *, HierarchyAlpha);")
+cpp_quote("    HRESULT (WINAPI *get_Guard)(IDVBTLocator2 *, GuardInterval *);")
+cpp_quote("    HRESULT (WINAPI *put_Guard)(IDVBTLocator2 *, GuardInterval);")
+cpp_quote("    HRESULT (WINAPI *get_Mode)(IDVBTLocator2 *, TransmissionMode *);")
+cpp_quote("    HRESULT (WINAPI *put_Mode)(IDVBTLocator2 *, TransmissionMode);")
+cpp_quote("    HRESULT (WINAPI *get_OtherFrequencyInUse)(IDVBTLocator2 *, VARIANT_BOOL *);")
+cpp_quote("    HRESULT (WINAPI *put_OtherFrequencyInUse)(IDVBTLocator2 *, VARIANT_BOOL);")
+cpp_quote("    HRESULT (WINAPI *get_PhysicalLayerPipeId)(IDVBTLocator2 *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_PhysicalLayerPipeId)(IDVBTLocator2 *, long);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IESCloseMmiEvent IESCloseMmiEvent;")
+cpp_quote("")
+cpp_quote("struct IESCloseMmiEventVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESCloseMmiEvent *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESCloseMmiEvent *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESCloseMmiEvent *);")
+cpp_quote("    HRESULT (WINAPI *GetEventId)(IESCloseMmiEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEventType)(IESCloseMmiEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *SetCompletionStatus)(IESCloseMmiEvent *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *GetData)(IESCloseMmiEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetStringData)(IESCloseMmiEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetDialogNumber)(IESCloseMmiEvent *, DWORD *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESEventFactory IESEventFactory;")
+cpp_quote("")
+cpp_quote("struct IESEventFactoryVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESEventFactory *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESEventFactory *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESEventFactory *);")
+cpp_quote("    HRESULT (WINAPI *CreateESEvent)(IESEventFactory *, IUnknown *, DWORD, GUID, DWORD, BYTE *, BSTR, IUnknown *, IESEvent **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESEventService IESEventService;")
+cpp_quote("")
+cpp_quote("typedef struct IESEventServiceConfiguration IESEventServiceConfiguration;")
+cpp_quote("")
+cpp_quote("struct IESEventServiceConfigurationVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESEventServiceConfiguration *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESEventServiceConfiguration *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESEventServiceConfiguration *);")
+cpp_quote("    HRESULT (WINAPI *SetParent)(IESEventServiceConfiguration *, IESEventService *);")
+cpp_quote("    HRESULT (WINAPI *RemoveParent)(IESEventServiceConfiguration *);")
+cpp_quote("    HRESULT (WINAPI *SetOwner)(IESEventServiceConfiguration *, IESEvents *);")
+cpp_quote("    HRESULT (WINAPI *RemoveOwner)(IESEventServiceConfiguration *);")
+cpp_quote("    HRESULT (WINAPI *SetGraph)(IESEventServiceConfiguration *, IFilterGraph *);")
+cpp_quote("    HRESULT (WINAPI *RemoveGraph)(IESEventServiceConfiguration *, IFilterGraph *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("struct IESEventServiceVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESEventService *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESEventService *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESEventService *);")
+cpp_quote("    HRESULT (WINAPI *FireESEvent)(IESEventService *, IESEvent *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESFileExpiryDateEvent IESFileExpiryDateEvent;")
+cpp_quote("")
+cpp_quote("struct IESFileExpiryDateEventVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESFileExpiryDateEvent *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESFileExpiryDateEvent *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESFileExpiryDateEvent *);")
+cpp_quote("    HRESULT (WINAPI *GetEventId)(IESFileExpiryDateEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEventType)(IESFileExpiryDateEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *SetCompletionStatus)(IESFileExpiryDateEvent *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *GetData)(IESFileExpiryDateEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetStringData)(IESFileExpiryDateEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetTunerId)(IESFileExpiryDateEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *GetExpiryDate)(IESFileExpiryDateEvent *, DWORD64 *);")
+cpp_quote("    HRESULT (WINAPI *GetFinalExpiryDate)(IESFileExpiryDateEvent *, DWORD64 *);")
+cpp_quote("    HRESULT (WINAPI *GetMaxRenewalCount)(IESFileExpiryDateEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *IsEntitlementTokenPresent)(IESFileExpiryDateEvent *, BOOL *);")
+cpp_quote("    HRESULT (WINAPI *DoesExpireAfterFirstUse)(IESFileExpiryDateEvent *, BOOL *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESIsdbCasResponseEvent IESIsdbCasResponseEvent;")
+cpp_quote("")
+cpp_quote("struct IESIsdbCasResponseEventVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESIsdbCasResponseEvent *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESIsdbCasResponseEvent *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESIsdbCasResponseEvent *);")
+cpp_quote("    HRESULT (WINAPI *GetEventId)(IESIsdbCasResponseEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEventType)(IESIsdbCasResponseEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *SetCompletionStatus)(IESIsdbCasResponseEvent *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *GetData)(IESIsdbCasResponseEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetStringData)(IESIsdbCasResponseEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetRequestId)(IESIsdbCasResponseEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetStatus)(IESIsdbCasResponseEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetDataLength)(IESIsdbCasResponseEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetResponseData)(IESIsdbCasResponseEvent *, SAFEARRAY **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESLicenseRenewalResultEvent IESLicenseRenewalResultEvent;")
+cpp_quote("")
+cpp_quote("struct IESLicenseRenewalResultEventVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESLicenseRenewalResultEvent *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESLicenseRenewalResultEvent *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESLicenseRenewalResultEvent *);")
+cpp_quote("    HRESULT (WINAPI *GetEventId)(IESLicenseRenewalResultEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEventType)(IESLicenseRenewalResultEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *SetCompletionStatus)(IESLicenseRenewalResultEvent *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *GetData)(IESLicenseRenewalResultEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetStringData)(IESLicenseRenewalResultEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetCallersId)(IESLicenseRenewalResultEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetFileName)(IESLicenseRenewalResultEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *IsRenewalSuccessful)(IESLicenseRenewalResultEvent *, BOOL *);")
+cpp_quote("    HRESULT (WINAPI *IsCheckEntitlementCallRequired)(IESLicenseRenewalResultEvent *, BOOL *);")
+cpp_quote("    HRESULT (WINAPI *GetDescrambledStatus)(IESLicenseRenewalResultEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetRenewalResultCode)(IESLicenseRenewalResultEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetCASFailureCode)(IESLicenseRenewalResultEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetRenewalHResult)(IESLicenseRenewalResultEvent *, HRESULT *);")
+cpp_quote("    HRESULT (WINAPI *GetEntitlementTokenLength)(IESLicenseRenewalResultEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEntitlementToken)(IESLicenseRenewalResultEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetExpiryDate)(IESLicenseRenewalResultEvent *, DWORD64 *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESOpenMmiEvent IESOpenMmiEvent;")
+cpp_quote("")
+cpp_quote("struct IESOpenMmiEventVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESOpenMmiEvent *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESOpenMmiEvent *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESOpenMmiEvent *);")
+cpp_quote("    HRESULT (WINAPI *GetEventId)(IESOpenMmiEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEventType)(IESOpenMmiEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *SetCompletionStatus)(IESOpenMmiEvent *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *GetData)(IESOpenMmiEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetStringData)(IESOpenMmiEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetDialogNumber)(IESOpenMmiEvent *, DWORD *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetDialogType)(IESOpenMmiEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *GetDialogData)(IESOpenMmiEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetDialogStringData)(IESOpenMmiEvent *, BSTR *, BSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESRequestTunerEvent IESRequestTunerEvent;")
+cpp_quote("")
+cpp_quote("struct IESRequestTunerEventVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESRequestTunerEvent *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESRequestTunerEvent *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESRequestTunerEvent *);")
+cpp_quote("    HRESULT (WINAPI *GetEventId)(IESRequestTunerEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEventType)(IESRequestTunerEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *SetCompletionStatus)(IESRequestTunerEvent *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *GetData)(IESRequestTunerEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetStringData)(IESRequestTunerEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetPriority)(IESRequestTunerEvent *, BYTE *);")
+cpp_quote("    HRESULT (WINAPI *GetReason)(IESRequestTunerEvent *, BYTE *);")
+cpp_quote("    HRESULT (WINAPI *GetConsequences)(IESRequestTunerEvent *, BYTE *);")
+cpp_quote("    HRESULT (WINAPI *GetEstimatedTime)(IESRequestTunerEvent *, DWORD *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IESValueUpdatedEvent IESValueUpdatedEvent;")
+cpp_quote("")
+cpp_quote("struct IESValueUpdatedEventVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IESValueUpdatedEvent *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IESValueUpdatedEvent *);")
+cpp_quote("    ULONG (WINAPI *Release)(IESValueUpdatedEvent *);")
+cpp_quote("    HRESULT (WINAPI *GetEventId)(IESValueUpdatedEvent *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetEventType)(IESValueUpdatedEvent *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *SetCompletionStatus)(IESValueUpdatedEvent *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *GetData)(IESValueUpdatedEvent *, SAFEARRAY **);")
+cpp_quote("    HRESULT (WINAPI *GetStringData)(IESValueUpdatedEvent *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetValueNames)(IESValueUpdatedEvent *, SAFEARRAY **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IGpnvsCommonBase IGpnvsCommonBase;")
+cpp_quote("")
+cpp_quote("struct IGpnvsCommonBaseVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IGpnvsCommonBase *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IGpnvsCommonBase *);")
+cpp_quote("    ULONG (WINAPI *Release)(IGpnvsCommonBase *);")
+cpp_quote("    HRESULT (WINAPI *GetValueUpdateName)(IGpnvsCommonBase *, BSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IISDBSLocator IISDBSLocator;")
+cpp_quote("")
+cpp_quote("struct IISDBSLocatorVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IISDBSLocator *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IISDBSLocator *);")
+cpp_quote("    ULONG (WINAPI *Release)(IISDBSLocator *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IISDBSLocator *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IISDBSLocator *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IISDBSLocator *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IISDBSLocator *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_CarrierFrequency)(IISDBSLocator *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_CarrierFrequency)(IISDBSLocator *, long);")
+cpp_quote("    HRESULT (WINAPI *get_InnerFEC)(IISDBSLocator *, FECMethod *);")
+cpp_quote("    HRESULT (WINAPI *put_InnerFEC)(IISDBSLocator *, FECMethod);")
+cpp_quote("    HRESULT (WINAPI *get_InnerFECRate)(IISDBSLocator *, BinaryConvolutionCodeRate *);")
+cpp_quote("    HRESULT (WINAPI *put_InnerFECRate)(IISDBSLocator *, BinaryConvolutionCodeRate);")
+cpp_quote("    HRESULT (WINAPI *get_OuterFEC)(IISDBSLocator *, FECMethod *);")
+cpp_quote("    HRESULT (WINAPI *put_OuterFEC)(IISDBSLocator *, FECMethod);")
+cpp_quote("    HRESULT (WINAPI *get_OuterFECRate)(IISDBSLocator *, BinaryConvolutionCodeRate *);")
+cpp_quote("    HRESULT (WINAPI *put_OuterFECRate)(IISDBSLocator *, BinaryConvolutionCodeRate);")
+cpp_quote("    HRESULT (WINAPI *get_Modulation)(IISDBSLocator *, ModulationType *);")
+cpp_quote("    HRESULT (WINAPI *put_Modulation)(IISDBSLocator *, ModulationType);")
+cpp_quote("    HRESULT (WINAPI *get_SymbolRate)(IISDBSLocator *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_SymbolRate)(IISDBSLocator *, long);")
+cpp_quote("    HRESULT (WINAPI *Clone)(IISDBSLocator *, ILocator **);")
+cpp_quote("    HRESULT (WINAPI *get_SignalPolarisation)(IISDBSLocator *, Polarisation *);")
+cpp_quote("    HRESULT (WINAPI *put_SignalPolarisation)(IISDBSLocator *, Polarisation);")
+cpp_quote("    HRESULT (WINAPI *get_WestPosition)(IISDBSLocator *, VARIANT_BOOL *);")
+cpp_quote("    HRESULT (WINAPI *put_WestPosition)(IISDBSLocator *, VARIANT_BOOL);")
+cpp_quote("    HRESULT (WINAPI *get_OrbitalPosition)(IISDBSLocator *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_OrbitalPosition)(IISDBSLocator *, long);")
+cpp_quote("    HRESULT (WINAPI *get_Azimuth)(IISDBSLocator *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_Azimuth)(IISDBSLocator *, long);")
+cpp_quote("    HRESULT (WINAPI *get_Elevation)(IISDBSLocator *, long *);")
+cpp_quote("    HRESULT (WINAPI *put_Elevation)(IISDBSLocator *, long);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IPersistTuneXml IPersistTuneXml;")
+cpp_quote("")
+cpp_quote("typedef struct IPersistTuneXmlUtility IPersistTuneXmlUtility;")
+cpp_quote("")
+cpp_quote("typedef struct IPersistTuneXmlUtility2 IPersistTuneXmlUtility2;")
+cpp_quote("")
+cpp_quote("struct IPersistTuneXmlUtility2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IPersistTuneXmlUtility2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IPersistTuneXmlUtility2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(IPersistTuneXmlUtility2 *);")
+cpp_quote("    HRESULT (WINAPI *Deserialize)(IPersistTuneXmlUtility2 *, VARIANT, IUnknown **);")
+cpp_quote("    HRESULT (WINAPI *Serialize)(IPersistTuneXmlUtility2 *, ITuneRequest *, BSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("struct IPersistTuneXmlUtilityVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IPersistTuneXmlUtility *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IPersistTuneXmlUtility *);")
+cpp_quote("    ULONG (WINAPI *Release)(IPersistTuneXmlUtility *);")
+cpp_quote("    HRESULT (WINAPI *Deserialize)(IPersistTuneXmlUtility *, VARIANT, IUnknown **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("struct IPersistTuneXmlVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IPersistTuneXml *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IPersistTuneXml *);")
+cpp_quote("    ULONG (WINAPI *Release)(IPersistTuneXml *);")
+cpp_quote("    HRESULT (WINAPI *GetClassID)(IPersistTuneXml *, CLSID *);")
+cpp_quote("    HRESULT (WINAPI *InitNew)(IPersistTuneXml *);")
+cpp_quote("    HRESULT (WINAPI *Load)(IPersistTuneXml *, VARIANT);")
+cpp_quote("    HRESULT (WINAPI *Save)(IPersistTuneXml *, VARIANT *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct ISDBSLocator ISDBSLocator;")
+cpp_quote("")
+cpp_quote("typedef struct ITunerCapEx ITunerCapEx;")
+cpp_quote("")
+cpp_quote("struct ITunerCapExVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(ITunerCapEx *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(ITunerCapEx *);")
+cpp_quote("    ULONG (WINAPI *Release)(ITunerCapEx *);")
+cpp_quote("    HRESULT (WINAPI *get_Has608_708Caption)(ITunerCapEx *, VARIANT_BOOL *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct PersistTuneXmlUtility PersistTuneXmlUtility;")
+
+cpp_quote("#define SID_ESEventFactory CLSID_ESEventFactory")
+

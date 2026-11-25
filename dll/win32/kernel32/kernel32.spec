@@ -72,7 +72,7 @@
 @ stdcall CancelWaitableTimer(long)
 @ stdcall ChangeTimerQueueTimer(ptr ptr long long)
 @ stdcall -stub -version=0x600+ CheckElevation(ptr ptr ptr ptr ptr)
-@ stdcall -stub -version=0x600+ CheckElevationEnabled(ptr)
+@ stdcall -version=0x600+ CheckElevationEnabled(ptr)
 @ stub -version=0x600+ CheckForReadOnlyResource
 @ stdcall CheckNameLegalDOS8Dot3A(str str long long long)
 @ stdcall CheckNameLegalDOS8Dot3W(wstr str long long long)
@@ -754,7 +754,7 @@
 @ stdcall GetWindowsDirectoryA(ptr long)
 @ stdcall GetWindowsDirectoryW(ptr long)
 @ stdcall GetWriteWatch(long ptr long ptr ptr ptr)
-@ stdcall -thunk -version=0x601+ -arch=i386,x86_64,arm64ec GetXStateFeaturesMask(ptr ptr) kernelbase.GetXStateFeaturesMask
+@ stdcall -thunk -version=0x601+ -arch=i386,x86_64,arm64,arm64ec GetXStateFeaturesMask(ptr ptr) kernelbase.GetXStateFeaturesMask
 @ stdcall GlobalAddAtomA(str)
 @ stdcall GlobalAddAtomW(wstr)
 @ stdcall GlobalAlloc(long long)
@@ -777,7 +777,7 @@
 @ stdcall GlobalUnfix(long)
 @ stdcall GlobalUnlock(long)
 @ stdcall GlobalWire(long)
-@ stdcall Heap32First(ptr long long)
+@ stdcall Heap32First(ptr long ptr)
 @ stdcall Heap32ListFirst(long ptr)
 @ stdcall Heap32ListNext(long ptr)
 @ stdcall Heap32Next(ptr)
@@ -925,7 +925,7 @@
 @ stdcall LocalSize(long)
 @ stdcall LocalUnlock(long)
 @ stdcall -thunk -version=0x600+ LocaleNameToLCID(wstr long) kernelbase.LocaleNameToLCID
-@ stdcall -thunk -version=0x601+ -arch=i386,x86_64,arm64ec LocateXStateFeature(ptr long ptr) kernelbase.LocateXStateFeature
+@ stdcall -thunk -version=0x601+ -arch=i386,x86_64,arm64,arm64ec LocateXStateFeature(ptr long ptr) kernelbase.LocateXStateFeature
 @ stdcall LockFile(long long long long long)
 @ stdcall LockFileEx(long long long long long ptr)
 @ stdcall LockResource(long)
@@ -1270,7 +1270,7 @@
 @ stdcall -version=0xA00+ SetProcessDefaultCpuSets(ptr ptr long) kernelbase.SetProcessDefaultCpuSets
 @ stdcall -version=0x602+ SetProcessInformation(long long ptr long)
 @ stdcall -version=0x602+ SetProcessMitigationPolicy(long ptr long)
-@ stdcall -version=0xA00+ SetProcessValidCallTargets(long ptr long long ptr)
+@ stdcall -version=0xA00+ SetProcessValidCallTargets(ptr ptr ptr long ptr)
 @ stdcall -thunk -version=0x601+ SetProcessPreferredUILanguages(long ptr ptr) kernelbase.SetProcessPreferredUILanguages
 @ stdcall SetProcessPriorityBoost(long long)
 @ stdcall SetProcessShutdownParameters(long long)
@@ -1321,7 +1321,7 @@
 @ stdcall SetVolumeMountPointW(wstr wstr)
 @ stdcall SetWaitableTimer(long ptr long ptr ptr long)
 @ stdcall -version=0x601+ SetWaitableTimerEx(long ptr long ptr ptr ptr long)
-@ stdcall -thunk -version=0x601+ -arch=i386,x86_64,arm64ec SetXStateFeaturesMask(ptr int64) kernelbase.SetXStateFeaturesMask
+@ stdcall -thunk -version=0x601+ -arch=i386,x86_64,arm64,arm64ec SetXStateFeaturesMask(ptr int64) kernelbase.SetXStateFeaturesMask
 @ stdcall SetupComm(long long long)
 @ stdcall -thunk ShowConsoleCursor(long long) kernelbase.ShowConsoleCursor
 @ stdcall SignalObjectAndWait(long long long long)

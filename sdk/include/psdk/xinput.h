@@ -257,4 +257,31 @@ DWORD WINAPI XInputGetStateEx(DWORD, XINPUT_STATE*);
 }
 #endif
 
+#ifndef XINPUT_DEVSUBTYPE_UNKNOWN
+#define XINPUT_DEVSUBTYPE_UNKNOWN 0x00
+#endif
+
+#ifdef UNICODE
+#define XINPUT_DLL XINPUT_DLL_W
+#else
+#if (!(defined(UNICODE)))
+#define XINPUT_DLL XINPUT_DLL_A
+#else
+#define XINPUT_DLL XINPUT_DLL_W
+#endif
+#endif
+#define XINPUT_DLL_A "xinput1_4.dll"
+#define XINPUT_DLL_W L"xinput1_4.dll"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+DWORD WINAPI XInputGetAudioDeviceIds(DWORD dwUserIndex, LPWSTR pRenderDeviceId, UINT *pRenderCount, LPWSTR pCaptureDeviceId, UINT *pCaptureCount);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __WINE_XINPUT_H */

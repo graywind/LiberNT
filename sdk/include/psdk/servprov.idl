@@ -19,7 +19,6 @@
 
 import "objidl.idl";
 
-
 /*****************************************************************************
  * IServiceProvider interface
  */
@@ -44,3 +43,14 @@ interface IServiceProvider : IUnknown
         [in] REFIID riid,
         [out, iid_is(riid)] IUnknown ** ppvObject);
 }
+
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

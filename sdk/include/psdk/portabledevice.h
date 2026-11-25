@@ -1025,4 +1025,29 @@ typedef struct tagWPD_COMMAND_ACCESS_LOOKUP_ENTRY {
   PROPERTYKEY AccessProperty;
 } WPD_COMMAND_ACCESS_LOOKUP_ENTRY;
 
+#define END_WPD_COMMAND_ACCESS_MAP { WPD_PROPERTY_NULL, 0, WPD_PROPERTY_NULL }, };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+void FreePortableDevicePnPIDs(LPWSTR *pPnPIDs, DWORD cPnPIDs);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define DECLARE_WPD_STANDARD_COMMAND_ACCESS_ENTRIES 0
+
+#define IS_COMMAND_IN_WPD_COMMAND_ACCESS_MAP IsCommandInWpdCommandAccessMap
+
+#define DECLARE_VERIFY_WPD_COMMAND_ACCESS 0
+
+#define VERIFY_WPD_COMMAND_ACCESS VerifyWpdCommandAccessFromMap
+
+#define BEGIN_WPD_COMMAND_ACCESS_MAP(x) static WPD_COMMAND_ACCESS_LOOKUP_ENTRY x [] = {
+#define WPD_COMMAND_ACCESS_ENTRY(WpdCommand, WpdCommandAccessType) { WpdCommand, WpdCommandAccessType, WPD_PROPERTY_NULL },
+#define WPD_COMMAND_ACCESS_PROPERTY_ENTRY(WpdCommand, WpdCommandAccessType, WpdAccessProperty) { WpdCommand, WpdCommandAccessType, WpdAccessProperty },
+
 #endif /* PORTABLEDEVICE_H */

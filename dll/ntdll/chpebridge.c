@@ -16,7 +16,7 @@
 #include <ndk/sefuncs.h>
 #include <ndk/dbgkfuncs.h>
 #include <ndk/pofuncs.h>
-#include <reactos/subsys/csr/csr.h>
+#include <libernt/subsys/csr/csr.h>
 #include <delayloadhandler.h>
 #include <evntprov.h>
 #include <math.h>
@@ -1875,7 +1875,7 @@ ChpeRtlRandom(PULONG Seed)
     return RtlRandom(Seed);
 }
 
-BOOLEAN NTAPI
+LOGICAL NTAPI
 ChpeRtlFreeHeap(HANDLE HeapHandle, ULONG Flags, PVOID Pointer)
 {
     return RtlFreeHeap(HeapHandle, Flags, Pointer);
@@ -3201,10 +3201,16 @@ ChpeRtlIsEcCode(ULONG_PTR CodeAddress)
     return RtlIsEcCode(CodeAddress);
 }
 
+ULONG64 NTAPI
+ChpeRtlGetEnabledExtendedFeatures(ULONG64 Mask)
+{
+    return SharedUserData->XState.EnabledFeatures & Mask;
+}
+
 PVOID NTAPI
 ChpeRtlLocateExtendedFeature(PVOID ContextEx, ULONG FeatureId, PULONG Length)
 {
-    return RtlLocateExtendedFeature(ContextEx, FeatureId, Length);
+    return RtlLocateExtendedFeature2(ContextEx, FeatureId, &SharedUserData->XState, Length);
 }
 
 PVOID NTAPI
