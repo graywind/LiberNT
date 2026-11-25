@@ -25,7 +25,8 @@
 #define HOST_IMAGE_PATH         L"\\" HOST_STAGE_DIRECTORY L"\\" HOST_STAGE_IMAGE
 #define HOST_SHA256_CHARS       65
 #define HOST_VERSION_CHARS      128
-#define HOST_LOG_DIRECTORY      L"\\Logs\\LiberNT"
+#define HOST_LOG_ROOT           L"\\Logs"
+#define HOST_LOG_DIRECTORY      L"\\LiberNT"
 #define HOST_LOG_FILE           L"\\setup.log"
 
 typedef struct _HOST_PARTITION
