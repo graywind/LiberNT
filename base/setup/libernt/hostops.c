@@ -97,10 +97,13 @@ HostLog(
     OutputDebugStringW(Line);
 
     if (!GetWindowsDirectoryW(Path, ARRAYSIZE(Path)) ||
-        FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_DIRECTORY)))
+        FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_ROOT)))
     {
         return;
     }
+    CreateDirectoryW(Path, NULL);
+    if (FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_DIRECTORY)))
+        return;
     CreateDirectoryW(Path, NULL);
     if (FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_FILE)))
         return;
