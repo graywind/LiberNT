@@ -44,8 +44,8 @@ typedef struct
 
 /**********************************************************************/
 
-#define COMPRESS_ALGORITHM_NULL         0
-#define COMPRESS_ALGORITHM_INVALID      1
+#define COMPRESS_ALGORITHM_INVALID      0
+#define COMPRESS_ALGORITHM_NULL         1
 #define COMPRESS_ALGORITHM_MSZIP        2
 #define COMPRESS_ALGORITHM_XPRESS       3
 #define COMPRESS_ALGORITHM_XPRESS_HUFF  4
@@ -60,6 +60,47 @@ BOOL WINAPI CloseCompressor( COMPRESSOR_HANDLE );
 BOOL WINAPI CreateDecompressor( DWORD, COMPRESS_ALLOCATION_ROUTINES*, DECOMPRESSOR_HANDLE* );
 BOOL WINAPI Decompress( DECOMPRESSOR_HANDLE, const VOID*, SIZE_T, VOID*, SIZE_T, SIZE_T* );
 BOOL WINAPI CloseDecompressor( DECOMPRESSOR_HANDLE );
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef COMPRESS_ALGORITHM_MAX
+#define COMPRESS_ALGORITHM_MAX 6
+#endif
+
+typedef enum COMPRESS_INFORMATION_CLASS {
+    COMPRESS_INFORMATION_CLASS_INVALID = 0,
+    COMPRESS_INFORMATION_CLASS_BLOCK_SIZE = 1,
+    COMPRESS_INFORMATION_CLASS_LEVEL = 2
+} COMPRESS_INFORMATION_CLASS;
+
+typedef COMPRESSOR_HANDLE * PCOMPRESSOR_HANDLE;
+typedef COMPRESSOR_HANDLE * PDECOMPRESSOR_HANDLE;
+
+#define COMPRESS_RAW 0x20000000
+
+struct _COMPRESS_ALLOCATION_ROUTINES
+{
+    PFN_COMPRESS_ALLOCATE Allocate;
+    PFN_COMPRESS_FREE Free;
+    PVOID UserContext;
+};
+
+
+typedef struct _COMPRESS_ALLOCATION_ROUTINES *PCOMPRESS_ALLOCATION_ROUTINES;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL WINAPI QueryCompressorInformation(COMPRESSOR_HANDLE CompressorHandle, COMPRESS_INFORMATION_CLASS CompressInformationClass, PVOID CompressInformation, SIZE_T CompressInformationSize);
+BOOL WINAPI QueryDecompressorInformation(DECOMPRESSOR_HANDLE DecompressorHandle, COMPRESS_INFORMATION_CLASS CompressInformationClass, PVOID CompressInformation, SIZE_T CompressInformationSize);
+BOOL WINAPI ResetCompressor(COMPRESSOR_HANDLE CompressorHandle);
+BOOL WINAPI ResetDecompressor(DECOMPRESSOR_HANDLE DecompressorHandle);
+BOOL WINAPI SetCompressorInformation(COMPRESSOR_HANDLE CompressorHandle, COMPRESS_INFORMATION_CLASS CompressInformationClass, LPCVOID CompressInformation, SIZE_T CompressInformationSize);
+BOOL WINAPI SetDecompressorInformation(DECOMPRESSOR_HANDLE DecompressorHandle, COMPRESS_INFORMATION_CLASS CompressInformationClass, LPCVOID CompressInformation, SIZE_T CompressInformationSize);
 
 #ifdef __cplusplus
 }

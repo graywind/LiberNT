@@ -161,4 +161,43 @@ HRESULT WINAPI D3DLoadModule(const void *data, SIZE_T size, ID3D11Module **modul
 }
 #endif
 
+#ifndef D3DCOMPILE_SECDATA_MERGE_UAV_SLOTS
+#define D3DCOMPILE_SECDATA_MERGE_UAV_SLOTS 0x00000001
+#endif
+#ifndef D3DCOMPILE_SECDATA_PRESERVE_TEMPLATE_SLOTS
+#define D3DCOMPILE_SECDATA_PRESERVE_TEMPLATE_SLOTS 0x00000002
+#endif
+#ifndef D3DCOMPILE_SECDATA_REQUIRE_TEMPLATE_MATCH
+#define D3DCOMPILE_SECDATA_REQUIRE_TEMPLATE_MATCH 0x00000004
+#endif
+#ifndef D3D_COMPRESS_SHADER_KEEP_ALL_PARTS
+#define D3D_COMPRESS_SHADER_KEEP_ALL_PARTS 0x00000001
+#endif
+#ifndef D3D_GET_INST_OFFSETS_INCLUDE_NON_EXECUTABLE
+#define D3D_GET_INST_OFFSETS_INCLUDE_NON_EXECUTABLE 0x00000001
+#endif
+
+typedef struct _D3D_SHADER_DATA {
+  LPCVOID pBytecode;
+  SIZE_T BytecodeLength;
+} D3D_SHADER_DATA;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+HRESULT WINAPI D3DCompressShaders(UINT uNumShaders, D3D_SHADER_DATA *pShaderData, UINT uFlags, ID3DBlob **ppCompressedData);
+HRESULT WINAPI D3DDecompressShaders(LPCVOID pSrcData, SIZE_T SrcDataSize, UINT uNumShaders, UINT uStartIndex, UINT *pIndices, UINT uFlags, ID3DBlob **ppShaders, UINT *pTotalShaders);
+struct ID3D10Effect;
+HRESULT WINAPI D3DDisassemble10Effect(struct ID3D10Effect *pEffect, UINT Flags, ID3DBlob **ppDisassembly);
+HRESULT WINAPI D3DDisassembleRegion(LPCVOID pSrcData, SIZE_T SrcDataSize, UINT Flags, LPCSTR szComments, SIZE_T StartByteOffset, SIZE_T NumInsts, SIZE_T *pFinishByteOffset, ID3DBlob **ppDisassembly);
+HRESULT WINAPI D3DGetTraceInstructionOffsets(LPCVOID pSrcData, SIZE_T SrcDataSize, UINT Flags, SIZE_T StartInstIndex, SIZE_T NumInsts, SIZE_T *pOffsets, SIZE_T *pTotalInsts);
+HRESULT WINAPI D3DReflectLibrary(LPCVOID pSrcData, SIZE_T SrcDataSize, const IID *const riid, LPVOID *ppReflector);
+HRESULT WINAPI D3DSetBlobPart(LPCVOID pSrcData, SIZE_T SrcDataSize, D3D_BLOB_PART Part, UINT Flags, LPCVOID pPart, SIZE_T PartSize, ID3DBlob **ppNewShader);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

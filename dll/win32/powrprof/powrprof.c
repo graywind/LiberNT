@@ -24,6 +24,7 @@
 #include <windef.h>
 #include <winbase.h>
 #include <winreg.h>
+#include <winuser.h>
 #define NTOS_MODE_USER
 #include <ndk/pofuncs.h>
 #include <ndk/rtlfuncs.h>
@@ -58,6 +59,7 @@ static HANDLE PPRegSemaphore = NULL;
 
 #ifdef __REACTOS__
 static const GUID PowrProfVideoSubgroup = { 0x7516B95F, 0xF776, 0x4464, { 0x8C, 0x53, 0x06, 0x16, 0x7F, 0x40, 0xCC, 0x99 } };
+static const GUID PowrProfAcDcPowerSource = { 0x5D3E9A59, 0xE9D5, 0x4B00, { 0xA6, 0xBD, 0xFF, 0x34, 0xFF, 0x51, 0x65, 0x48 } };
 static const GUID PowrProfVideoPowerdownTimeout = { 0x3C0BC021, 0xC8A8, 0x4E07, { 0xA9, 0x73, 0x6B, 0x14, 0xCB, 0xCB, 0x2B, 0x7E } };
 static const GUID PowrProfSleepSubgroup = { 0x238C9FA8, 0x0AAD, 0x41ED, { 0x83, 0xF4, 0x97, 0xBE, 0x24, 0x2C, 0x8F, 0x20 } };
 static const GUID PowrProfStandbyTimeout = { 0x29F6C1DB, 0x86DA, 0x48C5, { 0x9F, 0xDB, 0xF2, 0xB6, 0x7B, 0x1F, 0x44, 0xDA } };
@@ -94,7 +96,14 @@ typedef struct _POWRPROF_SETTING_INFO
     const GUID *Setting;
     LPCWSTR Name;
     LPCWSTR Description;
+    DWORD Attributes;
 } POWRPROF_SETTING_INFO;
+
+typedef struct _POWRPROF_PROCESSOR_DEFAULT
+{
+    const GUID *Setting;
+    DWORD Values[3][2];
+} POWRPROF_PROCESSOR_DEFAULT;
 
 typedef struct _POWRPROF_PROCESSOR_POLICY_VALUES
 {
@@ -104,6 +113,7 @@ typedef struct _POWRPROF_PROCESSOR_POLICY_VALUES
     DWORD EnergyPreference;
 } POWRPROF_PROCESSOR_POLICY_VALUES;
 
+/* TODO: Windows 11 keeps the schemes machine-wide in Control\Power\User\PowerSchemes, written only by the Power service; this per-user store has no broker */
 static const WCHAR szModernPowerSchemes[] = L"Control Panel\\PowerCfg\\PowerSchemes";
 static const WCHAR szActivePowerScheme[] = L"ActivePowerScheme";
 static const WCHAR szAcSettingIndex[] = L"ACSettingIndex";
@@ -116,9 +126,47 @@ static const POWRPROF_SCHEME_DEFAULTS PowrProfSchemes[] =
      L"Balanced", L"Automatically balances performance with energy consumption on capable hardware."},
     {&GUID_MAX_POWER_SAVINGS, 5, 5, 5, 100, 100, 60, 60, 300, 120, 900, 600, 1200, 300,
      L"Power saver", L"Saves energy by reducing your computer's performance where possible."},
-    {&GUID_MIN_POWER_SAVINGS, 4, 100, 5, 100, 100, 0, 0, 900, 900, 0, 1200, 1200, 1200,
+    {&GUID_MIN_POWER_SAVINGS, 4, 100, 5, 100, 100, 0, 0, 900, 600, 0, 0, 1200, 1200,
      L"High performance", L"Favors performance, but may use more energy."}
 };
+
+/* Windows 11 defaults, in the order of PowrProfSchemes, on AC then on DC */
+static const POWRPROF_PROCESSOR_DEFAULT PowrProfProcessorDefaults[] =
+{
+    {&GUID_PROCESSOR_PERF_INCREASE_THRESHOLD, {{60, 90}, {90, 90}, {30, 30}}},
+    {&GUID_PROCESSOR_PERF_DECREASE_THRESHOLD, {{20, 30}, {60, 60}, {10, 10}}},
+    {&GUID_PROCESSOR_PERF_INCREASE_POLICY, {{3, 3}, {1, 1}, {2, 2}}},
+    {&GUID_PROCESSOR_PERF_DECREASE_POLICY, {{0, 0}, {2, 2}, {1, 1}}},
+    {&GUID_PROCESSOR_PERF_INCREASE_TIME, {{1, 1}, {3, 3}, {1, 1}}},
+    {&GUID_PROCESSOR_PERF_DECREASE_TIME, {{1, 1}, {1, 1}, {1, 1}}},
+    {&GUID_PROCESSOR_PERF_TIME_CHECK, {{30, 30}, {200, 200}, {15, 15}}},
+    {&GUID_PROCESSOR_PERF_BOOST_POLICY, {{60, 40}, {0, 0}, {100, 100}}},
+    {&GUID_PROCESSOR_PERF_BOOST_MODE, {{2, 2}, {2, 2}, {2, 2}}},
+    {&GUID_PROCESSOR_PERF_INCREASE_THRESHOLD_1, {{60, 90}, {60, 90}, {60, 90}}},
+    {&GUID_PROCESSOR_PERF_DECREASE_THRESHOLD_1, {{20, 30}, {20, 30}, {20, 30}}},
+    {&GUID_PROCESSOR_PERF_INCREASE_POLICY_1, {{3, 3}, {3, 3}, {3, 3}}},
+    {&GUID_PROCESSOR_PERF_DECREASE_POLICY_1, {{0, 0}, {0, 0}, {0, 0}}},
+    {&GUID_PROCESSOR_PERF_INCREASE_TIME_1, {{1, 1}, {3, 3}, {1, 1}}},
+    {&GUID_PROCESSOR_PERF_DECREASE_TIME_1, {{2, 2}, {2, 2}, {2, 2}}},
+    {&GUID_PROCESSOR_THROTTLE_MINIMUM_1, {{5, 5}, {5, 5}, {100, 5}}},
+    {&GUID_PROCESSOR_THROTTLE_MAXIMUM_1, {{100, 100}, {75, 75}, {100, 100}}},
+    {&GUID_PROCESSOR_PERF_ENERGY_PERFORMANCE_PREFERENCE_1, {{33, 50}, {60, 60}, {0, 0}}},
+    {&GUID_PROCESSOR_FREQUENCY_LIMIT, {{0, 0}, {0, 0}, {0, 0}}},
+    {&GUID_PROCESSOR_FREQUENCY_LIMIT_1, {{0, 0}, {0, 0}, {0, 0}}},
+    {&GUID_PROCESSOR_CORE_PARKING_MIN_CORES, {{10, 10}, {10, 10}, {100, 100}}},
+    {&GUID_PROCESSOR_CORE_PARKING_MIN_CORES_1, {{0, 0}, {0, 0}, {0, 0}}},
+    {&GUID_PROCESSOR_CORE_PARKING_MAX_CORES, {{100, 100}, {100, 100}, {100, 100}}},
+    {&GUID_PROCESSOR_CORE_PARKING_MAX_CORES_1, {{100, 100}, {100, 100}, {100, 100}}},
+    {&GUID_PROCESSOR_CORE_PARKING_INCREASE_TIME, {{1, 1}, {1, 1}, {7, 7}}},
+    {&GUID_PROCESSOR_CORE_PARKING_DECREASE_TIME, {{10, 10}, {2, 2}, {20, 20}}},
+    {&GUID_PROCESSOR_CORE_PARKING_INCREASE_POLICY, {{0, 0}, {0, 0}, {0, 0}}},
+    {&GUID_PROCESSOR_CORE_PARKING_DECREASE_POLICY, {{0, 0}, {0, 0}, {0, 0}}},
+    {&GUID_PROCESSOR_PARKING_CONCURRENCY_THRESHOLD, {{97, 97}, {97, 97}, {97, 97}}},
+    {&GUID_PROCESSOR_PARKING_HEADROOM_THRESHOLD, {{20, 20}, {20, 20}, {20, 20}}},
+    {&GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_THRESHOLD, {{85, 85}, {90, 90}, {60, 60}}}
+};
+
+C_ASSERT(_countof(PowrProfSchemes) == _countof(PowrProfProcessorDefaults[0].Values));
 
 static const POWRPROF_SETTING_INFO PowrProfSubgroups[] =
 {
@@ -129,12 +177,12 @@ static const POWRPROF_SETTING_INFO PowrProfSubgroups[] =
 
 static const POWRPROF_SETTING_INFO PowrProfSettings[] =
 {
-    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MINIMUM, L"Minimum processor state", L"Specify the minimum processor performance state in percent."},
-    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MAXIMUM, L"Maximum processor state", L"Specify the maximum processor performance state in percent."},
-    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_PERF_AUTONOMOUS_MODE, L"Processor performance autonomous mode", L"Specify whether the processor manages its own performance state."},
-    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_PERF_ENERGY_PERFORMANCE_PREFERENCE, L"Processor energy performance preference policy", L"Specify how much processor performance to trade for energy savings."},
-    {&PowrProfVideoSubgroup, &PowrProfVideoPowerdownTimeout, L"Turn off display after", L"Specify how long the computer is inactive before the display turns off."},
-    {&PowrProfSleepSubgroup, &PowrProfStandbyTimeout, L"Sleep after", L"Specify how long the computer is inactive before it sleeps."},
+    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MINIMUM, L"Minimum processor state", L"Specify the minimum processor performance state in percent.", POWER_ATTRIBUTE_SHOW_AOAC},
+    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_THROTTLE_MAXIMUM, L"Maximum processor state", L"Specify the maximum processor performance state in percent.", POWER_ATTRIBUTE_SHOW_AOAC},
+    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_PERF_AUTONOMOUS_MODE, L"Processor performance autonomous mode", L"Specify whether the processor manages its own performance state.", POWER_ATTRIBUTE_HIDE},
+    {&GUID_PROCESSOR_SETTINGS_SUBGROUP, &GUID_PROCESSOR_PERF_ENERGY_PERFORMANCE_PREFERENCE, L"Processor energy performance preference policy", L"Specify how much processor performance to trade for energy savings.", POWER_ATTRIBUTE_HIDE},
+    {&PowrProfVideoSubgroup, &PowrProfVideoPowerdownTimeout, L"Turn off display after", L"Specify how long the computer is inactive before the display turns off.", POWER_ATTRIBUTE_SHOW_AOAC},
+    {&PowrProfSleepSubgroup, &PowrProfStandbyTimeout, L"Sleep after", L"Specify how long the computer is inactive before it sleeps.", POWER_ATTRIBUTE_SHOW_AOAC},
     {&PowrProfSleepSubgroup, &PowrProfHibernateTimeout, L"Hibernate after", L"Specify how long the computer is inactive before it hibernates."}
 };
 
@@ -215,6 +263,14 @@ POWRPROF_FormatGuid(
     swprintf(Buffer, L"{%08lx-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", Guid->Data1, Guid->Data2, Guid->Data3, Guid->Data4[0], Guid->Data4[1], Guid->Data4[2], Guid->Data4[3], Guid->Data4[4], Guid->Data4[5], Guid->Data4[6], Guid->Data4[7]);
 }
 
+static void
+POWRPROF_FormatKeyGuid(
+    WCHAR Buffer[37],
+    const GUID *Guid)
+{
+    swprintf(Buffer, L"%08lx-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x", Guid->Data1, Guid->Data2, Guid->Data3, Guid->Data4[0], Guid->Data4[1], Guid->Data4[2], Guid->Data4[3], Guid->Data4[4], Guid->Data4[5], Guid->Data4[6], Guid->Data4[7]);
+}
+
 static DWORD
 POWRPROF_OpenSettingKey(
     const GUID *Scheme,
@@ -242,6 +298,7 @@ static const WCHAR szDefaultPowerSchemeValues[] = L"DefaultPowerSchemeValues";
 static const WCHAR szPossibleSettings[] = L"PossibleSettings";
 static const WCHAR szFriendlyName[] = L"FriendlyName";
 static const WCHAR szSettingDescription[] = L"Description";
+static const WCHAR szAttributes[] = L"Attributes";
 
 static DWORD
 POWRPROF_OpenDefinitionKey(
@@ -252,19 +309,22 @@ POWRPROF_OpenDefinitionKey(
     BOOL Create,
     HKEY *Key)
 {
-    WCHAR SubgroupString[39], SettingString[39];
+    WCHAR GuidString[37];
     WCHAR Path[MAX_PATH];
     DWORD Disposition;
 
-    POWRPROF_FormatGuid(SubgroupString, Subgroup ? Subgroup : &NO_SUBGROUP_GUID);
+    wcscpy(Path, szPowerSettings);
+    if (Subgroup && !IsEqualGUID(Subgroup, &NO_SUBGROUP_GUID))
+    {
+        POWRPROF_FormatKeyGuid(GuidString, Subgroup);
+        wcscat(Path, L"\\");
+        wcscat(Path, GuidString);
+    }
     if (Setting)
     {
-        POWRPROF_FormatGuid(SettingString, Setting);
-        swprintf(Path, L"%s\\%s\\%s", szPowerSettings, SubgroupString, SettingString);
-    }
-    else
-    {
-        swprintf(Path, L"%s\\%s", szPowerSettings, SubgroupString);
+        POWRPROF_FormatKeyGuid(GuidString, Setting);
+        wcscat(Path, L"\\");
+        wcscat(Path, GuidString);
     }
     if (SubKey)
     {
@@ -296,7 +356,7 @@ POWRPROF_GetDefinedSettingDefault(
     *Value = 0;
     wcscpy(SubKey, szDefaultPowerSchemeValues);
     wcscat(SubKey, L"\\");
-    POWRPROF_FormatGuid(SubKey + wcslen(SubKey), Scheme);
+    POWRPROF_FormatKeyGuid(SubKey + wcslen(SubKey), Scheme);
     if (POWRPROF_OpenDefinitionKey(Subgroup, Setting, SubKey, KEY_QUERY_VALUE, FALSE, &Key) != ERROR_SUCCESS)
         return ERROR_SUCCESS;
     Size = sizeof(*Value);
@@ -314,6 +374,26 @@ POWRPROF_GetBuiltinSettingDefaults(
     const GUID *Setting,
     BOOL AcValue,
     DWORD *Value);
+
+static DWORD
+POWRPROF_GetProcessorDefault(
+    const POWRPROF_SCHEME_DEFAULTS *Defaults,
+    const GUID *Setting,
+    BOOL AcValue,
+    DWORD *Value)
+{
+    UINT Index;
+
+    for (Index = 0; Index < _countof(PowrProfProcessorDefaults); Index++)
+    {
+        if (IsEqualGUID(PowrProfProcessorDefaults[Index].Setting, Setting))
+        {
+            *Value = PowrProfProcessorDefaults[Index].Values[Defaults - PowrProfSchemes][AcValue ? PoAc : PoDc];
+            return ERROR_SUCCESS;
+        }
+    }
+    return ERROR_FILE_NOT_FOUND;
+}
 
 static DWORD
 POWRPROF_GetSettingDefaults(
@@ -391,7 +471,7 @@ POWRPROF_GetBuiltinSettingDefaults(
     else if (IsEqualGUID(Setting, &GUID_PROCESSOR_PERF_ENERGY_PERFORMANCE_PREFERENCE))
         *Value = AcValue ? Defaults->AcEnergyPreference : Defaults->DcEnergyPreference;
     else
-        return ERROR_FILE_NOT_FOUND;
+        return POWRPROF_GetProcessorDefault(Defaults, Setting, AcValue, Value);
     return ERROR_SUCCESS;
 }
 
@@ -611,6 +691,8 @@ POWRPROF_ApplyProcessorPolicyValues(
     const POWRPROF_PROCESSOR_POLICY_VALUES *Values)
 {
     DWORD Error;
+    DWORD Value;
+    UINT Index;
 
     Error = POWRPROF_ApplyPowerSetting(&GUID_PROCESSOR_THROTTLE_MAXIMUM, PowerCondition, Values->Maximum);
     if (Error == ERROR_SUCCESS)
@@ -619,6 +701,13 @@ POWRPROF_ApplyProcessorPolicyValues(
         Error = POWRPROF_ApplyPowerSetting(&GUID_PROCESSOR_PERF_AUTONOMOUS_MODE, PowerCondition, Values->AutonomousMode);
     if (Error == ERROR_SUCCESS)
         Error = POWRPROF_ApplyPowerSetting(&GUID_PROCESSOR_PERF_ENERGY_PERFORMANCE_PREFERENCE, PowerCondition, Values->EnergyPreference);
+    for (Index = 0; Index < _countof(PowrProfProcessorDefaults) && Error == ERROR_SUCCESS; Index++)
+    {
+        Error = POWRPROF_ReadValueIndex(Scheme, &GUID_PROCESSOR_SETTINGS_SUBGROUP, PowrProfProcessorDefaults[Index].Setting,
+                                        PowerCondition == PoAc, &Value);
+        if (Error == ERROR_SUCCESS)
+            Error = POWRPROF_ApplyPowerSetting(PowrProfProcessorDefaults[Index].Setting, PowerCondition, Value);
+    }
     if (Error == ERROR_SUCCESS)
         Error = POWRPROF_ApplyGuidPowerSetting(&GUID_POWERSCHEME_PERSONALITY, PowerCondition, Scheme);
     if (Error == ERROR_SUCCESS)
@@ -1080,7 +1169,7 @@ DeletePwrScheme(UINT uiIndex)
     UINT Current;
     LONG Err;
 
-    swprintf(Buf, L"Control Panel\\PowerCfg\\PowerPolicies\\%d", uiIndex);
+    swprintf(Buf, L"Control Panel\\PowerCfg\\PowerPolicies\\%u", uiIndex);
 
     if (!GetActivePwrScheme(&Current))
         return FALSE;
@@ -1423,7 +1512,7 @@ GetPwrDiskSpindownRange(PUINT RangeMax, PUINT RangeMin)
 BOOLEAN WINAPI
 IsAdminOverrideActive(PADMINISTRATOR_POWER_POLICY p)
 {
-    FIXME("( %p) stub!\n", p);
+    TRACE("(%p)\n", p);
     return FALSE;
 }
 
@@ -1991,30 +2080,203 @@ DWORD WINAPI PowerEnumerate(HKEY key, const GUID *scheme, const GUID *subgroup, 
     }
 }
 
+typedef struct _POWRPROF_NOTIFY_REGISTRATION
+{
+    LIST_ENTRY Entry;
+    GUID Setting;
+    BOOL SuspendResume;
+    PDEVICE_NOTIFY_CALLBACK_ROUTINE Callback;
+    PVOID Context;
+    PTP_WORK Work;
+} POWRPROF_NOTIFY_REGISTRATION, *PPOWRPROF_NOTIFY_REGISTRATION;
+
+static SRWLOCK PowrProfNotifyLock = SRWLOCK_INIT;
+static LIST_ENTRY PowrProfNotifyList = {&PowrProfNotifyList, &PowrProfNotifyList};
+
+static BOOL
+POWRPROF_CurrentSettingValue(
+    const GUID *Setting,
+    BYTE Data[sizeof(GUID)],
+    DWORD *Length)
+{
+    const POWRPROF_SCHEME_DEFAULTS *Defaults;
+    SYSTEM_POWER_STATUS PowerStatus;
+    GUID Scheme;
+    DWORD Value, Error;
+    BOOL Ac = TRUE;
+    UINT Index;
+
+    if (GetSystemPowerStatus(&PowerStatus) && PowerStatus.ACLineStatus == 0)
+        Ac = FALSE;
+    if (IsEqualGUID(Setting, &PowrProfAcDcPowerSource))
+    {
+        Value = Ac ? PoAc : PoDc;
+        RtlCopyMemory(Data, &Value, sizeof(Value));
+        *Length = sizeof(Value);
+        return TRUE;
+    }
+
+    if (AcquirePwrProfSemaphoreError() != ERROR_SUCCESS)
+        return FALSE;
+    Error = POWRPROF_ReadActiveScheme(&Scheme, NULL);
+    if (Error == ERROR_SUCCESS && IsEqualGUID(Setting, &GUID_POWERSCHEME_PERSONALITY))
+    {
+        Defaults = POWRPROF_FindScheme(&Scheme);
+        ReleaseSemaphore(PPRegSemaphore, 1, NULL);
+        if (!Defaults)
+            return FALSE;
+        RtlCopyMemory(Data, Defaults->Guid, sizeof(GUID));
+        *Length = sizeof(GUID);
+        return TRUE;
+    }
+    for (Index = 0; Error == ERROR_SUCCESS && Index < sizeof(PowrProfSettings) / sizeof(PowrProfSettings[0]); Index++)
+    {
+        if (!IsEqualGUID(PowrProfSettings[Index].Setting, Setting))
+            continue;
+        Error = POWRPROF_ReadValueIndex(&Scheme, PowrProfSettings[Index].Subgroup, Setting, Ac, &Value);
+        ReleaseSemaphore(PPRegSemaphore, 1, NULL);
+        if (Error != ERROR_SUCCESS)
+            return FALSE;
+        RtlCopyMemory(Data, &Value, sizeof(Value));
+        *Length = sizeof(Value);
+        return TRUE;
+    }
+    ReleaseSemaphore(PPRegSemaphore, 1, NULL);
+    return FALSE;
+}
+
+static VOID CALLBACK
+POWRPROF_SettingNotifyWork(
+    PTP_CALLBACK_INSTANCE Instance,
+    PVOID Context,
+    PTP_WORK Work)
+{
+    PPOWRPROF_NOTIFY_REGISTRATION Registration = Context;
+    PDEVICE_NOTIFY_CALLBACK_ROUTINE Callback = Registration->Callback;
+    PVOID CallbackContext = Registration->Context;
+    union
+    {
+        POWERBROADCAST_SETTING Setting;
+        BYTE Buffer[FIELD_OFFSET(POWERBROADCAST_SETTING, Data) + sizeof(GUID)];
+    } Broadcast;
+    DWORD Length;
+
+    UNREFERENCED_PARAMETER(Work);
+
+    if (!Callback || !POWRPROF_CurrentSettingValue(&Registration->Setting, Broadcast.Setting.Data, &Length))
+        return;
+    Broadcast.Setting.PowerSetting = Registration->Setting;
+    Broadcast.Setting.DataLength = Length;
+    /* The callback may unregister this registration, which waits for the callbacks of its work */
+    DisassociateCurrentThreadFromCallback(Instance);
+    Callback(CallbackContext, PBT_POWERSETTINGCHANGE, &Broadcast.Setting);
+}
+
+static DWORD
+POWRPROF_RegisterNotification(
+    const GUID *Setting,
+    BOOL SuspendResume,
+    DWORD Flags,
+    HANDLE Recipient,
+    PHPOWERNOTIFY RegistrationHandle)
+{
+    PDEVICE_NOTIFY_SUBSCRIBE_PARAMETERS Parameters = Recipient;
+    PPOWRPROF_NOTIFY_REGISTRATION Registration;
+    DWORD Error;
+
+    if (Flags != DEVICE_NOTIFY_CALLBACK || !Parameters || !RegistrationHandle || (!SuspendResume && !Setting))
+        return ERROR_INVALID_PARAMETER;
+
+    Registration = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*Registration));
+    if (!Registration)
+        return ERROR_NOT_ENOUGH_MEMORY;
+    if (Setting)
+        Registration->Setting = *Setting;
+    Registration->SuspendResume = SuspendResume;
+    Registration->Callback = Parameters->Callback;
+    Registration->Context = Parameters->Context;
+    if (!SuspendResume)
+    {
+        Registration->Work = CreateThreadpoolWork(POWRPROF_SettingNotifyWork, Registration, NULL);
+        if (!Registration->Work)
+        {
+            Error = GetLastError();
+            HeapFree(GetProcessHeap(), 0, Registration);
+            return Error;
+        }
+    }
+
+    AcquireSRWLockExclusive(&PowrProfNotifyLock);
+    InsertTailList(&PowrProfNotifyList, &Registration->Entry);
+    ReleaseSRWLockExclusive(&PowrProfNotifyLock);
+
+    *RegistrationHandle = Registration;
+    if (Registration->Work)
+        SubmitThreadpoolWork(Registration->Work);
+    return ERROR_SUCCESS;
+}
+
+static DWORD
+POWRPROF_UnregisterNotification(
+    HPOWERNOTIFY RegistrationHandle,
+    BOOL SuspendResume)
+{
+    PPOWRPROF_NOTIFY_REGISTRATION Registration = NULL;
+    PLIST_ENTRY Entry;
+
+    AcquireSRWLockExclusive(&PowrProfNotifyLock);
+    for (Entry = PowrProfNotifyList.Flink; Entry != &PowrProfNotifyList; Entry = Entry->Flink)
+    {
+        PPOWRPROF_NOTIFY_REGISTRATION Candidate = CONTAINING_RECORD(Entry, POWRPROF_NOTIFY_REGISTRATION, Entry);
+
+        if (Candidate == RegistrationHandle && Candidate->SuspendResume == SuspendResume)
+        {
+            RemoveEntryList(&Candidate->Entry);
+            Registration = Candidate;
+            break;
+        }
+    }
+    ReleaseSRWLockExclusive(&PowrProfNotifyLock);
+
+    if (!Registration)
+        return ERROR_INVALID_PARAMETER;
+    if (Registration->Work)
+    {
+        WaitForThreadpoolWorkCallbacks(Registration->Work, TRUE);
+        CloseThreadpoolWork(Registration->Work);
+    }
+    HeapFree(GetProcessHeap(), 0, Registration);
+    return ERROR_SUCCESS;
+}
+
 DWORD WINAPI PowerRegisterSuspendResumeNotification(DWORD flags, HANDLE recipient, PHPOWERNOTIFY handle)
 {
-    FIXME("(0x%08lx,%p,%p) stub!\n", flags, recipient, handle);
-    *handle = (HPOWERNOTIFY)0xdeadbeef;
-    return ERROR_SUCCESS;
+    TRACE("(0x%08lx,%p,%p)\n", flags, recipient, handle);
+
+    /* TODO: suspend and resume events need a notification from the kernel; none is delivered yet */
+    return POWRPROF_RegisterNotification(NULL, TRUE, flags, recipient, handle);
 }
 
 DWORD WINAPI PowerUnregisterSuspendResumeNotification(HPOWERNOTIFY handle)
 {
-    FIXME("(%p) stub!\n", handle);
-    return ERROR_SUCCESS;
+    TRACE("(%p)\n", handle);
+
+    return POWRPROF_UnregisterNotification(handle, TRUE);
 }
 
 DWORD WINAPI PowerSettingRegisterNotification(const GUID *setting, DWORD flags, HANDLE recipient, PHPOWERNOTIFY handle)
 {
-    FIXME("(%s,0x%08lx,%p,%p) stub!\n", debugstr_guid(setting), flags, recipient, handle);
-    *handle = (PHPOWERNOTIFY)0xdeadbeef;
-    return ERROR_SUCCESS;
+    TRACE("(%s,0x%08lx,%p,%p)\n", debugstr_guid(setting), flags, recipient, handle);
+
+    /* TODO: later changes, and the console display and monitor states, need a notification from the kernel; only the current power source, scheme personality and scheme settings are delivered */
+    return POWRPROF_RegisterNotification(setting, FALSE, flags, recipient, handle);
 }
 
 DWORD WINAPI PowerSettingUnregisterNotification(HPOWERNOTIFY handle)
 {
-    FIXME("(%p) stub!\n", handle);
-    return ERROR_SUCCESS;
+    TRACE("(%p)\n", handle);
+
+    return POWRPROF_UnregisterNotification(handle, FALSE);
 }
 
 DWORD WINAPI PowerWriteACValueIndex(HKEY key, const GUID *scheme, const GUID *subgroup, const GUID *setting, DWORD index)
@@ -2228,7 +2490,7 @@ POWRPROF_FormatDefaultKey(
 {
     wcscpy(SubKey, szDefaultPowerSchemeValues);
     wcscat(SubKey, L"\\");
-    POWRPROF_FormatGuid(SubKey + wcslen(SubKey), SchemePersonality);
+    POWRPROF_FormatKeyGuid(SubKey + wcslen(SubKey), SchemePersonality);
 }
 
 DWORD WINAPI PowerCreateSetting(HKEY RootSystemPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid)
@@ -2264,7 +2526,7 @@ DWORD WINAPI PowerCreatePossibleSetting(HKEY RootSystemPowerKey, const GUID *Sub
 
 DWORD WINAPI PowerRemovePowerSetting(const GUID *PowerSettingSubKeyGuid, const GUID *PowerSettingGuid)
 {
-    WCHAR SettingString[39];
+    WCHAR SettingString[37];
     HKEY Key;
     DWORD Error;
 
@@ -2278,7 +2540,7 @@ DWORD WINAPI PowerRemovePowerSetting(const GUID *PowerSettingSubKeyGuid, const G
     Error = POWRPROF_OpenDefinitionKey(PowerSettingSubKeyGuid, NULL, NULL, KEY_ALL_ACCESS, FALSE, &Key);
     if (Error == ERROR_SUCCESS)
     {
-        POWRPROF_FormatGuid(SettingString, PowerSettingGuid);
+        POWRPROF_FormatKeyGuid(SettingString, PowerSettingGuid);
         Error = RegDeleteTreeW(Key, SettingString);
         RegCloseKey(Key);
     }
@@ -2288,20 +2550,26 @@ DWORD WINAPI PowerRemovePowerSetting(const GUID *PowerSettingSubKeyGuid, const G
 
 DWORD WINAPI PowerReadACDefaultIndex(HKEY RootPowerKey, const GUID *SchemePersonalityGuid, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, LPDWORD AcDefaultIndex)
 {
+    DWORD Ignored;
+
     TRACE("(%p,%s,%s,%s,%p)\n", RootPowerKey, debugstr_guid(SchemePersonalityGuid), debugstr_guid(SubGroupOfPowerSettingsGuid), debugstr_guid(PowerSettingGuid), AcDefaultIndex);
 
-    if (!SchemePersonalityGuid || !PowerSettingGuid || !AcDefaultIndex)
+    if (!SchemePersonalityGuid || !PowerSettingGuid)
         return ERROR_INVALID_PARAMETER;
-    return POWRPROF_GetSettingDefaults(SchemePersonalityGuid, SubGroupOfPowerSettingsGuid, PowerSettingGuid, TRUE, AcDefaultIndex);
+    return POWRPROF_GetSettingDefaults(SchemePersonalityGuid, SubGroupOfPowerSettingsGuid, PowerSettingGuid, TRUE,
+                                       AcDefaultIndex ? AcDefaultIndex : &Ignored);
 }
 
 DWORD WINAPI PowerReadDCDefaultIndex(HKEY RootPowerKey, const GUID *SchemePersonalityGuid, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, LPDWORD DcDefaultIndex)
 {
+    DWORD Ignored;
+
     TRACE("(%p,%s,%s,%s,%p)\n", RootPowerKey, debugstr_guid(SchemePersonalityGuid), debugstr_guid(SubGroupOfPowerSettingsGuid), debugstr_guid(PowerSettingGuid), DcDefaultIndex);
 
-    if (!SchemePersonalityGuid || !PowerSettingGuid || !DcDefaultIndex)
+    if (!SchemePersonalityGuid || !PowerSettingGuid)
         return ERROR_INVALID_PARAMETER;
-    return POWRPROF_GetSettingDefaults(SchemePersonalityGuid, SubGroupOfPowerSettingsGuid, PowerSettingGuid, FALSE, DcDefaultIndex);
+    return POWRPROF_GetSettingDefaults(SchemePersonalityGuid, SubGroupOfPowerSettingsGuid, PowerSettingGuid, FALSE,
+                                       DcDefaultIndex ? DcDefaultIndex : &Ignored);
 }
 
 DWORD WINAPI PowerWriteACDefaultIndex(HKEY RootSystemPowerKey, const GUID *SchemePersonalityGuid, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, DWORD DefaultAcIndex)
@@ -2378,8 +2646,136 @@ DWORD WINAPI PowerWritePossibleValue(HKEY RootPowerKey, const GUID *SubGroupOfPo
 
 DWORD WINAPI PowerWriteSettingAttributes(const GUID *SubGroupGuid, const GUID *PowerSettingGuid, DWORD Attributes)
 {
+    HKEY Key;
+    DWORD Error;
+
     TRACE("(%s,%s,0x%lx)\n", debugstr_guid(SubGroupGuid), debugstr_guid(PowerSettingGuid), Attributes);
-    return POWRPROF_WriteDefinitionDword(SubGroupGuid, PowerSettingGuid, NULL, L"Attributes", Attributes);
+
+    Error = AcquirePwrProfSemaphoreError();
+    if (Error != ERROR_SUCCESS)
+        return Error;
+    Error = POWRPROF_OpenDefinitionKey(SubGroupGuid, PowerSettingGuid, NULL, KEY_SET_VALUE, TRUE, &Key);
+    if (Error == ERROR_SUCCESS)
+    {
+        Error = RegSetValueExW(Key, szAttributes, 0, REG_DWORD, (const BYTE *)&Attributes, sizeof(Attributes));
+        RegCloseKey(Key);
+    }
+    ReleaseSemaphore(PPRegSemaphore, 1, NULL);
+    return Error;
+}
+
+static BOOL
+POWRPROF_GetBuiltinAttributes(
+    const GUID *Subgroup,
+    const GUID *Setting,
+    DWORD *Attributes)
+{
+    UINT Index;
+
+    if (!Setting)
+    {
+        for (Index = 0; Index < sizeof(PowrProfSubgroups) / sizeof(PowrProfSubgroups[0]); Index++)
+        {
+            if (IsEqualGUID(PowrProfSubgroups[Index].Subgroup, Subgroup))
+            {
+                *Attributes = PowrProfSubgroups[Index].Attributes;
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
+    for (Index = 0; Index < sizeof(PowrProfSettings) / sizeof(PowrProfSettings[0]); Index++)
+    {
+        if (IsEqualGUID(PowrProfSettings[Index].Setting, Setting))
+        {
+            *Attributes = PowrProfSettings[Index].Attributes;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static DWORD
+POWRPROF_QueryAttributes(
+    HKEY Key)
+{
+    DWORD Value, Type, Size = sizeof(Value);
+
+    if (RegQueryValueExW(Key, szAttributes, NULL, &Type, (BYTE *)&Value, &Size) != ERROR_SUCCESS ||
+        Type != REG_DWORD || Size != sizeof(Value))
+        return 0;
+    return Value;
+}
+
+static BOOL
+POWRPROF_FindSettingDefinition(
+    const GUID *Setting,
+    HKEY *Key)
+{
+    WCHAR SettingString[37], Name[256 + 37];
+    HKEY Settings;
+    DWORD Index, Length;
+    BOOL Found = FALSE;
+
+    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, szPowerSettings, 0, KEY_ENUMERATE_SUB_KEYS, &Settings) != ERROR_SUCCESS)
+        return FALSE;
+    POWRPROF_FormatKeyGuid(SettingString, Setting);
+    for (Index = 0; !Found; Index++)
+    {
+        Length = 256;
+        if (RegEnumKeyExW(Settings, Index, Name, &Length, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+            break;
+        if (_wcsicmp(Name, SettingString) != 0)
+        {
+            wcscat(Name, L"\\");
+            wcscat(Name, SettingString);
+        }
+        Found = RegOpenKeyExW(Settings, Name, 0, KEY_QUERY_VALUE, Key) == ERROR_SUCCESS;
+    }
+    RegCloseKey(Settings);
+    return Found;
+}
+
+DWORD WINAPI PowerReadSettingAttributes(const GUID *SubGroupGuid, const GUID *PowerSettingGuid)
+{
+    HKEY Key;
+    DWORD Attributes = 0, Value;
+
+    TRACE("(%s,%s)\n", debugstr_guid(SubGroupGuid), debugstr_guid(PowerSettingGuid));
+
+    if (SubGroupGuid)
+    {
+        if (POWRPROF_OpenDefinitionKey(SubGroupGuid, NULL, NULL, KEY_QUERY_VALUE, FALSE, &Key) == ERROR_SUCCESS)
+        {
+            Attributes = POWRPROF_QueryAttributes(Key);
+            RegCloseKey(Key);
+        }
+        else if (POWRPROF_GetBuiltinAttributes(SubGroupGuid, NULL, &Value))
+        {
+            Attributes = Value;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    if (PowerSettingGuid)
+    {
+        if (POWRPROF_FindSettingDefinition(PowerSettingGuid, &Key))
+        {
+            Attributes |= POWRPROF_QueryAttributes(Key);
+            RegCloseKey(Key);
+        }
+        else if (POWRPROF_GetBuiltinAttributes(NULL, PowerSettingGuid, &Value))
+        {
+            Attributes |= Value;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    return Attributes;
 }
 
 DWORD WINAPI PowerWriteValueIncrement(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, DWORD ValueIncrement)
@@ -2569,7 +2965,7 @@ ReadProcessorPwrScheme(UINT uiID,
     WCHAR szPath[MAX_PATH];
     DWORD dwSize = sizeof(MACHINE_PROCESSOR_POWER_POLICY);
 
-    swprintf(szPath, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Controls Folder\\PowerCfg\\ProcessorPolicies\\%i", uiID);
+    swprintf(szPath, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Controls Folder\\PowerCfg\\ProcessorPolicies\\%u", uiID);
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, szPath, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
         return FALSE;
 
@@ -2598,7 +2994,7 @@ ReadPwrScheme(UINT uiID,
     if (!AcquirePwrProfSemaphore())
         return FALSE;
 
-    swprintf(szNum, L"%d", uiID);
+    swprintf(szNum, L"%u", uiID);
 
     if (!POWRPROF_GetUserPowerPolicy(szNum, &userPwrPolicy, 0, NULL, 0, NULL))
     {
@@ -2680,7 +3076,7 @@ SetActivePwrScheme(UINT uiID,
         return FALSE;
     }
 
-    swprintf(Buf, L"%i", uiID);
+    swprintf(Buf, L"%u", uiID);
     if (RegSetValueExW(hKey, szCurrentPowerPolicies, 0, REG_SZ, (PBYTE)Buf, (strlenW(Buf) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
     {
         RegCloseKey(hKey);
@@ -2769,7 +3165,7 @@ WriteProcessorPwrScheme(UINT ID,
     WCHAR Buf[MAX_PATH];
     HKEY hKey;
 
-    swprintf(Buf, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Controls Folder\\PowerCfg\\ProcessorPolicies\\%i", ID);
+    swprintf(Buf, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Controls Folder\\PowerCfg\\ProcessorPolicies\\%u", ID);
 
     if (RegCreateKey(HKEY_LOCAL_MACHINE, Buf, &hKey) != ERROR_SUCCESS)
         return FALSE;
@@ -2791,7 +3187,7 @@ SetLastID(VOID)
                     KEY_WRITE,
                     &hKey) != ERROR_SUCCESS)
         return;
-    swprintf(Buf, L"%i", g_LastID);
+    swprintf(Buf, L"%u", g_LastID);
     RegSetValueExW(hKey, szLastID, 0, REG_SZ, (PBYTE)Buf, strlenW(Buf)*sizeof(WCHAR));
     RegCloseKey(hKey);
 }
@@ -2812,7 +3208,7 @@ WritePwrScheme(PUINT puiID,
         SetLastID();
     }
 
-    swprintf(Buf, L"Control Panel\\PowerCfg\\PowerPolicies\\%i", *puiID);
+    swprintf(Buf, L"Control Panel\\PowerCfg\\PowerPolicies\\%u", *puiID);
 
     if (RegCreateKey(HKEY_CURRENT_USER, Buf, &hKey) != ERROR_SUCCESS)
         return FALSE;
@@ -3104,7 +3500,7 @@ BOOLEAN WINAPI WritePwrPolicy(PUINT puiID, PPOWER_POLICY pPowerPolicy)
     WCHAR Buf[MAX_PATH];
     HKEY hKey;
 
-    swprintf(Buf, L"Control Panel\\PowerCfg\\PowerPolicies\\%i", *puiID);
+    swprintf(Buf, L"Control Panel\\PowerCfg\\PowerPolicies\\%u", *puiID);
 
     if (RegCreateKey(HKEY_CURRENT_USER, Buf, &hKey) != ERROR_SUCCESS)
         return FALSE;
@@ -3112,7 +3508,7 @@ BOOLEAN WINAPI WritePwrPolicy(PUINT puiID, PPOWER_POLICY pPowerPolicy)
     RegSetValueExW(hKey, szPolicies, 0, REG_BINARY, (const unsigned char *)&pPowerPolicy->user, sizeof(USER_POWER_POLICY));
     RegCloseKey(hKey);
 
-    swprintf(Buf, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Controls Folder\\PowerCfg\\PowerPolicies\\%i", *puiID);
+    swprintf(Buf, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Controls Folder\\PowerCfg\\PowerPolicies\\%u", *puiID);
 
     if (RegCreateKey(HKEY_LOCAL_MACHINE, Buf, &hKey) != ERROR_SUCCESS)
         return FALSE;

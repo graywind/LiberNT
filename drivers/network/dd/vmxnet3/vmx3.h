@@ -13,7 +13,7 @@
 #include <ipifcons.h>
 
 #define NDEBUG
-#include <reactos/debug.h>
+#include <libernt/debug.h>
 
 #ifndef ETH_LENGTH_OF_ADDRESS
 #define ETH_LENGTH_OF_ADDRESS 6
@@ -75,7 +75,6 @@
 #define VMX3_BUFFER_SIZE 2048
 #define VMX3_MTU 1500
 #define VMX3_FRAME_SIZE 1514
-#define VMX3_RX_BUDGET 128
 #define VMX3_MAX_MULTICAST 32
 #define VMX3_DRIVER_VERSION 0x0100
 #define VMX3_MAC_OPTIONS (NDIS_MAC_OPTION_TRANSFERS_NOT_PEND | \

@@ -45,7 +45,7 @@ typedef enum tagCOMPONENT_CHARACTERISTICS
     NCF_LW_FILTER                   = 0x40000
 } COMPONENT_CHARACTERISTICS;
 
-typedef enum
+typedef enum tagNCRP_FLAGS
 {
     NCRP_QUERY_PROPERTY_UI  = 1,
     NCRP_SHOW_PROPERTY_UI   = 2
@@ -210,13 +210,13 @@ DECLARE_INTERFACE_(IEnumNetCfgBindingPath, IUnknown)
 
 EXTERN_C const IID IID_IEnumNetCfgBindingPath;
 
-typedef enum
+typedef enum tagSUPPORTS_BINDING_INTERFACE_FLAGS
 {
     NCF_LOWER = 0x1,
     NCF_UPPER = 0x2
 }SUPPORTS_BINDING_INTERFACE_FLAGS;
 
-typedef enum
+typedef enum tagENUM_BINDING_PATHS_FLAGS
 {
     EBP_ABOVE   = 0x1,
     EBP_BELOW   = 0x2
@@ -429,5 +429,35 @@ DECLARE_INTERFACE_(INetCfgSysPrep, IUnknown)
 #define INetCfgSysPrep_HrSetupSetFirstStringAsBool(p,a,b,c) (p)->lpVtbl->HrSetupSetFirstStringAsBool(p,a,b,c)
 #define INetCfgSysPrep_HrSetupSetFirstMultiSzField(p,a,b,c) (p)->lpVtbl->HrSetupSetFirstMultiSzField(p,a,b,c)
 #endif
+
+#define NETCFG_CLIENT_CID_MS_MSClient TEXT("ms_msclient")
+#define NETCFG_E_DUPLICATE_INSTANCEID (-2147180501)
+#define NETCFG_E_VMSWITCH_ACTIVE_OVER_ADAPTER (-2147180502)
+#define NETCFG_SERVICE_CID_MS_NETBIOS TEXT("ms_netbios")
+#define NETCFG_SERVICE_CID_MS_PSCHED TEXT("ms_pschedpc")
+#define NETCFG_SERVICE_CID_MS_SERVER TEXT("ms_server")
+#define NETCFG_SERVICE_CID_MS_WLBS TEXT("ms_wlbs")
+#define NETCFG_TRANS_CID_MS_APPLETALK TEXT("ms_appletalk")
+#define NETCFG_TRANS_CID_MS_NETBEUI TEXT("ms_netbeui")
+#define NETCFG_TRANS_CID_MS_NETMON TEXT("ms_netmon")
+#define NETCFG_TRANS_CID_MS_NWIPX TEXT("ms_nwipx")
+#define NETCFG_TRANS_CID_MS_NWSPX TEXT("ms_nwspx")
+#define NETCFG_TRANS_CID_MS_TCPIP TEXT("ms_tcpip")
+
+typedef struct INetCfgClassSetup2 INetCfgClassSetup2;
+
+struct INetCfgClassSetup2Vtbl
+{
+    HRESULT (WINAPI *QueryInterface)(INetCfgClassSetup2 *, const IID *const , void **);
+    ULONG (WINAPI *AddRef)(INetCfgClassSetup2 *);
+    ULONG (WINAPI *Release)(INetCfgClassSetup2 *);
+    HRESULT (WINAPI *SelectAndInstall)(INetCfgClassSetup2 *, HWND, OBO_TOKEN *, INetCfgComponent **);
+    HRESULT (WINAPI *Install)(INetCfgClassSetup2 *, LPCWSTR, OBO_TOKEN *, DWORD, DWORD, LPCWSTR, LPCWSTR, INetCfgComponent **);
+    HRESULT (WINAPI *DeInstall)(INetCfgClassSetup2 *, INetCfgComponent *, OBO_TOKEN *, LPWSTR *);
+    HRESULT (WINAPI *UpdateNonEnumeratedComponent)(INetCfgClassSetup2 *, INetCfgComponent *, DWORD, DWORD);
+};
+
+
+
 
 #endif

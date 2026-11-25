@@ -81,3 +81,6 @@
 #define WSAAsyncGetHostByName(a,b,c,d,e) WSAAsyncGetHostByName_IPV6INCOMPATIBLE
 
 #endif
+
+#define _WSIPV6OK_
+

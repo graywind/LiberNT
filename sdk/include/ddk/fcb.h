@@ -676,4 +676,76 @@ RxFinalizeNetFobx(
 
 #endif
 
+#ifndef FCB_STATE_LWIO_ENABLED
+#define FCB_STATE_LWIO_ENABLED 0x00000008
+#endif
+#ifndef FOBX_FLAG_READ_ONLY
+#define FOBX_FLAG_READ_ONLY 0x400000
+#endif
+#ifndef FOBX_FLAG_WRITES_ISSUED
+#define FOBX_FLAG_WRITES_ISSUED 0x10000000
+#endif
+#ifndef FOBX_NUMBER_OF_SERIALIZATION_QUEUES
+#define FOBX_NUMBER_OF_SERIALIZATION_QUEUES 2
+#endif
+#ifndef MAX_FCB_ASYNC_ACQUIRE
+#define MAX_FCB_ASYNC_ACQUIRE 0xf000
+#endif
+#ifndef NETROOT_FLAG_DEVICE_NETROOT
+#define NETROOT_FLAG_DEVICE_NETROOT 0x00020000
+#endif
+#ifndef NETROOT_FLAG_ENCLOSED_ALLOCATED
+#define NETROOT_FLAG_ENCLOSED_ALLOCATED 0x00010000
+#endif
+#ifndef NETROOT_INIT_KEY
+#define NETROOT_INIT_KEY 0
+#endif
+#ifndef SRVCALL_FLAG_NO_CONNECTION_ALLOWED
+#define SRVCALL_FLAG_NO_CONNECTION_ALLOWED 0x10000
+#endif
+#ifndef SRVCALL_FLAG_NO_DELETES_ALLOWED
+#define SRVCALL_FLAG_NO_DELETES_ALLOWED 0x40000
+#endif
+#ifndef SRVCALL_FLAG_NO_WRITES_ALLOWED
+#define SRVCALL_FLAG_NO_WRITES_ALLOWED 0x20000
+#endif
+#ifndef SRVOPEN_INIT_KEY
+#define SRVOPEN_INIT_KEY 0
+#endif
+
+typedef enum _FCB_CONDITION {
+    FcbGood = 1,
+    FcbBad = 2,
+    FcbNeedsToBeVerified = 3
+} FCB_CONDITION;
+
+typedef NODE_TYPE_CODE TYPE_OF_OPEN;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+RX_FILE_TYPE RxInferFileType(PRX_CONTEXT RxContext);
+BOOLEAN RxLoudFcbMsg(PUCHAR msg, PUNICODE_STRING Name);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+
+
+
+
+
+#define FILESIZE_LOCK_DISABLED(x)
+#define RxReferenceSrvCallAtDpc(SrvCall) RxpTrackReference(RDBSS_REF_TRACK_SRVCALL, __FILE__, __LINE__, SrvCall); ASSERT(SrvCall -> NodeReferenceCount > 1); InterlockedIncrement(& SrvCall -> NodeReferenceCount)
+#define RxWriteCachingAllowed(FCB, SRVOPEN) (FlagOn((FCB) -> FcbState, FCB_STATE_WRITECACHING_ENABLED) && !FlagOn((SRVOPEN) -> Flags, SRVOPEN_FLAG_DONTUSE_WRITE_CACHING))
+
+#define RxDbgTrace(INDENT, CONTROLPOINTNUM, Z) { NOTHING; }
+#define RxWaitForStableSrvCall_Async(SRVCALL, RXCONTEXT, PNTSTATUS) { RxDbgTrace(0, Dbg, ("RxWaitForStableSrvCall -- %lx\n", (SRVCALL))); RxWaitForStableCondition(& (SRVCALL) -> Condition, & (SRVCALL) -> TransitionWaitList, (RXCONTEXT), (PNTSTATUS)); }
+
 #endif

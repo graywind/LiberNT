@@ -5,7 +5,7 @@
  * PURPOSE:     IOCTL bridge to the nwifi.sys control device
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  *
- * Issues the <reactos/nwifi_ioctl.h> IOCTLs on \\.\Nwifi; a worker thread
+ * Issues the <libernt/nwifi_ioctl.h> IOCTLs on \\.\Nwifi; a worker thread
  * pends GET_NOTIFICATION and turns kernel events into WLAN ACM notifications.
  * If nwifi is not loaded, entry points fail and no interfaces are presented.
  */
@@ -280,6 +280,40 @@ NwifiSetKey(PNWIFI_SET_KEY pKey)
     pKey->Size = sizeof(*pKey);
     return NwifiIoctl(hDev, IOCTL_NWIFI_SET_KEY, pKey, sizeof(*pKey),
                       NULL, 0, NULL);
+}
+
+DWORD
+NwifiIhvControl(ULONG InterfaceIndex, const BYTE *pIn, DWORD InSize,
+                LPBYTE pOut, DWORD OutSize, LPDWORD pBytesReturned)
+{
+    PNWIFI_IHV_CONTROL pReq;
+    HANDLE hDev;
+    DWORD size, err;
+
+    *pBytesReturned = 0;
+
+    hDev = NwifiGetControlHandle();
+    if (hDev == INVALID_HANDLE_VALUE)
+        return ERROR_NOT_READY;
+
+    if (InSize > MAXDWORD - FIELD_OFFSET(NWIFI_IHV_CONTROL, Input))
+        return ERROR_INVALID_PARAMETER;
+
+    size = FIELD_OFFSET(NWIFI_IHV_CONTROL, Input) + InSize;
+    pReq = HeapAlloc(GetProcessHeap(), 0, size);
+    if (pReq == NULL)
+        return ERROR_NOT_ENOUGH_MEMORY;
+
+    pReq->Size = FIELD_OFFSET(NWIFI_IHV_CONTROL, Input);
+    pReq->InterfaceIndex = InterfaceIndex;
+    pReq->InputLength = InSize;
+    if (InSize != 0)
+        CopyMemory(pReq->Input, pIn, InSize);
+
+    err = NwifiIoctl(hDev, IOCTL_NWIFI_IHV_CONTROL, pReq, size,
+                     pOut, OutSize, pBytesReturned);
+    HeapFree(GetProcessHeap(), 0, pReq);
+    return err;
 }
 
 DWORD

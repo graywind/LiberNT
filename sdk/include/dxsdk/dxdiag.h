@@ -152,4 +152,11 @@ DECLARE_INTERFACE_(IDxDiagProvider,IUnknown)
 }
 #endif
 
+
+typedef struct IDxDiagContainerVtbl IDxDiagContainerVtbl;
+
+typedef struct IDxDiagProviderVtbl IDxDiagProviderVtbl;
+
+#define IDxDiagContainer_EnumProps(p, a, b) (p) -> lpVtbl -> EnumProps(p, a, b, c)
+
 #endif

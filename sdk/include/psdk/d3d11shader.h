@@ -335,4 +335,106 @@ DECLARE_INTERFACE_(ID3D11FunctionLinkingGraph, IUnknown)
 };
 #undef INTERFACE
 
+#ifndef D3D_RETURN_PARAMETER_INDEX
+#define D3D_RETURN_PARAMETER_INDEX (-1)
+#endif
+
+typedef enum D3D11_SHADER_VERSION_TYPE {
+    D3D11_SHVER_PIXEL_SHADER = 0,
+    D3D11_SHVER_VERTEX_SHADER = 1,
+    D3D11_SHVER_GEOMETRY_SHADER = 2,
+    D3D11_SHVER_HULL_SHADER = 3,
+    D3D11_SHVER_DOMAIN_SHADER = 4,
+    D3D11_SHVER_COMPUTE_SHADER = 5,
+    D3D11_SHVER_RESERVED0 = 0xFFF0
+} D3D11_SHADER_VERSION_TYPE;
+
+typedef struct ID3D11ShaderReflection * LPD3D11SHADERREFLECTION;
+typedef struct ID3D11ShaderReflectionConstantBuffer * LPD3D11SHADERREFLECTIONCONSTANTBUFFER;
+typedef struct ID3D11ShaderReflectionType * LPD3D11SHADERREFLECTIONTYPE;
+typedef struct ID3D11ShaderReflectionVariable * LPD3D11SHADERREFLECTIONVARIABLE;
+
+typedef struct _D3D11_FUNCTION_DESC {
+  UINT Version;
+  LPCSTR Creator;
+  UINT Flags;
+  UINT ConstantBuffers;
+  UINT BoundResources;
+  UINT InstructionCount;
+  UINT TempRegisterCount;
+  UINT TempArrayCount;
+  UINT DefCount;
+  UINT DclCount;
+  UINT TextureNormalInstructions;
+  UINT TextureLoadInstructions;
+  UINT TextureCompInstructions;
+  UINT TextureBiasInstructions;
+  UINT TextureGradientInstructions;
+  UINT FloatInstructionCount;
+  UINT IntInstructionCount;
+  UINT UintInstructionCount;
+  UINT StaticFlowControlCount;
+  UINT DynamicFlowControlCount;
+  UINT MacroInstructionCount;
+  UINT ArrayInstructionCount;
+  UINT MovInstructionCount;
+  UINT MovcInstructionCount;
+  UINT ConversionInstructionCount;
+  UINT BitwiseInstructionCount;
+  D3D_FEATURE_LEVEL MinFeatureLevel;
+  UINT64 RequiredFeatureFlags;
+  LPCSTR Name;
+  INT FunctionParameterCount;
+  BOOL HasReturn;
+  BOOL Has10Level9VertexShader;
+  BOOL Has10Level9PixelShader;
+} D3D11_FUNCTION_DESC;
+
+typedef struct _D3D11_LIBRARY_DESC {
+  LPCSTR Creator;
+  UINT Flags;
+  UINT FunctionCount;
+} D3D11_LIBRARY_DESC;
+
+
+typedef struct ID3D11FunctionLinkingGraphVtbl ID3D11FunctionLinkingGraphVtbl;
+
+typedef struct ID3D11FunctionParameterReflection ID3D11FunctionParameterReflection;
+
+typedef struct ID3D11FunctionParameterReflectionVtbl ID3D11FunctionParameterReflectionVtbl;
+
+typedef struct ID3D11FunctionReflection ID3D11FunctionReflection;
+
+typedef struct ID3D11FunctionReflectionVtbl ID3D11FunctionReflectionVtbl;
+
+typedef struct ID3D11LibraryReflection ID3D11LibraryReflection;
+
+typedef struct ID3D11LibraryReflectionVtbl ID3D11LibraryReflectionVtbl;
+
+typedef struct ID3D11LinkerVtbl ID3D11LinkerVtbl;
+
+typedef struct ID3D11LinkingNodeVtbl ID3D11LinkingNodeVtbl;
+
+typedef struct ID3D11ModuleInstanceVtbl ID3D11ModuleInstanceVtbl;
+
+typedef struct ID3D11ModuleVtbl ID3D11ModuleVtbl;
+
+typedef struct ID3D11ShaderReflectionConstantBufferVtbl ID3D11ShaderReflectionConstantBufferVtbl;
+
+typedef struct ID3D11ShaderReflectionTypeVtbl ID3D11ShaderReflectionTypeVtbl;
+
+typedef struct ID3D11ShaderReflectionVariableVtbl ID3D11ShaderReflectionVariableVtbl;
+
+typedef struct ID3D11ShaderReflectionVtbl ID3D11ShaderReflectionVtbl;
+
+typedef struct ID3D11FunctionParameterReflection *LPD3D11FUNCTIONPARAMETERREFLECTION;
+
+typedef struct ID3D11FunctionReflection *LPD3D11FUNCTIONREFLECTION;
+
+typedef struct ID3D11LibraryReflection *LPD3D11LIBRARYREFLECTION;
+
+#define D3D11_SHVER_GET_MAJOR(_Version) (((_Version) >> 4) & 0xf)
+#define D3D11_SHVER_GET_MINOR(_Version) (((_Version) >> 0) & 0xf)
+#define D3D11_SHVER_GET_TYPE(_Version) (((_Version) >> 16) & 0xffff)
+
 #endif

@@ -75,7 +75,6 @@ typedef struct WTS_THUMBNAILID
     BYTE rgbKey[16];
 } WTS_THUMBNAILID;
 
-
 cpp_quote("#define WTS_E_FAILEDEXTRACTION MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0xb200)")
 cpp_quote("#define WTS_E_EXTRACTIONTIMEDOUT MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0xb201)")
 cpp_quote("#define WTS_E_SURROGATEUNAVAILABLE MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0xb202)")
@@ -183,3 +182,20 @@ library ThumbCacheLib
         interface ISharedBitmap;
     }
 }
+
+cpp_quote("#define WTS_E_NOSTORAGEPROVIDERTHUMBNAILHANDLER (-2147175929)")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

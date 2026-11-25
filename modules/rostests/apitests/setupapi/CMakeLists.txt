@@ -34,7 +34,10 @@ list(APPEND SOURCE
     SetupDiGetActualModelsSection.c
     SetupInstallFile.c
     SetupInstallRegisterDlls.c
+    AddRegRegistryView.c
     SetupInstallServicesFromInfSectionEx.c
+    ReenumerateFlags.c
+    ServiceFilterNoLegacyNode.c
     SoftwareComponent.c
     SysButtonDevices.c
     UsbHubInformation.c

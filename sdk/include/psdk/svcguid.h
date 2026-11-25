@@ -231,4 +231,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#define _SVCGUID_
+
 #endif

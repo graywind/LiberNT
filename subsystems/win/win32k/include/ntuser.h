@@ -974,6 +974,10 @@ typedef LONG_PTR
                             /* Seen during WM_CREATE on error exit too. */
 #define FNID_FREED   0x8000 /* Window being Freed... */
 
+#define FNID_HAS_PRIVATE_EXTRA(fnid) \
+    ((((fnid) & ~(FNID_DDEML | FNID_DESTROY | FNID_FREED)) == FNID_MENU) || \
+     (((fnid) & ~(FNID_DDEML | FNID_DESTROY | FNID_FREED)) == FNID_SCROLLBAR))
+
 #define ICLASS_TO_MASK(iCls) (1 << ((iCls)))
 
 #define GETPFNCLIENTA(fnid) \
@@ -1209,7 +1213,7 @@ typedef struct _SHAREDINFO
     WNDMSG DefWindowSpecMsgs;
 } SHAREDINFO, *PSHAREDINFO;
 
-/* See also the USERSRV_API_CONNECTINFO #define in include/reactos/subsys/win/winmsg.h */
+/* See also the USERSRV_API_CONNECTINFO #define in include/libernt/subsys/win/winmsg.h */
 typedef struct _USERCONNECT
 {
     ULONG ulVersion;
@@ -2097,7 +2101,7 @@ BOOL
 NTAPI
 NtUserDestroyInputContext(_In_ HIMC hIMC);
 
-BOOLEAN
+BOOL
 NTAPI
 NtUserDestroyWindow(
     HWND Wnd);
@@ -2632,7 +2636,7 @@ NTAPI
 NtUserGetThreadState(
     DWORD Routine);
 
-BOOLEAN
+BOOL
 NTAPI
 NtUserGetTitleBarInfo(
     HWND hwnd,

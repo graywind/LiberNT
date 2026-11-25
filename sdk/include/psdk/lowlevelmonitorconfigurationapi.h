@@ -23,18 +23,46 @@
 extern "C" {
 #endif
 
+#pragma pack(push, 1)
 typedef struct _MC_TIMING_REPORT
 {
-    BYTE bTimingStatusByte;
     DWORD dwHorizontalFrequencyInHZ;
     DWORD dwVerticalFrequencyInHZ;
+    BYTE bTimingStatusByte;
 } MC_TIMING_REPORT, *LPMC_TIMING_REPORT;
+#pragma pack(pop)
 
 typedef enum _MC_VCP_CODE_TYPE
 {
     MC_MOMENTARY,
     MC_SET_PARAMETER
 } MC_VCP_CODE_TYPE, *LPMC_VCP_CODE_TYPE;
+
+#ifdef __cplusplus
+}
+#endif
+
+#define LowLevelMonitorConfigurationAPI_h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+_BOOL WINAPI CapabilitiesRequestAndCapabilitiesReply(HANDLE hMonitor, LPSTR pszASCIICapabilitiesString, DWORD dwCapabilitiesStringLengthInCharacters);
+_BOOL WINAPI GetCapabilitiesStringLength(HANDLE hMonitor, LPDWORD pdwCapabilitiesStringLengthInCharacters);
+_BOOL WINAPI GetTimingReport(HANDLE hMonitor, LPMC_TIMING_REPORT pmtrMonitorTimingReport);
+_BOOL WINAPI GetVCPFeatureAndVCPFeatureReply(HANDLE hMonitor, BYTE bVCPCode, LPMC_VCP_CODE_TYPE pvct, LPDWORD pdwCurrentValue, LPDWORD pdwMaximumValue);
+_BOOL WINAPI SetVCPFeature(HANDLE hMonitor, BYTE bVCPCode, DWORD dwNewValue);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+_BOOL WINAPI SaveCurrentSettings(HANDLE hMonitor);
 
 #ifdef __cplusplus
 }

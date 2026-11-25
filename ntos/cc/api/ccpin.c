@@ -156,6 +156,11 @@ CcMapData(
     else
         CcMapDataNoWait++;
 
+    if (FileOffset != NULL && ((ULONG64)FileOffset->QuadPart & CC_VIEW_MASK) + Length > CC_VIEW_SIZE)
+    {
+        ExRaiseStatus(STATUS_ACCESS_VIOLATION);
+    }
+
     if (!CcNtAcquireBcb(FileObject, FileOffset, Length, (Flags & MAP_WAIT) ? PIN_WAIT : 0, FALSE, &NtBcb, Buffer))
         return FALSE;
 

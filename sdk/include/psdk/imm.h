@@ -724,7 +724,7 @@ ImmNotifyIME(
     _In_ HIMC hIMC,
     _In_ DWORD dwAction,
     _In_ DWORD dwIndex,
-    _In_ DWORD_PTR dwValue);
+    _In_ DWORD dwValue);
 
 BOOL
 WINAPI
@@ -840,6 +840,47 @@ ImmUnregisterWordW(
     typedef REGISTERWORDENUMPROCA REGISTERWORDENUMPROC;
     typedef STYLEBUFA STYLEBUF;
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef IME_CMODE_RESERVED
+#define IME_CMODE_RESERVED 0xF0000000
+#endif
+#ifndef IME_SMODE_RESERVED
+#define IME_SMODE_RESERVED 0x0000F000
+#endif
+
+#if (!(defined(UNICODE)))
+typedef LPREGISTERWORDA LPREGISTERWORD;
+typedef NPREGISTERWORDA NPREGISTERWORD;
+typedef PREGISTERWORDA PREGISTERWORD;
+typedef REGISTERWORDA REGISTERWORD;
+#else
+typedef LPREGISTERWORDW LPREGISTERWORD;
+typedef NPREGISTERWORDW NPREGISTERWORD;
+typedef PREGISTERWORDW PREGISTERWORD;
+typedef REGISTERWORDW REGISTERWORD;
+#endif
+
+#define _IMM_
+
+
+
+struct tagCOMPOSITIONFORM
+{
+    DWORD dwStyle;
+    POINT ptCurrentPos;
+    RECT rcArea;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL WINAPI ImmDisableLegacyIME(void);
 
 #ifdef __cplusplus
 }

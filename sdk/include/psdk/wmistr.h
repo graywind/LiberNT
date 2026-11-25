@@ -156,7 +156,8 @@ typedef enum
     WMI_ENABLE_COLLECTION,
     WMI_DISABLE_COLLECTION,
     WMI_REGINFO,
-    WMI_EXECUTE_METHOD
+    WMI_EXECUTE_METHOD,
+    WMI_CAPTURE_STATE = 0xA,
 } WMIDPREQUESTCODE;
 
 #define WMIGUID_QUERY                 0x0001
@@ -185,5 +186,47 @@ typedef enum
 #else
 #define WMIGUID_ALL_ACCESS WMIGUID_ALL_ACCESS_WIN2K
 #endif
+
+#ifndef WMI_GLOBAL_LOGGER_ID
+#define WMI_GLOBAL_LOGGER_ID 0x0001
+#endif
+#ifndef WMI_GUIDTYPE_DATA
+#define WMI_GUIDTYPE_DATA 2
+#endif
+#ifndef WMI_GUIDTYPE_EVENT
+#define WMI_GUIDTYPE_EVENT 3
+#endif
+#ifndef WMI_GUIDTYPE_TRACE
+#define WMI_GUIDTYPE_TRACE 1
+#endif
+#ifndef WMI_GUIDTYPE_TRACECONTROL
+#define WMI_GUIDTYPE_TRACECONTROL 0
+#endif
+#ifndef WNODE_FLAG_SEND_DATA_BLOCK
+#define WNODE_FLAG_SEND_DATA_BLOCK 0x00400000
+#endif
+#ifndef WNODE_FLAG_VERSIONED_PROPERTIES
+#define WNODE_FLAG_VERSIONED_PROPERTIES 0x00800000
+#endif
+
+typedef struct tagWNODE_EVENT_ITEM {
+  struct _WNODE_HEADER WnodeHeader;
+} WNODE_EVENT_ITEM, *PWNODE_EVENT_ITEM;
+
+struct tagWNODE_EVENT_REFERENCE
+{
+    struct _WNODE_HEADER WnodeHeader;
+    GUID TargetGuid;
+    ULONG TargetDataBlockSize;
+    union
+    {
+        ULONG TargetInstanceIndex;
+        WCHAR TargetInstanceName[];
+    };
+};
+
+typedef struct tagWNODE_EVENT_REFERENCE *PWNODE_EVENT_REFERENCE;
+
+typedef struct tagWNODE_EVENT_REFERENCE WNODE_EVENT_REFERENCE;
 
 #endif /* _WMISTR_ */

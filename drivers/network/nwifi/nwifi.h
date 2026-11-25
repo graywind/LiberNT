@@ -13,7 +13,7 @@
 
 #include <ndis.h>
 #include <windot11.h>
-#include <reactos/nwifi_ioctl.h>
+#include <libernt/nwifi_ioctl.h>
 
 #define NWIFI_TAG  'FIWN'   /* 'NWIF' */
 #define NWIFI_BSS_LIST_ATTEMPTS 3
@@ -250,6 +250,15 @@ NDIS_STATUS NwifiDoRequestEx(
     _In_ ULONG Length,
     _Out_opt_ PULONG BytesProcessed,
     _Out_opt_ PULONG BytesNeeded);
+
+NDIS_STATUS NwifiDoMethodRequest(
+    _In_ PNWIFI_ADAPTER Adapter,
+    _In_ NDIS_OID Oid,
+    _Inout_updates_bytes_(OutputLength) PVOID Buffer,
+    _In_ ULONG InputLength,
+    _In_ ULONG OutputLength,
+    _Out_ PULONG BytesWritten,
+    _Out_ PULONG BytesNeeded);
 
 /* --- datapath.c : 802.3 <-> 802.11 translation ---------------------------- */
 FILTER_SEND_NET_BUFFER_LISTS            NwifiFilterSendNetBufferLists;

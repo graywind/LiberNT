@@ -170,3 +170,7 @@ interface IAudioMeterInformation : IUnknown
         [out] DWORD *pdwHardwareSupportMask
     );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

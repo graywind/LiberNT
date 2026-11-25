@@ -257,3 +257,6 @@ interface IDXGIDebug1 : IDXGIDebug
     void DisableLeakTrackingForThread();
     BOOL IsLeakTrackingEnabledForThread();
 }
+
+cpp_quote("")
+cpp_quote("")

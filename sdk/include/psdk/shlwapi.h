@@ -1287,4 +1287,292 @@ LWSTDAPI StrFormatByteSizeEx(ULONGLONG ull, SFBS_FLAGS flags, _Out_writes_(cchBu
 #pragma pack(pop)
 
 #endif // NOSHLWAPI
+typedef const QITAB * LPCQITAB;
+#if (!(defined(UNICODE)))
+typedef PARSEDURLA PARSEDURL;
+typedef PPARSEDURLA PPARSEDURL;
+#else
+typedef PARSEDURLW PARSEDURL;
+typedef PPARSEDURLW PPARSEDURL;
+#endif
+typedef DWORD SHCT_FLAGS;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+HRESULT WINAPI GetProcessReference(IUnknown ** punk);
+void WINAPI SetProcessReference(IUnknown * punk);
+int WINAPI SHAnsiToAnsi(PCSTR pszSrc, PSTR pszDst, int cchBuf);
+LRESULT WINAPI SHSendMessageBroadcastA(UINT uMsg, WPARAM wParam, LPARAM lParam);
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef UNICODE
+#define PathIsHTMLFile PathIsHTMLFileW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define PathIsHTMLFile PathIsHTMLFileW
+#else
+#define PathIsHTMLFile PathIsHTMLFileA
+#endif
+#endif
+#endif
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SHFormatDateTime SHFormatDateTimeW
+#else
+#define SHFormatDateTime SHFormatDateTimeA
+#endif
+#endif
+#ifdef UNICODE
+#define SHMessageBoxCheck SHMessageBoxCheckW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SHMessageBoxCheck SHMessageBoxCheckW
+#else
+#define SHMessageBoxCheck SHMessageBoxCheckA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define SHSendMessageBroadcast SHSendMessageBroadcastW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SHSendMessageBroadcast SHSendMessageBroadcastW
+#else
+#define SHSendMessageBroadcast SHSendMessageBroadcastA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define SHStripMneumonic SHStripMneumonicW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SHStripMneumonic SHStripMneumonicW
+#else
+#define SHStripMneumonic SHStripMneumonicA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define StrCmpC StrCmpCW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define StrCmpC StrCmpCW
+#else
+#define StrCmpC StrCmpCA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define StrCmpIC StrCmpICW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define StrCmpIC StrCmpICW
+#else
+#define StrCmpIC StrCmpICA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define StrCmpNC StrCmpNCW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define StrCmpNC StrCmpNCW
+#else
+#define StrCmpNC StrCmpNCA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define StrCmpNIC StrCmpNICW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define StrCmpNIC StrCmpNICW
+#else
+#define StrCmpNIC StrCmpNICA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define SZ_CONTENTTYPE_CDF SZ_CONTENTTYPE_CDFW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SZ_CONTENTTYPE_CDF SZ_CONTENTTYPE_CDFW
+#else
+#define SZ_CONTENTTYPE_CDF SZ_CONTENTTYPE_CDFA
+#endif
+#endif
+#endif
+#define SZ_CONTENTTYPE_CDFA "application/x-cdf"
+#define SZ_CONTENTTYPE_CDFW L"application/x-cdf"
+#ifdef UNICODE
+#define SZ_CONTENTTYPE_HTML SZ_CONTENTTYPE_HTMLW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SZ_CONTENTTYPE_HTML SZ_CONTENTTYPE_HTMLW
+#else
+#define SZ_CONTENTTYPE_HTML SZ_CONTENTTYPE_HTMLA
+#endif
+#endif
+#endif
+#define SZ_CONTENTTYPE_HTMLA "text/html"
+#define SZ_CONTENTTYPE_HTMLW L"text/html"
+
+struct _DLLVERSIONINFO
+{
+    DWORD cbSize;
+    DWORD dwMajorVersion;
+    DWORD dwMinorVersion;
+    DWORD dwBuildNumber;
+    DWORD dwPlatformID;
+};
+
+typedef struct IQueryAssociationsVtbl IQueryAssociationsVtbl;
+
+typedef int STIF_FLAGS;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+HRESULT WINAPI SHGetInverseCMAP(BYTE *pbMap, ULONG cbMap);
+int WINAPI SHMessageBoxCheckA(HWND hwnd, LPCSTR pszText, LPCSTR pszCaption, UINT uType, int iDefault, LPCSTR pszRegVal);
+int WINAPI SHMessageBoxCheckW(HWND hwnd, LPCWSTR pszText, LPCWSTR pszCaption, UINT uType, int iDefault, LPCWSTR pszRegVal);
+BOOL WINAPI SHRegGetBoolValueFromHKCUHKLM(PCWSTR pszKey, PCWSTR pszValue, BOOL fDefault);
+CHAR WINAPI SHStripMneumonicA(LPSTR pszMenu);
+WCHAR WINAPI SHStripMneumonicW(LPWSTR pszMenu);
+int WINAPI SHUnicodeToUnicode(PCWSTR pwzSrc, PWSTR pwzDst, int cwchBuf);
+PWSTR WINAPI StrChrNW(PCWSTR pszStart, WCHAR wMatch, UINT cchMax);
+int WINAPI StrCmpCA(LPCSTR pszStr1, LPCSTR pszStr2);
+int WINAPI StrCmpCW(LPCWSTR pszStr1, LPCWSTR pszStr2);
+int WINAPI StrCmpICA(LPCSTR pszStr1, LPCSTR pszStr2);
+int WINAPI StrCmpICW(LPCWSTR pszStr1, LPCWSTR pszStr2);
+int WINAPI StrCmpNCA(LPCSTR pszStr1, LPCSTR pszStr2, int nChar);
+int WINAPI StrCmpNCW(LPCWSTR pszStr1, LPCWSTR pszStr2, int nChar);
+int WINAPI StrCmpNICA(LPCSTR pszStr1, LPCSTR pszStr2, int nChar);
+int WINAPI StrCmpNICW(LPCWSTR pszStr1, LPCWSTR pszStr2, int nChar);
+HRESULT WINAPI UrlFixupW(PCWSTR pcszUrl, PWSTR pszTranslatedUrl, DWORD cchMax);
+
+/* TODO: LiberNT does not implement the functions below yet */
+HRESULT STDAPICALLTYPE IStream_Copy(IStream *pstmFrom, IStream *pstmTo, DWORD cb);
+HRESULT STDAPICALLTYPE IStream_ReadStr(IStream *pstm, PWSTR *ppsz);
+HRESULT STDAPICALLTYPE IStream_WriteStr(IStream *pstm, PCWSTR psz);
+BOOL SHCreateThreadWithHandle(LPTHREAD_START_ROUTINE pfnThreadProc, void *pData, SHCT_FLAGS flags, LPTHREAD_START_ROUTINE pfnCallback, HANDLE *pHandle);
+#ifndef NO_SHLWAPI_REG
+DWORD STDAPICALLTYPE SHGetAssocKeys(IQueryAssociations *pqa, HKEY *rgKeys, DWORD cKeys);
+#endif
+PWSTR STDAPICALLTYPE StrChrNIW(PCWSTR pszStart, WCHAR wMatch, UINT cchMax);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum
+{
+    GLOBALCOUNTER_SEARCHMANAGER = 0,
+    GLOBALCOUNTER_SEARCHOPTIONS = 1,
+    GLOBALCOUNTER_FOLDERSETTINGSCHANGE = 2,
+    GLOBALCOUNTER_RATINGS = 3,
+    GLOBALCOUNTER_APPROVEDSITES = 4,
+    GLOBALCOUNTER_RESTRICTIONS = 5,
+    GLOBALCOUNTER_SHELLSETTINGSCHANGED = 6,
+    GLOBALCOUNTER_SYSTEMPIDLCHANGE = 7,
+    GLOBALCOUNTER_OVERLAYMANAGER = 8,
+    GLOBALCOUNTER_QUERYASSOCIATIONS = 9,
+    GLOBALCOUNTER_IESESSIONS = 0xA,
+    GLOBALCOUNTER_IEONLY_SESSIONS = 0xB,
+    GLOBALCOUNTER_APPLICATION_DESTINATIONS = 0xC,
+    __UNUSED_RECYCLE_WAS_GLOBALCOUNTER_CSCSYNCINPROGRESS = 0xD,
+    GLOBALCOUNTER_BITBUCKETNUMDELETERS = 0xE,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_SHARES = 0xF,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_A = 0x10,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_B = 0x11,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_C = 0x12,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_D = 0x13,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_E = 0x14,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_F = 0x15,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_G = 0x16,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_H = 0x17,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_I = 0x18,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_J = 0x19,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_K = 0x1A,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_L = 0x1B,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_M = 0x1C,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_N = 0x1D,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_O = 0x1E,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_P = 0x1F,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_Q = 0x20,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_R = 0x21,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_S = 0x22,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_T = 0x23,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_U = 0x24,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_V = 0x25,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_W = 0x26,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_X = 0x27,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_Y = 0x28,
+    GLOBALCOUNTER_RECYCLEDIRTYCOUNT_DRIVE_Z = 0x29,
+    __UNUSED_RECYCLE_WAS_GLOBALCOUNTER_RECYCLEDIRTYCOUNT_SERVERDRIVE = 0x2A,
+    __UNUSED_RECYCLE_WAS_GLOBALCOUNTER_RECYCLEGLOBALDIRTYCOUNT = 0x2B,
+    GLOBALCOUNTER_RECYCLEBINENUM = 0x2C,
+    GLOBALCOUNTER_RECYCLEBINCORRUPTED = 0x2D,
+    GLOBALCOUNTER_RATINGS_STATECOUNTER = 0x2E,
+    GLOBALCOUNTER_PRIVATE_PROFILE_CACHE = 0x2F,
+    GLOBALCOUNTER_INTERNETTOOLBAR_LAYOUT = 0x30,
+    GLOBALCOUNTER_FOLDERDEFINITION_CACHE = 0x31,
+    GLOBALCOUNTER_COMMONPLACES_LIST_CACHE = 0x32,
+    GLOBALCOUNTER_PRIVATE_PROFILE_CACHE_MACHINEWIDE = 0x33,
+    GLOBALCOUNTER_ASSOCCHANGED = 0x34,
+    GLOBALCOUNTER_APP_ITEMS_STATE_STORE_CACHE = 0x35,
+    GLOBALCOUNTER_SETTINGSYNC_ENABLED = 0x36,
+    GLOBALCOUNTER_APPSFOLDER_FILETYPEASSOCIATION_COUNTER = 0x37,
+    GLOBALCOUNTER_USERINFOCHANGED = 0x38,
+    GLOBALCOUNTER_SYNC_ENGINE_INFORMATION_CACHE_MACHINEWIDE = 0x39,
+    GLOBALCOUNTER_BANNERS_DATAMODEL_CACHE_MACHINEWIDE = 0x3A,
+    GLOBALCOUNTER_MAXIMUMVALUE = 0x3B,
+} SHGLOBALCOUNTER;
+
+long WINAPI SHGlobalCounterDecrement(const SHGLOBALCOUNTER id);
+#ifndef NO_SHLWAPI_REG
+LSTATUS WINAPI SHRegGetValueFromHKCUHKLM(PCWSTR pwszKey, PCWSTR pwszValue, SRRF srrfFlags, DWORD *pdwType, void *pvData, DWORD *pcbData);
+#endif
+#ifndef NO_SHLWAPI_REG
+LSTATUS WINAPI SHRegSetValue(HKEY hkey, LPCWSTR pszSubKey, LPCWSTR pszValue, SRRF srrfFlags, DWORD dwType, LPCVOID pvData, DWORD cbData);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#define QITABENTMULTI2(Cthis, Ifoo, Iimpl) { (IID *) & Ifoo, OFFSETOFCLASS(Iimpl, Cthis) }
+#if (!(defined(UNICODE)))
+#define SHAnsiToTChar(szSrc, szDest, cchSize) SHAnsiToAnsi(szSrc, szDest, cchSize)
+#define SHTCharToAnsi(szSrc, szDest, cchSize) SHAnsiToAnsi(szSrc, szDest, cchSize)
+#define SHTCharToUnicode(szSrc, wzDest, cchSize) SHAnsiToUnicode(szSrc, wzDest, cchSize)
+#define SHUnicodeToTChar(wzSrc, szDest, cchSize) SHUnicodeToAnsi(wzSrc, szDest, cchSize)
+#else
+#define SHAnsiToTChar(szSrc, wzDest, cchSize) SHAnsiToUnicode(szSrc, wzDest, cchSize)
+#define SHTCharToAnsi(wzSrc, szDest, cchSize) SHUnicodeToAnsi(wzSrc, szDest, cchSize)
+#define SHTCharToUnicode(wzSrc, wzDest, cchSize) SHUnicodeToUnicode(wzSrc, wzDest, cchSize)
+#define SHUnicodeToTChar(wzSrc, wzDest, cchSize) SHUnicodeToUnicode(wzSrc, wzDest, cchSize)
+#endif
+#define STATIC_CAST(typ) static_cast < typ >
+
 #endif // _INC_SHLWAPI

@@ -32,12 +32,15 @@ extern void func_DisableableParents(void);
 extern void func_HalDeviceIds(void);
 extern void func_ProcessorDeviceIds(void);
 extern void func_SetupInstallServicesFromInfSectionEx(void);
+extern void func_ReenumerateFlags(void);
+extern void func_ServiceFilterNoLegacyNode(void);
 extern void func_SoftwareComponent(void);
 extern void func_SetupCommitFileQueue(void);
 extern void func_SetupDiInstallClassExA(void);
 extern void func_SetupDiOpenDeviceInterface(void);
 extern void func_SetupInstallFile(void);
 extern void func_SetupInstallRegisterDlls(void);
+extern void func_AddRegRegistryView(void);
 extern void func_SysButtonDevices(void);
 extern void func_UsbHubInformation(void);
 extern void func_UsbInterfaceIds(void);
@@ -74,12 +77,15 @@ const struct test winetest_testlist[] =
     { "HalDeviceIds", func_HalDeviceIds },
     { "ProcessorDeviceIds", func_ProcessorDeviceIds },
     { "SetupInstallServicesFromInfSectionEx", func_SetupInstallServicesFromInfSectionEx},
+    { "ReenumerateFlags", func_ReenumerateFlags },
+    { "ServiceFilterNoLegacyNode", func_ServiceFilterNoLegacyNode },
     { "SoftwareComponent", func_SoftwareComponent },
     { "SetupCommitFileQueue", func_SetupCommitFileQueue },
     { "SetupDiInstallClassExA", func_SetupDiInstallClassExA},
     { "SetupDiOpenDeviceInterface", func_SetupDiOpenDeviceInterface },
     { "SetupInstallFile", func_SetupInstallFile },
     { "SetupInstallRegisterDlls", func_SetupInstallRegisterDlls },
+    { "AddRegRegistryView", func_AddRegRegistryView },
     { "SysButtonDevices", func_SysButtonDevices },
     { "UsbHubInformation", func_UsbHubInformation },
     { "UsbInterfaceIds", func_UsbInterfaceIds },

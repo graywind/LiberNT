@@ -33,8 +33,8 @@
 #include "wingdi.h"
 #include "winuser.h"
 #ifdef __REACTOS__
-#include <reactos/user32_compat.h>
-#include <reactos/dwmframe.h>
+#include <libernt/user32_compat.h>
+#include <libernt/dwmframe.h>
 #endif
 #include "dwmapi.h"
 #include "wine/debug.h"
@@ -258,6 +258,8 @@ dwm_set_dword_attribute(HWND hwnd, DWORD attribute, DWORD value)
 
     if (property == NULL)
         return E_INVALIDARG;
+    if ((DWORD)(ULONG_PTR)GetPropW(hwnd, property) == value)
+        return S_OK;
     if (value == 0)
     {
         RemovePropW(hwnd, property);

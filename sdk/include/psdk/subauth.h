@@ -28,7 +28,7 @@ extern "C" {
 #define MSV1_0_SUBAUTH_PASSWORD_EXPIRY 32
 #define MSV1_0_SUBAUTH_ACCOUNT_TYPE 64
 #define MSV1_0_SUBAUTH_LOCKOUT 128
-#define NEXT_FREE_ACCOUNT_CONTROL_BIT 131072
+#define NEXT_FREE_ACCOUNT_CONTROL_BIT (USER_SHADOW_ACCOUNT << 1)
 #define SAM_DAYS_PER_WEEK 7
 #define SAM_HOURS_PER_WEEK 168
 #define SAM_MINUTES_PER_WEEK 10080
@@ -88,7 +88,8 @@ typedef enum _NETLOGON_LOGON_INFO_CLASS {
   NetlogonInteractiveInformation = 1,NetlogonNetworkInformation,
   NetlogonServiceInformation,NetlogonGenericInformation,
   NetlogonInteractiveTransitiveInformation,NetlogonNetworkTransitiveInformation,
-  NetlogonServiceTransitiveInformation
+  NetlogonServiceTransitiveInformation,
+  NetlogonTicketLogonInformation = 8,
 } NETLOGON_LOGON_INFO_CLASS;
 typedef struct _CYPHER_BLOCK {
   CHAR data[CYPHER_BLOCK_LENGTH];
@@ -203,4 +204,34 @@ NTSTATUS NTAPI Msv1_0SubAuthenticationRoutineEx(NETLOGON_LOGON_INFO_CLASS,PVOID,
 #ifdef __cplusplus
 }
 #endif
+#ifndef MSV1_0_KERBEROS_LOGON
+#define MSV1_0_KERBEROS_LOGON 0x04
+#endif
+#ifndef NETLOGON_TARGET_INFO_TYPE_KERBEROS
+#define NETLOGON_TARGET_INFO_TYPE_KERBEROS 2
+#endif
+#ifndef NETLOGON_TARGET_INFO_TYPE_NTLM
+#define NETLOGON_TARGET_INFO_TYPE_NTLM 1
+#endif
+#ifndef USER_SHADOW_ACCOUNT
+#define USER_SHADOW_ACCOUNT 0x00400000
+#endif
+
+typedef struct _NETLOGON_TARGET_INFO {
+  ULONG Type;
+  UNICODE_STRING NbComputerName;
+  UNICODE_STRING NbDomainName;
+  UNICODE_STRING DnsComputerName;
+  UNICODE_STRING DnsDomainName;
+  UNICODE_STRING DnsTreeName;
+  UNICODE_STRING TargetName;
+} NETLOGON_TARGET_INFO, *PNETLOGON_TARGET_INFO;
+
+#define _NTSAM_SAM_HANDLE_
+#define _NTSAM_SAM_USER_PARMS_
+#define _NTSAM_USER_ACCOUNT_FLAG_
+#define _NTSAM_USER_ALL_INFO_
+#define _NTSUBAUTH_
+#define USER_COMPUTED_ACCOUNT_CONTROL_BITS 0x20400
+
 #endif /* _SUBAUTH_H */

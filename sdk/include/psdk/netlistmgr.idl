@@ -86,6 +86,17 @@ typedef [v1_enum] enum NLM_CONNECTION_COST
     NLM_CONNECTION_COST_APPROACHINGDATALIMIT = 0x80000
 } NLM_CONNECTION_COST;
 
+#define MAX_PROFILENAME_LENGTH 256
+cpp_quote("#define MAX_PROFILENAME_LENGTH 256")
+
+typedef struct NLM_SIMULATED_PROFILE_INFO
+{
+    WCHAR ProfileName[MAX_PROFILENAME_LENGTH];
+    NLM_CONNECTION_COST cost;
+    DWORD UsageInMegabytes;
+    DWORD DataLimitInMegabytes;
+} NLM_SIMULATED_PROFILE_INFO;
+
 typedef struct NLM_SOCKADDR
 {
     BYTE data[128];
@@ -247,14 +258,19 @@ interface INetworkListManager : IDispatch
         [in] GUID gdNetworkConnectionId,
         [out, retval] INetworkConnection **ppNetworkConnection);
 
-    HRESULT IsConnectedToInternet(
+    [propget] HRESULT IsConnectedToInternet(
         [out, retval] VARIANT_BOOL *pbIsConnected);
 
-    HRESULT IsConnected(
+    [propget] HRESULT IsConnected(
         [out, retval] VARIANT_BOOL *pbIsConnected);
 
     HRESULT GetConnectivity(
         [out, retval] NLM_CONNECTIVITY *pConnectivity);
+
+    HRESULT SetSimulatedProfileInfo(
+        [in] NLM_SIMULATED_PROFILE_INFO *pSimulatedInfo);
+
+    HRESULT ClearSimulatedProfileInfo();
 }
 
 [
@@ -438,3 +454,103 @@ interface INetworkEvents : IUnknown
         [in] GUID networkId,
         [in] NLM_NETWORK_PROPERTY_CHANGE flags);
 }
+
+cpp_quote("#ifndef __netlistmgr_cpp_quote_1_DEFINED__")
+cpp_quote("#define __netlistmgr_cpp_quote_1_DEFINED__")
+cpp_quote("#ifndef NLM_MAX_ADDRESS_LIST_SIZE")
+cpp_quote("#define NLM_MAX_ADDRESS_LIST_SIZE 10")
+cpp_quote("#endif")
+
+cpp_quote("#define NA_AllowMerge L\"NA_AllowMerge\"")
+cpp_quote("#define NA_CategoryReadOnly L\"NA_CategoryReadOnly\"")
+cpp_quote("#define NA_CategorySetByPolicy L\"NA_CategorySetByPolicy\"")
+cpp_quote("#define NA_DescriptionReadOnly L\"NA_DescriptionReadOnly\"")
+cpp_quote("#define NA_DescriptionSetByPolicy L\"NA_DescriptionSetByPolicy\"")
+cpp_quote("#define NA_DomainAuthenticationFailed L\"NA_DomainAuthenticationFailed\"")
+cpp_quote("#define NA_IconReadOnly L\"NA_IconReadOnly\"")
+cpp_quote("#define NA_IconSetByPolicy L\"NA_IconSetByPolicy\"")
+cpp_quote("#define NA_InternetConnectivityV4 L\"NA_InternetConnectivityV4\"")
+cpp_quote("#define NA_InternetConnectivityV6 L\"NA_InternetConnectivityV6\"")
+cpp_quote("#define NA_NameReadOnly L\"NA_NameReadOnly\"")
+cpp_quote("#define NA_NameSetByPolicy L\"NA_NameSetByPolicy\"")
+cpp_quote("#define NA_NetworkClass L\"NA_NetworkClass\"")
+cpp_quote("")
+cpp_quote("enum NLM_DOMAIN_AUTHENTICATION_KIND")
+cpp_quote("{")
+cpp_quote("    NLM_DOMAIN_AUTHENTICATION_KIND_NONE = 0,")
+cpp_quote("    NLM_DOMAIN_AUTHENTICATION_KIND_LDAP = 1,")
+cpp_quote("    NLM_DOMAIN_AUTHENTICATION_KIND_TLS = 2,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum NLM_DOMAIN_AUTHENTICATION_KIND NLM_DOMAIN_AUTHENTICATION_KIND;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct INetwork2 INetwork2;")
+cpp_quote("")
+cpp_quote("struct INetwork2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(INetwork2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(INetwork2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(INetwork2 *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(INetwork2 *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(INetwork2 *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(INetwork2 *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(INetwork2 *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetName)(INetwork2 *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *SetName)(INetwork2 *, BSTR);")
+cpp_quote("    HRESULT (WINAPI *GetDescription)(INetwork2 *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *SetDescription)(INetwork2 *, BSTR);")
+cpp_quote("    HRESULT (WINAPI *GetNetworkId)(INetwork2 *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *GetDomainType)(INetwork2 *, NLM_DOMAIN_TYPE *);")
+cpp_quote("    HRESULT (WINAPI *GetNetworkConnections)(INetwork2 *, IEnumNetworkConnections **);")
+cpp_quote("    HRESULT (WINAPI *GetTimeCreatedAndConnected)(INetwork2 *, DWORD *, DWORD *, DWORD *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *get_IsConnectedToInternet)(INetwork2 *, VARIANT_BOOL *);")
+cpp_quote("    HRESULT (WINAPI *get_IsConnected)(INetwork2 *, VARIANT_BOOL *);")
+cpp_quote("    HRESULT (WINAPI *GetConnectivity)(INetwork2 *, NLM_CONNECTIVITY *);")
+cpp_quote("    HRESULT (WINAPI *GetCategory)(INetwork2 *, NLM_NETWORK_CATEGORY *);")
+cpp_quote("    HRESULT (WINAPI *SetCategory)(INetwork2 *, NLM_NETWORK_CATEGORY);")
+cpp_quote("    HRESULT (WINAPI *IsDomainAuthenticatedBy)(INetwork2 *, NLM_DOMAIN_AUTHENTICATION_KIND, BOOL *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct INetworkConnection2 INetworkConnection2;")
+cpp_quote("")
+cpp_quote("struct INetworkConnection2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(INetworkConnection2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(INetworkConnection2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(INetworkConnection2 *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(INetworkConnection2 *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(INetworkConnection2 *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(INetworkConnection2 *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(INetworkConnection2 *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetNetwork)(INetworkConnection2 *, INetwork **);")
+cpp_quote("    HRESULT (WINAPI *get_IsConnectedToInternet)(INetworkConnection2 *, VARIANT_BOOL *);")
+cpp_quote("    HRESULT (WINAPI *get_IsConnected)(INetworkConnection2 *, VARIANT_BOOL *);")
+cpp_quote("    HRESULT (WINAPI *GetConnectivity)(INetworkConnection2 *, NLM_CONNECTIVITY *);")
+cpp_quote("    HRESULT (WINAPI *GetConnectionId)(INetworkConnection2 *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *GetAdapterId)(INetworkConnection2 *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *GetDomainType)(INetworkConnection2 *, NLM_DOMAIN_TYPE *);")
+cpp_quote("    HRESULT (WINAPI *IsDomainAuthenticatedBy)(INetworkConnection2 *, NLM_DOMAIN_AUTHENTICATION_KIND, BOOL *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct INetworkConnectionCostEvents INetworkConnectionCostEvents;")
+cpp_quote("")
+cpp_quote("struct INetworkConnectionCostEventsVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(INetworkConnectionCostEvents *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(INetworkConnectionCostEvents *);")
+cpp_quote("    ULONG (WINAPI *Release)(INetworkConnectionCostEvents *);")
+cpp_quote("    HRESULT (WINAPI *ConnectionCostChanged)(INetworkConnectionCostEvents *, GUID, DWORD);")
+cpp_quote("    HRESULT (WINAPI *ConnectionDataPlanStatusChanged)(INetworkConnectionCostEvents *, GUID);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#endif")

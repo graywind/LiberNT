@@ -15,11 +15,11 @@ endif()
 spec2def(user32.dll user32.spec ADD_IMPORTLIB)
 
 include_directories(
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys
+    ${REACTOS_SOURCE_DIR}/sdk/include/libernt/subsys
     include
     ${REACTOS_SOURCE_DIR}/sdk/include/wine
     ${REACTOS_SOURCE_DIR}/subsystems/win/win32k/include
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/libpng)
+    ${REACTOS_SOURCE_DIR}/sdk/include/libernt/libs/libpng)
 
 list(APPEND SOURCE
     controls/appswitch.c
@@ -128,6 +128,7 @@ endif()
 if(WOW64_I386_RUNTIME AND ARCH STREQUAL "i386")
     target_compile_definitions(user32 PRIVATE WOW64_I386_RUNTIME)
 endif()
+target_compile_definitions(user32 PRIVATE _USER32_=)
 
 set_module_type(user32 win32dll UNICODE ENTRYPOINT DllMain 12)
 if((ARCH STREQUAL "amd64" OR ARCH STREQUAL "arm64") AND CMAKE_C_COMPILER_ID STREQUAL "Clang" AND NOT USE_DUMMY_PSEH)

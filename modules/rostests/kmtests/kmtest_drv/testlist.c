@@ -77,6 +77,7 @@ KMT_TESTFUNC Test_SoftGpuSlabHandoff;
 KMT_TESTFUNC Test_SoftGpuVsyncPolicy;
 #endif
 KMT_TESTFUNC Test_Example;
+KMT_TESTFUNC Test_ExAuxKlibFirmwareTable;
 KMT_TESTFUNC Test_ExCallback;
 KMT_TESTFUNC Test_ExDoubleList;
 KMT_TESTFUNC Test_ExFastMutex;
@@ -384,6 +385,7 @@ KMT_TESTFUNC Test_MmUserLayout;
 KMT_TESTFUNC Test_MmLoaderBlock;
 KMT_TESTFUNC Test_NdisIfProvider;
 KMT_TESTFUNC Test_NdisRwLock;
+KMT_TESTFUNC Test_NdisWdiIhvResponse;
 KMT_TESTFUNC Test_NdisWdiStationCaps;
 KMT_TESTFUNC Test_NdisProcessorGroup;
 KMT_TESTFUNC Test_NdisLegacyHelpers;
@@ -416,7 +418,7 @@ KMT_TESTFUNC Test_PoPowerLimit;
 KMT_TESTFUNC Test_TmTransactions;
 KMT_TESTFUNC Test_PoPowerSettings;
 KMT_TESTFUNC Test_PoLockConsoleOnWake;
-KMT_TESTFUNC Test_PoProcessorStateHandler;
+KMT_TESTFUNC Test_PoPpmProcessor;
 KMT_TESTFUNC Test_PoKernelPowerRequest;
 KMT_TESTFUNC Test_PsNotify;
 KMT_TESTFUNC Test_PsQuota;
@@ -569,6 +571,7 @@ const KMT_TEST TestList[] =
     { "SoftGpuSlabHandoff",                Test_SoftGpuSlabHandoff },
     { "SoftGpuVsyncPolicy",                Test_SoftGpuVsyncPolicy },
 #endif
+    { "ExAuxKlibFirmwareTable",             Test_ExAuxKlibFirmwareTable },
     { "ExCallback",                         Test_ExCallback },
     { "ExDoubleList",                       Test_ExDoubleList },
     { "ExFastMutex",                        Test_ExFastMutex },
@@ -854,6 +857,7 @@ const KMT_TEST TestList[] =
     { "MonitorBrightnessKey",               Test_MonitorBrightnessKey },
     { "NdisIfProvider",                     Test_NdisIfProvider },
     { "NdisRwLock",                         Test_NdisRwLock },
+    { "NdisWdiIhvResponse",                 Test_NdisWdiIhvResponse },
     { "NdisWdiStationCaps",                 Test_NdisWdiStationCaps },
     { "NdisProcessorGroup",                 Test_NdisProcessorGroup },
     { "NdisLegacyHelpers",                  Test_NdisLegacyHelpers },
@@ -890,7 +894,7 @@ const KMT_TEST TestList[] =
     { "TmTransactions",                     Test_TmTransactions },
     { "PoPowerSettings",                    Test_PoPowerSettings },
     { "PoLockConsoleOnWake",                Test_PoLockConsoleOnWake },
-    { "-PoProcessorStateHandler",           Test_PoProcessorStateHandler },
+    { "PoPpmProcessor",                     Test_PoPpmProcessor },
     { "PoKernelPowerRequest",               Test_PoKernelPowerRequest },
     { "PsNotify",                           Test_PsNotify },
     { "PsEnergy",                           Test_PsEnergy },

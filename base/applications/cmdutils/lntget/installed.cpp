@@ -24,6 +24,7 @@ namespace
 {
 
 constexpr UINT MessageUninstallDone = WM_APP + 1;
+constexpr UINT MessageUninstallWaiting = WM_APP + 2;
 
 enum : int
 {
@@ -44,15 +45,27 @@ struct InstalledWindow
     HWND refresh = nullptr;
     HWND close = nullptr;
     HFONT font = nullptr;
+    HANDLE thread = nullptr;
     bool busy = false;
+    std::wstring busyStatus;
     std::vector<InstalledPackage> apps;
 };
 
-struct UninstallJob
+struct UninstallJob final : public InstallLockWait
 {
     HWND window = nullptr;
     InstalledPackage package;
     Status status;
+
+    void Waiting() override
+    {
+        PostMessageW(window, MessageUninstallWaiting, TRUE, 0);
+    }
+
+    void Acquired() override
+    {
+        PostMessageW(window, MessageUninstallWaiting, FALSE, 0);
+    }
 };
 
 std::wstring FormatInstalledSize(unsigned long long bytes)
@@ -95,7 +108,7 @@ DWORD WINAPI UninstallThread(LPVOID parameter)
 {
     UninstallJob *job = static_cast<UninstallJob *>(parameter);
     DWORD exitCode = 0;
-    job->status = UninstallArpEntry(job->package.entry, job->package.installerType, InstallMode::Default, exitCode);
+    job->status = UninstallArpEntry(job->package.entry, job->package.installerType, InstallMode::Default, exitCode, job);
     if (job->status && !job->package.installerType.empty())
         RemoveTrackedPackage(job->package.packageId);
     std::printf("LNTGET_GUI_UNINSTALL_DONE id=%s status=%lu\n", job->package.entry.Identity().c_str(),
@@ -128,12 +141,13 @@ void RunUninstaller(InstalledWindow &state)
         MessageBoxW(state.window, message.c_str(), app.entry.name.c_str(), MB_OK | MB_ICONERROR);
         return;
     }
-    CloseHandle(thread);
+    state.thread = thread;
     state.busy = true;
     EnableWindow(state.uninstall, FALSE);
     EnableWindow(state.refresh, FALSE);
-    const std::wstring status = L"Uninstalling " + app.entry.name + L"\u2026";
-    SetWindowTextW(state.status, status.c_str());
+    EnableWindow(state.close, FALSE);
+    state.busyStatus = L"Uninstalling " + app.entry.name + L"\u2026";
+    SetWindowTextW(state.status, state.busyStatus.c_str());
 }
 
 void LayoutInstalled(InstalledWindow &state)
@@ -227,11 +241,19 @@ LRESULT CALLBACK InstalledProc(HWND window, UINT message, WPARAM wParam, LPARAM 
                                                     InstallMode::Default).empty());
             }
             return 0;
+        case MessageUninstallWaiting:
+            if (state->busy)
+                SetWindowTextW(state->status, wParam ? L"Waiting for another install/uninstall to complete\u2026" : state->busyStatus.c_str());
+            return 0;
         case MessageUninstallDone:
         {
             UninstallJob *job = reinterpret_cast<UninstallJob *>(lParam);
+            WaitForSingleObject(state->thread, INFINITE);
+            CloseHandle(state->thread);
+            state->thread = nullptr;
             state->busy = false;
             EnableWindow(state->refresh, TRUE);
+            EnableWindow(state->close, TRUE);
             const std::wstring message = job->status ? job->package.entry.name + L" was uninstalled." :
                                          job->package.entry.name + L" was not uninstalled: " + WideFromUtf8(job->status.message);
             delete job;
@@ -243,7 +265,11 @@ LRESULT CALLBACK InstalledProc(HWND window, UINT message, WPARAM wParam, LPARAM 
                 RunUninstaller(*state);
             else if (LOWORD(wParam) == IdInstalledRefresh && !state->busy)
                 RefreshInstalled(*state);
-            else if (LOWORD(wParam) == IdInstalledClose || LOWORD(wParam) == IDCANCEL)
+            else if ((LOWORD(wParam) == IdInstalledClose || LOWORD(wParam) == IDCANCEL) && !state->busy)
+                DestroyWindow(window);
+            return 0;
+        case WM_CLOSE:
+            if (!state->busy)
                 DestroyWindow(window);
             return 0;
         case WM_DESTROY:
@@ -293,6 +319,12 @@ Status ShowInstalledAppsManager(HWND owner)
             continue;
         TranslateMessage(&message);
         DispatchMessageW(&message);
+    }
+    if (state.thread)
+    {
+        WaitForSingleObject(state.thread, INFINITE);
+        CloseHandle(state.thread);
+        state.thread = nullptr;
     }
     EnableWindow(owner, TRUE);
     SetForegroundWindow(owner);

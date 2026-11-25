@@ -8,7 +8,7 @@
 
 #include <win32k.h>
 #include <immdev.h>
-#include <reactos/dwmframe.h>
+#include <libernt/dwmframe.h>
 DBG_DEFAULT_CHANNEL(UserWinpos);
 
 /* GLOBALS *******************************************************************/
@@ -2205,6 +2205,14 @@ ForceNCPaintErase(PWND Wnd, HRGN hRgn, PREGION pRgn)
    }
 }
 
+static BOOL FASTCALL
+IntImeFollowsWindow(PWND Window)
+{
+    PWND pwndFocus = gptiCurrent->MessageQueue ? gptiCurrent->MessageQueue->spwndFocus : NULL;
+
+    return Window && pwndFocus && (pwndFocus == Window || IntIsChildWindow(Window, pwndFocus));
+}
+
 VOID FASTCALL IntImeWindowPosChanged(VOID)
 {
     HWND *phwnd;
@@ -3067,7 +3075,8 @@ co_WinPosBatchChanged(PWINPOS_ENTRY Entry)
    {
       /* A live move can produce hundreds of position changes. The tracking
        * loop sends one update after the final position has been selected. */
-      if (IS_IMM_MODE() && !(gptiCurrent->TIF_flags & TIF_MOVESIZETRACKING))
+      if (IS_IMM_MODE() && !(gptiCurrent->TIF_flags & TIF_MOVESIZETRACKING) &&
+          IntImeFollowsWindow(ValidateHwndNoErr(WinPos.hwnd)))
           IntImeWindowPosChanged();
    }
 

@@ -10,6 +10,7 @@
 #include <commctrl.h>
 #include <shellapi.h>
 
+#include "arp.hpp"
 #include "category.hpp"
 #include "details.hpp"
 #include "gui.hpp"
@@ -22,6 +23,7 @@
 #include "util.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cstring>
 
 namespace lntget
@@ -35,6 +37,7 @@ enum : UINT
     MessageCatalogReady = WM_APP + 1,
     MessageDetailsReady = WM_APP + 2,
     MessageOperationUpdate = WM_APP + 3,
+    MessageInstalledReady = WM_APP + 4,
 };
 
 enum : int
@@ -110,11 +113,20 @@ struct PreparedCatalog
     std::vector<uint32_t> counts;
 };
 
+struct InstalledVersion
+{
+    std::wstring version;
+    std::string available;
+};
+
+typedef std::map<std::string, InstalledVersion> InstalledVersions;
+
 struct CatalogResult
 {
     bool ok = false;
     std::string error;
     PreparedCatalog catalog;
+    InstalledVersions installed;
 };
 
 struct DetailResult
@@ -143,8 +155,10 @@ enum class OperationStage
     Downloading,
     Verifying,
     Installing,
+    WaitingForInstall,
     Complete,
     Failed,
+    NeedsAgreement,
 };
 
 struct OperationUpdate
@@ -158,6 +172,7 @@ struct OperationUpdate
     std::wstring packageName;
     std::wstring path;
     std::string error;
+    std::vector<PackageAgreement> agreements;
 };
 
 COLORREF Blend(COLORREF front, COLORREF back, int weight)
@@ -270,6 +285,25 @@ void PrepareCatalog(const Catalog &catalog, PreparedCatalog &prepared)
     }
 }
 
+void CollectInstalledVersions(SourceManager *source, InstalledVersions &versions)
+{
+    versions.clear();
+    std::vector<InstalledPackage> packages;
+    CollectInstalledPackages(source, packages);
+    for (const InstalledPackage &package : packages)
+    {
+        if (!package.correlated || package.packageId.empty())
+            continue;
+        const auto inserted = versions.insert(std::make_pair(AsciiLower(package.packageId), InstalledVersion()));
+        InstalledVersion &entry = inserted.first->second;
+        if (inserted.second || CompareVersions(Utf8FromWide(package.entry.version), Utf8FromWide(entry.version)) > 0)
+        {
+            entry.version = package.entry.version;
+            entry.available = package.available;
+        }
+    }
+}
+
 int RankPackage(const GuiPackage &package, const std::string &query)
 {
     if (query.empty())
@@ -372,13 +406,22 @@ public:
 
     void CancelDetails() { InterlockedIncrement(&generation_); }
 
-    uint32_t RequestOperation(const PackageRecord &package, bool install)
+    void RequestInstalled()
+    {
+        EnterCriticalSection(&lock_);
+        installedPending_ = true;
+        LeaveCriticalSection(&lock_);
+        SetEvent(signal_);
+    }
+
+    uint32_t RequestOperation(const PackageRecord &package, bool install, bool acceptAgreements)
     {
         const uint32_t generation = static_cast<uint32_t>(InterlockedIncrement(&operationGeneration_));
         EnterCriticalSection(&lock_);
         operationPending_ = true;
         operationPackage_ = package;
         operationInstall_ = install;
+        operationAcceptAgreements_ = acceptAgreements;
         pendingOperationGeneration_ = generation;
         LeaveCriticalSection(&lock_);
         SetEvent(signal_);
@@ -431,6 +474,28 @@ private:
         const OperationUpdate &update_;
         unsigned lastPercent_ = 101;
         unsigned long long lastReceived_ = 0;
+    };
+
+    class InstallWaitCallback : public InstallLockWait
+    {
+    public:
+        InstallWaitCallback(Worker &worker, const OperationUpdate &update) : worker_(worker), update_(update) {}
+
+        void Waiting() override
+        {
+            OperationUpdate current = update_;
+            current.stage = OperationStage::WaitingForInstall;
+            worker_.PostOperation(current);
+        }
+
+        void Acquired() override
+        {
+            worker_.PostOperation(update_);
+        }
+
+    private:
+        Worker &worker_;
+        const OperationUpdate &update_;
     };
 
     static DWORD WINAPI ThreadMain(LPVOID parameter)
@@ -514,8 +579,10 @@ private:
                 bool catalog = false;
                 bool refresh = false;
                 bool details = false;
+                bool installed = false;
                 bool operation = false;
                 bool install = false;
+                bool acceptAgreements = false;
                 PackageRecord package;
                 uint32_t generation = 0;
                 EnterCriticalSection(&lock_);
@@ -525,6 +592,7 @@ private:
                     operationPending_ = false;
                     package = operationPackage_;
                     install = operationInstall_;
+                    acceptAgreements = operationAcceptAgreements_;
                     generation = pendingOperationGeneration_;
                     operation = true;
                 }
@@ -534,6 +602,11 @@ private:
                     refresh = catalogRefresh_;
                     catalogRefresh_ = false;
                     catalog = true;
+                }
+                else if (installedPending_)
+                {
+                    installedPending_ = false;
+                    installed = true;
                 }
                 else if (detailsPending_)
                 {
@@ -546,9 +619,11 @@ private:
                 if (quit)
                     return;
                 if (operation)
-                    RunOperationJob(package, install, generation);
+                    RunOperationJob(package, install, acceptAgreements, generation);
                 else if (catalog)
                     RunCatalogJob(refresh);
+                else if (installed)
+                    RunInstalledJob();
                 else if (details)
                     RunDetailsJob(package, generation);
                 else
@@ -563,12 +638,7 @@ private:
         Catalog catalog;
         Status status = refresh ? source_->Update() : source_->EnsureReady();
         if (status)
-        {
-            SQLiteIndex index;
-            status = index.Open(source_->IndexPath());
-            if (status)
-                status = index.LoadCatalog(catalog);
-        }
+            status = source_->LoadCatalog(catalog);
         if (!status)
         {
             result->error = status.message;
@@ -576,10 +646,19 @@ private:
         else
         {
             PrepareCatalog(catalog, result->catalog);
+            CollectInstalledVersions(source_, result->installed);
             result->ok = true;
         }
         if (!PostMessageW(window_, MessageCatalogReady, 0, reinterpret_cast<LPARAM>(result)))
             delete result;
+    }
+
+    void RunInstalledJob()
+    {
+        InstalledVersions *versions = new InstalledVersions();
+        CollectInstalledVersions(source_, *versions);
+        if (!PostMessageW(window_, MessageInstalledReady, 0, reinterpret_cast<LPARAM>(versions)))
+            delete versions;
     }
 
     void PostDetails(const DetailResult &result)
@@ -596,7 +675,7 @@ private:
             delete copy;
     }
 
-    void RunOperationJob(const PackageRecord &package, bool install, uint32_t generation)
+    void RunOperationJob(const PackageRecord &package, bool install, bool acceptAgreements, uint32_t generation)
     {
         OperationUpdate update;
         update.generation = generation;
@@ -611,13 +690,14 @@ private:
         if (status) status = ParseInstallerManifest(yaml, manifest);
         if (status && (!AsciiEquals(package.id, manifest.id) || package.version != manifest.version))
             status = Status::Fail(ERROR_BAD_FORMAT, "manifest identity does not match the source index");
-        if (status && manifest.hasAgreements)
-            status = Status::Fail(ERROR_CANCELLED, "review this package's agreements in the details pane, then use the command line with --accept-package-agreements");
 
         SelectionOptions options;
         options.downloadOnly = !install;
+        options.acceptPackageAgreements = acceptAgreements;
         InstallerEntry installer;
+        std::vector<DependencyStep> dependencies;
         if (status) status = SelectInstaller(manifest, options, installer);
+        if (status && install) status = PlanPackageDependencies(*source_, installer, options, dependencies);
         if (!status)
         {
             update.stage = OperationStage::Failed;
@@ -626,9 +706,29 @@ private:
             return;
         }
 
+        if (!acceptAgreements)
+        {
+            update.agreements = manifest.agreements;
+            for (const DependencyStep &step : dependencies)
+            {
+                for (PackageAgreement agreement : step.manifest.agreements)
+                {
+                    agreement.label = step.package.name + " (dependency)" + (agreement.label.empty() ? "" : ": " + agreement.label);
+                    update.agreements.push_back(agreement);
+                }
+            }
+            if (!update.agreements.empty())
+            {
+                update.stage = OperationStage::NeedsAgreement;
+                PostOperation(update);
+                return;
+            }
+        }
+
         if (install)
         {
-            status = InstallPackageDependencies(*source_, installer, options);
+            InstallWaitCallback wait(*this, update);
+            status = InstallDependencyPlan(*source_, dependencies, options, &wait);
             if (!status)
             {
                 update.stage = OperationStage::Failed;
@@ -656,8 +756,10 @@ private:
             update.stage = OperationStage::Installing;
             PostOperation(update);
             DWORD exitCode = 0;
-            status = service.Install(package, installer, path, InstallMode::Default, exitCode);
+            InstallWaitCallback wait(*this, update);
+            status = service.Install(package, installer, path, InstallMode::Default, exitCode, nullptr, &wait);
             update.exitCode = exitCode;
+            RunInstalledJob();
             if (!status)
             {
                 update.stage = OperationStage::Failed;
@@ -753,8 +855,10 @@ private:
     bool catalogPending_ = false;
     bool catalogRefresh_ = false;
     bool detailsPending_ = false;
+    bool installedPending_ = false;
     bool operationPending_ = false;
     bool operationInstall_ = false;
+    bool operationAcceptAgreements_ = false;
 };
 
 struct Theme
@@ -1245,8 +1349,11 @@ struct CatalogWindow
     Worker worker;
     SourceManager *source = nullptr;
     PreparedCatalog catalog;
+    InstalledVersions installedVersions;
     std::vector<uint32_t> filtered;
     std::map<std::string, DetailResult> cache;
+    DetailResult shownResult;
+    bool hasShownResult = false;
     std::string query;
     std::string failure;
     std::wstring placeholder;
@@ -1256,6 +1363,8 @@ struct CatalogWindow
     int selected = -1;
     uint32_t generation = 0;
     uint32_t operationGeneration = 0;
+    PackageRecord operationPackage;
+    bool operationInstall = false;
     bool loading = true;
     bool operationVisible = false;
     bool operationBusy = false;
@@ -1609,6 +1718,13 @@ void AdvanceSizeAnimation(CatalogWindow &state)
 
 void SetInfoBlocks(CatalogWindow &state, const GuiPackage &package, const DetailResult *result)
 {
+    if (result != &state.shownResult)
+    {
+        state.hasShownResult = result != nullptr;
+        if (result)
+            state.shownResult = *result;
+        result = state.hasShownResult ? &state.shownResult : nullptr;
+    }
     std::vector<InfoBlock> blocks;
 
     InfoBlock title;
@@ -1620,6 +1736,18 @@ void SetInfoBlocks(CatalogWindow &state, const GuiPackage &package, const Detail
     subtitle.kind = BlockKind::Subtitle;
     subtitle.text = package.id + L"   ·   version " + package.version;
     blocks.push_back(subtitle);
+
+    const auto installed = state.installedVersions.find(AsciiLower(package.utf8Id));
+    if (installed != state.installedVersions.end())
+    {
+        InfoBlock field;
+        field.kind = BlockKind::Field;
+        field.label = L"Installed";
+        field.text = installed->second.version.empty() ? L"yes" : L"version " + installed->second.version;
+        if (!installed->second.available.empty())
+            field.text += L"; version " + WideFromUtf8(installed->second.available) + L" is available";
+        blocks.push_back(field);
+    }
 
     InfoBlock categories;
     categories.kind = BlockKind::Chips;
@@ -1896,6 +2024,15 @@ void ShowDetails(CatalogWindow &state)
 void UpdateActionButtons(CatalogWindow &state)
 {
     const bool selected = state.selected >= 0 && static_cast<std::size_t>(state.selected) < state.filtered.size();
+    const wchar_t *action = L"Install";
+    if (selected)
+    {
+        const GuiPackage &package = state.catalog.packages[state.filtered[state.selected]];
+        const auto installed = state.installedVersions.find(AsciiLower(package.utf8Id));
+        if (installed != state.installedVersions.end())
+            action = installed->second.available.empty() ? L"Reinstall" : L"Update";
+    }
+    SetWindowTextW(state.install, action);
     EnableWindow(state.install, selected && !state.loading && !state.operationBusy);
     EnableWindow(state.download, selected && !state.loading && !state.operationBusy);
     EnableWindow(state.refresh, !state.loading && !state.operationBusy);
@@ -1954,6 +2091,26 @@ void HideBackgroundProgress(CatalogWindow &state)
     InvalidateRect(state.window, nullptr, TRUE);
 }
 
+void StartOperation(CatalogWindow &state, const PackageRecord &record, bool install, bool acceptAgreements)
+{
+    assert(!state.operationBusy);
+    state.backgroundProgress = false;
+    state.operationVisible = true;
+    state.operationBusy = true;
+    state.operationPackage = record;
+    state.operationInstall = install;
+    SetWindowTextW(state.operationTitle, (L"Preparing " + WideFromUtf8(record.name)).c_str());
+    SetWindowTextW(state.operationDetail, L"Checking signed package metadata…");
+    SetWindowTextW(state.operationPercent, L"");
+    SendMessageW(state.operationProgress, PBM_SETBARCOLOR, 0, state.theme.accent);
+    SetOperationMarquee(state, true);
+    state.operationGeneration = state.worker.RequestOperation(record, install, acceptAgreements);
+    UpdateActionButtons(state);
+    UpdateStatusBar(state);
+    LayoutWindow(state);
+    InvalidateRect(state.window, nullptr, TRUE);
+}
+
 void BeginOperation(CatalogWindow &state, bool install)
 {
     if (state.operationBusy || state.selected < 0 || static_cast<std::size_t>(state.selected) >= state.filtered.size())
@@ -1964,20 +2121,29 @@ void BeginOperation(CatalogWindow &state, bool install)
     record.name = package.utf8Name;
     record.version = package.utf8Version;
     std::memcpy(record.manifestHash, package.manifestHash, sizeof(record.manifestHash));
+    StartOperation(state, record, install, false);
+}
 
-    state.backgroundProgress = false;
-    state.operationVisible = true;
-    state.operationBusy = true;
-    SetWindowTextW(state.operationTitle, (std::wstring(L"Preparing ") + package.name).c_str());
-    SetWindowTextW(state.operationDetail, L"Checking signed package metadata…");
-    SetWindowTextW(state.operationPercent, L"");
-    SendMessageW(state.operationProgress, PBM_SETBARCOLOR, 0, state.theme.accent);
-    SetOperationMarquee(state, true);
-    state.operationGeneration = state.worker.RequestOperation(record, install);
-    UpdateActionButtons(state);
-    UpdateStatusBar(state);
-    LayoutWindow(state);
-    InvalidateRect(state.window, nullptr, TRUE);
+bool ConfirmPackageAgreements(HWND owner, const std::wstring &name, const std::vector<PackageAgreement> &agreements)
+{
+    constexpr std::size_t MaximumPromptText = 3000;
+    std::wstring terms;
+    for (const PackageAgreement &agreement : agreements)
+    {
+        std::wstring entry;
+        if (!agreement.label.empty()) entry += WideFromUtf8(agreement.label) + L"\n";
+        if (!agreement.text.empty()) entry += WideFromUtf8(agreement.text) + L"\n";
+        if (!agreement.url.empty()) entry += WideFromUtf8(agreement.url) + L"\n";
+        if (!entry.empty()) terms += entry + L"\n";
+    }
+    if (terms.size() > MaximumPromptText)
+    {
+        terms.resize(IS_HIGH_SURROGATE(terms[MaximumPromptText - 1]) ? MaximumPromptText - 1 : MaximumPromptText);
+        terms += L"…\n\nThe full terms are shown in the details pane.\n\n";
+    }
+    const std::wstring text = name + L" comes with the following package agreements.\n\n" + terms +
+                              L"Do you accept them?";
+    return MessageBoxW(owner, text.c_str(), L"Package agreements", MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES;
 }
 
 void ApplyOperationUpdate(CatalogWindow &state, const OperationUpdate &update)
@@ -2027,6 +2193,12 @@ void ApplyOperationUpdate(CatalogWindow &state, const OperationUpdate &update)
             SetWindowTextW(state.operationPercent, L"");
             SetOperationMarquee(state, true);
             break;
+        case OperationStage::WaitingForInstall:
+            SetWindowTextW(state.operationTitle, (std::wstring(L"Waiting to install ") + name).c_str());
+            SetWindowTextW(state.operationDetail, L"Waiting for another install/uninstall to complete…");
+            SetWindowTextW(state.operationPercent, L"");
+            SetOperationMarquee(state, true);
+            break;
         case OperationStage::Complete:
         {
             state.operationBusy = false;
@@ -2052,6 +2224,28 @@ void ApplyOperationUpdate(CatalogWindow &state, const OperationUpdate &update)
             UpdateActionButtons(state);
             UpdateStatusBar(state);
             break;
+        case OperationStage::NeedsAgreement:
+        {
+            state.operationBusy = false;
+            SetWindowTextW(state.operationTitle, (L"Package agreements for " + name).c_str());
+            SetWindowTextW(state.operationDetail, L"Waiting for the package agreements to be accepted…");
+            SetOperationMarquee(state, false);
+            const bool accepted = ConfirmPackageAgreements(state.window, name, update.agreements);
+            if (!IsWindow(state.window))
+                break;
+            if (accepted && !state.operationBusy)
+            {
+                StartOperation(state, state.operationPackage, state.operationInstall, true);
+                break;
+            }
+            SetWindowTextW(state.operationTitle, update.install ? L"Installation cancelled" : L"Download cancelled");
+            SetWindowTextW(state.operationDetail, L"The package agreements were not accepted.");
+            SetWindowTextW(state.operationPercent, L"");
+            SendMessageW(state.operationProgress, PBM_SETPOS, 0, 0);
+            UpdateActionButtons(state);
+            UpdateStatusBar(state);
+            break;
+        }
     }
 }
 
@@ -2401,6 +2595,8 @@ LRESULT CALLBACK CatalogProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
                 case IdInstalled:
                 {
                     const Status status = ShowInstalledAppsManager(window);
+                    if (IsWindow(window))
+                        state->worker.RequestInstalled();
                     if (!status)
                     {
                         const std::wstring message = WideFromUtf8(status.message);
@@ -2536,6 +2732,7 @@ LRESULT CALLBACK CatalogProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
             state->failure.clear();
             state->catalog.packages.swap(result->catalog.packages);
             state->catalog.counts.swap(result->catalog.counts);
+            state->installedVersions.swap(result->installed);
             delete result;
             state->placeholder = L"Search " + FormatCount(state->catalog.packages.size()) + L" packages…";
             InvalidateRect(state->search, nullptr, TRUE);
@@ -2577,6 +2774,19 @@ LRESULT CALLBACK CatalogProc(HWND window, UINT message, WPARAM wParam, LPARAM lP
             else
                 StopSizeAnimation(*state);
             delete result;
+            return 0;
+        }
+        case MessageInstalledReady:
+        {
+            InstalledVersions *versions = reinterpret_cast<InstalledVersions *>(lParam);
+            state->installedVersions.swap(*versions);
+            delete versions;
+            UpdateActionButtons(*state);
+            if (state->selected >= 0 && static_cast<std::size_t>(state->selected) < state->filtered.size())
+            {
+                SetInfoBlocks(*state, state->catalog.packages[state->filtered[state->selected]],
+                              state->hasShownResult ? &state->shownResult : nullptr);
+            }
             return 0;
         }
         case MessageOperationUpdate:

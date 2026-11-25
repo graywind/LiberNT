@@ -10,6 +10,7 @@
 
 #include "afd.h"
 #include <tdikrnl.h>
+#include <ws2ipdef.h>
 
 static IO_COMPLETION_ROUTINE SendComplete;
 
@@ -554,6 +555,14 @@ AfdConnectedSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
         FCB->EventSelectDisabled &= ~AFD_EVENT_SEND;
         PTDI_CONNECTION_INFORMATION TargetAddress;
 
+        if (FCB->SendClosed)
+        {
+            AFD_DbgPrint(MIN_TRACE,("No more sends\n"));
+
+            /* This is a graceful send closure */
+            return UnlockAndMaybeComplete(FCB, STATUS_END_OF_FILE, Irp, 0);
+        }
+
         if( !FCB->RemoteAddress )
             return UnlockAndMaybeComplete( FCB, STATUS_INVALID_CONNECTION, Irp, 0 );
 
@@ -610,6 +619,14 @@ AfdConnectedSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
         }
     }
 
+    if (FCB->SendClosed)
+    {
+        AFD_DbgPrint(MIN_TRACE,("No more sends\n"));
+
+        /* A local send shutdown wins over any pending remote close */
+        return UnlockAndMaybeComplete(FCB, STATUS_END_OF_FILE, Irp, 0);
+    }
+
     if (FCB->PollState & AFD_EVENT_CLOSE)
     {
         AFD_DbgPrint(MIN_TRACE,("Connection reset by remote peer\n"));
@@ -624,14 +641,6 @@ AfdConnectedSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
 
         /* This is an abortive socket closure on our side */
         return UnlockAndMaybeComplete(FCB, FCB->PollStatus[FD_CLOSE_BIT], Irp, 0);
-    }
-
-    if (FCB->SendClosed)
-    {
-        AFD_DbgPrint(MIN_TRACE,("No more sends\n"));
-
-        /* This is a graceful send closure */
-        return UnlockAndMaybeComplete(FCB, STATUS_FILE_CLOSED, Irp, 0);
     }
 
     if( !(SendReq = LockRequest( Irp, IrpSp, FALSE, &LockMode )) )
@@ -803,14 +812,222 @@ AfdConnectedSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
     return Status;
 }
 
+#define AFD_CMSG32_ALIGN(Length) (((Length) + sizeof(ULONG) - 1) & ~(sizeof(ULONG) - 1))
+
+static NTSTATUS
+AfdCaptureSendAddress(
+    _In_opt_ PTRANSPORT_ADDRESS UserAddress,
+    _In_ KPROCESSOR_MODE Mode,
+    _Out_ PTRANSPORT_ADDRESS *Address)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    ULONG Length = 0;
+
+    *Address = NULL;
+    if (!UserAddress)
+        return STATUS_SUCCESS;
+
+    _SEH2_TRY
+    {
+        if (Mode != KernelMode)
+            ProbeForRead(UserAddress, FIELD_OFFSET(TRANSPORT_ADDRESS, Address[0].Address), sizeof(UCHAR));
+        Length = TaLengthOfTransportAddressByType(UserAddress->Address[0].AddressType);
+        if (Length)
+        {
+            *Address = ExAllocatePoolWithTag(NonPagedPool, Length, TAG_AFD_TRANSPORT_ADDRESS);
+            if (!*Address)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+            }
+            else
+            {
+                if (Mode != KernelMode)
+                    ProbeForRead(UserAddress, Length, sizeof(UCHAR));
+                RtlCopyMemory(*Address, UserAddress, Length);
+            }
+        }
+        else
+        {
+            Status = STATUS_INVALID_PARAMETER;
+        }
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = STATUS_ACCESS_VIOLATION;
+    }
+    _SEH2_END;
+
+    if (!NT_SUCCESS(Status) && *Address)
+    {
+        ExFreePoolWithTag(*Address, TAG_AFD_TRANSPORT_ADDRESS);
+        *Address = NULL;
+    }
+
+    ASSERT(NT_SUCCESS(Status) == (*Address != NULL));
+    return Status;
+}
+
+#define AFD_NO_PEER_PKTINFO (-1)
+
+static NTSTATUS
+AfdConvertSendControl(
+    _In_reads_bytes_(Length) const UCHAR *Source,
+    _In_ ULONG Length,
+    _In_ BOOLEAN Is32Bit,
+    _In_ LONG PeerPktInfoLevel,
+    _Out_writes_bytes_opt_(*Written) PUCHAR Destination,
+    _Out_ PULONG Written)
+{
+    ULONG HeaderLength = Is32Bit ? AFD_CMSG32_HEADER_LENGTH : (ULONG)TDI_CMSG_LEN(0);
+    ULONG Offset, Space, DataLength, Used = 0;
+    SIZE_T CmsgLength;
+    LONG Level, Type;
+
+    ASSERT(PeerPktInfoLevel == AFD_NO_PEER_PKTINFO || PeerPktInfoLevel == IPPROTO_IP || PeerPktInfoLevel == IPPROTO_IPV6);
+    for (Offset = 0; Length - Offset >= HeaderLength; Offset += Space)
+    {
+        if (Is32Bit)
+        {
+            const ULONG *Header32 = (const ULONG *)(Source + Offset);
+
+            CmsgLength = Header32[0];
+            Level = (LONG)Header32[1];
+            Type = (LONG)Header32[2];
+        }
+        else
+        {
+            const TDI_CMSGHDR *Header = (const TDI_CMSGHDR *)(Source + Offset);
+
+            CmsgLength = Header->cmsg_len;
+            Level = Header->cmsg_level;
+            Type = Header->cmsg_type;
+        }
+
+        if (CmsgLength < HeaderLength || CmsgLength > Length - Offset)
+            return STATUS_INVALID_PARAMETER;
+        Space = Is32Bit ? (ULONG)AFD_CMSG32_ALIGN(CmsgLength) : (ULONG)TDI_CMSGHDR_ALIGN(CmsgLength);
+        if (Space > Length - Offset)
+            return STATUS_INVALID_PARAMETER;
+        DataLength = (ULONG)CmsgLength - HeaderLength;
+
+        if (Level == PeerPktInfoLevel &&
+            Type == (PeerPktInfoLevel == IPPROTO_IP ? IP_PKTINFO : IPV6_PKTINFO))
+            continue;
+
+        if (Destination)
+        {
+            RtlZeroMemory(Destination + Used, TDI_CMSG_SPACE(DataLength));
+            TDI_INIT_CMSGHDR(Destination + Used, Level, Type, DataLength);
+            RtlCopyMemory(TDI_CMSG_DATA(Destination + Used), Source + Offset + HeaderLength, DataLength);
+        }
+        Used += (ULONG)TDI_CMSG_SPACE(DataLength);
+    }
+
+    if (Is32Bit && Offset != Length)
+        return STATUS_INVALID_PARAMETER;
+
+    *Written = Used;
+    return STATUS_SUCCESS;
+}
+
+static LONG
+AfdPeerPktInfoLevel(
+    _In_ PTRANSPORT_ADDRESS Peer)
+{
+    PTA_ADDRESS Address = Peer->Address;
+    PTDI_ADDRESS_IP6 Ip6;
+    ULONG i;
+
+    if (Address->AddressType != TDI_ADDRESS_TYPE_IP6 || Address->AddressLength < TDI_ADDRESS_LENGTH_IP6)
+        return IPPROTO_IP;
+
+    Ip6 = (PTDI_ADDRESS_IP6)Address->Address;
+    for (i = 0; i < 5; i++)
+    {
+        if (Ip6->sin6_addr[i])
+            return IPPROTO_IPV6;
+    }
+    return Ip6->sin6_addr[5] == 0xFFFF ? IPPROTO_IP : IPPROTO_IPV6;
+}
+
+static NTSTATUS
+AfdCaptureSendControl(
+    _In_opt_ PVOID UserControl,
+    _In_ LONG UserLength,
+    _In_ KPROCESSOR_MODE Mode,
+    _In_ BOOLEAN Is32Bit,
+    _In_ LONG PeerPktInfoLevel,
+    _Out_ PVOID *Control,
+    _Out_ PULONG ControlLength,
+    _Out_ PNTSTATUS FormatStatus)
+{
+    PUCHAR Captured;
+    NTSTATUS Status = STATUS_SUCCESS;
+    ULONG Length, Needed, Written;
+
+    *Control = NULL;
+    *ControlLength = 0;
+    *FormatStatus = STATUS_SUCCESS;
+    if (!UserControl || UserLength <= 0)
+        return UserLength < 0 ? STATUS_INVALID_PARAMETER : STATUS_SUCCESS;
+
+    Length = (ULONG)UserLength;
+    if (Is32Bit && Length < AFD_CMSG32_HEADER_LENGTH)
+        return STATUS_INVALID_PARAMETER;
+    Captured = ExAllocatePoolWithTag(NonPagedPool, Length, TAG_AFD_DATA_BUFFER);
+    if (!Captured)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    _SEH2_TRY
+    {
+        if (Mode != KernelMode)
+            ProbeForRead(UserControl, Length, sizeof(UCHAR));
+        RtlCopyMemory(Captured, UserControl, Length);
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = STATUS_ACCESS_VIOLATION;
+    }
+    _SEH2_END;
+
+    if (!NT_SUCCESS(Status))
+    {
+        ExFreePoolWithTag(Captured, TAG_AFD_DATA_BUFFER);
+        return Status;
+    }
+
+    *FormatStatus = AfdConvertSendControl(Captured, Length, Is32Bit, PeerPktInfoLevel, NULL, &Needed);
+    if (NT_SUCCESS(*FormatStatus) && Needed)
+    {
+        *Control = ExAllocatePoolWithTag(NonPagedPool, Needed, TAG_AFD_DATA_BUFFER);
+        if (!*Control)
+        {
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+        }
+        else
+        {
+            NT_VERIFY(NT_SUCCESS(AfdConvertSendControl(Captured, Length, Is32Bit, PeerPktInfoLevel, *Control, &Written)));
+            ASSERT(Written == Needed);
+            *ControlLength = Needed;
+        }
+    }
+
+    ExFreePoolWithTag(Captured, TAG_AFD_DATA_BUFFER);
+    ASSERT(!*Control || NT_SUCCESS(*FormatStatus));
+    return Status;
+}
+
 NTSTATUS NTAPI
 AfdPacketSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
                          PIO_STACK_LOCATION IrpSp) {
-    NTSTATUS Status = STATUS_SUCCESS;
+    NTSTATUS Status = STATUS_SUCCESS, FormatStatus;
     PTDI_CONNECTION_INFORMATION TargetAddress;
     PFILE_OBJECT FileObject = IrpSp->FileObject;
     PAFD_FCB FCB = FileObject->FsContext;
     PAFD_SEND_INFO_UDP SendReq;
+    PTRANSPORT_ADDRESS CapturedAddress, RemoteAddress;
+    PVOID Control;
+    ULONG ControlLength;
     KPROCESSOR_MODE LockMode;
     UINT SendLength;
 
@@ -833,11 +1050,19 @@ AfdPacketSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
     if (FCB->SendClosed)
     {
         AFD_DbgPrint(MIN_TRACE,("No more sends\n"));
-        return UnlockAndMaybeComplete(FCB, STATUS_FILE_CLOSED, Irp, 0);
+        return UnlockAndMaybeComplete(FCB, STATUS_END_OF_FILE, Irp, 0);
     }
 
     if( !(SendReq = LockRequest( Irp, IrpSp, FALSE, &LockMode )) )
         return UnlockAndMaybeComplete(FCB, STATUS_NO_MEMORY, Irp, 0);
+
+    Status = AfdCaptureSendAddress(SendReq->TdiConnection.RemoteAddress, LockMode, &CapturedAddress);
+    if (!NT_SUCCESS(Status))
+        return UnlockAndMaybeComplete(FCB, Status, Irp, 0);
+
+    RemoteAddress = CapturedAddress ? CapturedAddress : FCB->RemoteAddress;
+    if (!RemoteAddress)
+        return UnlockAndMaybeComplete(FCB, STATUS_INVALID_CONNECTION, Irp, 0);
 
     if (FCB->SharedData.State == SOCKET_STATE_CREATED)
     {
@@ -847,46 +1072,73 @@ AfdPacketSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
         }
 
         FCB->LocalAddress =
-        TaBuildNullTransportAddress( ((PTRANSPORT_ADDRESS)SendReq->TdiConnection.RemoteAddress)->
-                                      Address[0].AddressType );
+        TaBuildNullTransportAddress( RemoteAddress->Address[0].AddressType );
 
         if( FCB->LocalAddress ) {
             Status = WarmSocketForBind( FCB, AFD_SHARE_WILDCARD );
 
             if( NT_SUCCESS(Status) )
                 FCB->SharedData.State = SOCKET_STATE_BOUND;
-            else
-                return UnlockAndMaybeComplete( FCB, Status, Irp, 0 );
         } else
-            return UnlockAndMaybeComplete
-            ( FCB, STATUS_NO_MEMORY, Irp, 0 );
+            Status = STATUS_NO_MEMORY;
+
+        if (!NT_SUCCESS(Status))
+        {
+            if (CapturedAddress)
+                ExFreePoolWithTag(CapturedAddress, TAG_AFD_TRANSPORT_ADDRESS);
+            return UnlockAndMaybeComplete( FCB, Status, Irp, 0 );
+        }
     }
 
     SendReq->BufferArray = LockBuffers(SendReq->BufferArray, SendReq->BufferCount, NULL, NULL, FALSE, FALSE, LockMode, AfdIs32bitIoctl(Irp));
 
     if( !SendReq->BufferArray )
+    {
+        if (CapturedAddress)
+            ExFreePoolWithTag(CapturedAddress, TAG_AFD_TRANSPORT_ADDRESS);
         return UnlockAndMaybeComplete( FCB, STATUS_ACCESS_VIOLATION,
                                        Irp, 0 );
+    }
+
+    Status = AfdCaptureSendControl(SendReq->TdiConnection.Options,
+                                   SendReq->TdiConnection.OptionsLength,
+                                   LockMode,
+                                   AfdIs32bitIoctl(Irp),
+                                   CapturedAddress ? AFD_NO_PEER_PKTINFO : AfdPeerPktInfoLevel(RemoteAddress),
+                                   &Control,
+                                   &ControlLength,
+                                   &FormatStatus);
+    if (!NT_SUCCESS(Status))
+    {
+        if (CapturedAddress)
+            ExFreePoolWithTag(CapturedAddress, TAG_AFD_TRANSPORT_ADDRESS);
+        UnlockBuffers(SendReq->BufferArray, SendReq->BufferCount, FALSE);
+        return UnlockAndMaybeComplete( FCB, Status, Irp, 0 );
+    }
 
     AFD_DbgPrint
         (MID_TRACE,("RemoteAddress #%d Type %u\n",
-                    ((PTRANSPORT_ADDRESS)SendReq->TdiConnection.RemoteAddress)->
-                    TAAddressCount,
-                    ((PTRANSPORT_ADDRESS)SendReq->TdiConnection.RemoteAddress)->
-                    Address[0].AddressType));
+                    RemoteAddress->TAAddressCount,
+                    RemoteAddress->Address[0].AddressType));
 
-    Status = TdiBuildConnectionInfo( &TargetAddress,
-                            ((PTRANSPORT_ADDRESS)SendReq->TdiConnection.RemoteAddress) );
+    Status = TdiBuildConnectionInfo( &TargetAddress, RemoteAddress );
+    if (CapturedAddress)
+        ExFreePoolWithTag(CapturedAddress, TAG_AFD_TRANSPORT_ADDRESS);
 
     /* Check the size of the Address given ... */
 
     if( NT_SUCCESS(Status) ) {
+        TargetAddress->Options = Control;
+        TargetAddress->OptionsLength = (LONG)ControlLength;
         FCB->PollState &= ~AFD_EVENT_SEND;
 
         Status = QueueUserModeIrp(FCB, Irp, FUNCTION_SEND);
         if (Status == STATUS_PENDING)
         {
-            Status = AfdSendDatagram(FCB, (PAFD_SEND_INFO)SendReq, TargetAddress, &SendLength);
+            if (NT_SUCCESS(FormatStatus))
+                Status = AfdSendDatagram(FCB, (PAFD_SEND_INFO)SendReq, TargetAddress, &SendLength);
+            else
+                Status = FormatStatus;
             if (Status != STATUS_PENDING)
             {
                 NT_VERIFY(RemoveHeadList(&FCB->PendingIrpList[FUNCTION_SEND]) == &Irp->Tail.Overlay.ListEntry);
@@ -899,6 +1151,8 @@ AfdPacketSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
             }
         }
 
+        if (Control)
+            ExFreePoolWithTag(Control, TAG_AFD_DATA_BUFFER);
         ExFreePoolWithTag(TargetAddress, TAG_AFD_TDI_CONNECTION_INFORMATION);
 
         SocketStateUnlock(FCB);
@@ -907,6 +1161,8 @@ AfdPacketSocketWriteData(PDEVICE_OBJECT DeviceObject, PIRP Irp,
     }
     else
     {
+        if (Control)
+            ExFreePoolWithTag(Control, TAG_AFD_DATA_BUFFER);
         UnlockBuffers(SendReq->BufferArray, SendReq->BufferCount, FALSE);
         return UnlockAndMaybeComplete( FCB, Status, Irp, 0 );
     }

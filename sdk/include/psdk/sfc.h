@@ -43,4 +43,39 @@ BOOL WINAPI SfpVerifyFile(LPCSTR, LPSTR, DWORD);
 }
 #endif
 
+#ifndef SFC_DISABLE_ASK
+#define SFC_DISABLE_ASK 1
+#endif
+#ifndef SFC_DISABLE_NOPOPUPS
+#define SFC_DISABLE_NOPOPUPS 4
+#endif
+#ifndef SFC_DISABLE_NORMAL
+#define SFC_DISABLE_NORMAL 0
+#endif
+#ifndef SFC_DISABLE_ONCE
+#define SFC_DISABLE_ONCE 2
+#endif
+#ifndef SFC_DISABLE_SETUP
+#define SFC_DISABLE_SETUP 3
+#endif
+#ifndef SFC_QUOTA_DEFAULT
+#define SFC_QUOTA_DEFAULT 50
+#endif
+#ifndef SFC_SCAN_ALWAYS
+#define SFC_SCAN_ALWAYS 1
+#endif
+#ifndef SFC_SCAN_IMMEDIATE
+#define SFC_SCAN_IMMEDIATE 3
+#endif
+#ifndef SFC_SCAN_NORMAL
+#define SFC_SCAN_NORMAL 0
+#endif
+#ifndef SFC_SCAN_ONCE
+#define SFC_SCAN_ONCE 2
+#endif
+
+#define _SFC_
+#define SFC_IDLE_TRIGGER L"WFP_IDLE_TRIGGER"
+#define SFC_QUOTA_ALL_FILES ((ULONG)0xFFFFFFFF)
+
 #endif

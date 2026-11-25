@@ -7,7 +7,7 @@
 
 #include <blefi.h>
 #include <fdtacpi.h>
-#include <Fdt.h>
+#include <edk2/Fdt.h>
 #include <libernt/fdtlib.h>
 #include "../../winload/winload.h"
 
@@ -630,7 +630,7 @@ ArmCleanLoadedImages(
 
     for (Entry = VaToPa(Head->Flink); Entry != Head; Entry = VaToPa(Entry->Flink))
     {
-        PLDR_DATA_TABLE_ENTRY Module = CONTAINING_RECORD(Entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        PKLDR_DATA_TABLE_ENTRY Module = CONTAINING_RECORD(Entry, KLDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
 
         ArmCleanRange((ULONG_PTR)VaToPa(Module->DllBase), Module->SizeOfImage);
     }

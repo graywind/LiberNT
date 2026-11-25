@@ -224,6 +224,23 @@ UserDetachMonitor(IN HDEV hDev)
     return STATUS_SUCCESS;
 }
 
+/* The monitor of a display whose internals moved to another PDEV follows them */
+NTSTATUS NTAPI
+UserSetMonitorDevice(IN HDEV hDevOld, IN HDEV hDevNew)
+{
+    PMONITOR pMonitor;
+
+    for (pMonitor = gMonitorList; pMonitor != NULL; pMonitor = pMonitor->pMonitorNext)
+    {
+        if (pMonitor->hDev == hDevOld)
+        {
+            pMonitor->hDev = hDevNew;
+            return STATUS_SUCCESS;
+        }
+    }
+    return STATUS_INVALID_PARAMETER;
+}
+
 /* UserUpdateMonitorSize
  *
  * Reset size of the monitor using atached device
@@ -258,9 +275,17 @@ UserUpdateMonitorSize(IN HDEV hDev)
     /* Get the size of the hdev */
     PDEVOBJ_sizl((PPDEVOBJ)hDev, &DeviceSize);
 
-    /* Update monitor size */
+    /* Update monitor size; a display of a multi-display desktop sits at its position */
     pMonitor->rcMonitor.left  = 0;
     pMonitor->rcMonitor.top   = 0;
+    if (gpmdev != NULL && gpmdev->cDev > 1 && (PPDEVOBJ)hDev != gpmdev->ppdevGlobal)
+    {
+        RECTL rclDisplay;
+
+        MultiDisplayRect((PPDEVOBJ)hDev, &rclDisplay);
+        pMonitor->rcMonitor.left = rclDisplay.left;
+        pMonitor->rcMonitor.top = rclDisplay.top;
+    }
     pMonitor->rcMonitor.right  = pMonitor->rcMonitor.left + DeviceSize.cx;
     pMonitor->rcMonitor.bottom = pMonitor->rcMonitor.top + DeviceSize.cy;
     pMonitor->rcWork = pMonitor->rcMonitor;
@@ -287,6 +312,25 @@ UserUpdateMonitorSize(IN HDEV hDev)
     gpsi->rcScreenReal = pMonitor->rcMonitor;
 
     return STATUS_SUCCESS;
+}
+
+/* The rectangle of each monitor of the desktop, up to cMax of them; returns how many there are */
+UINT
+NTAPI
+UserGetMonitorRects(
+    _Out_writes_(cMax) PRECTL prcl,
+    _In_ UINT cMax)
+{
+    PMONITOR pMonitor;
+    UINT cMonitors = 0;
+
+    for (pMonitor = gMonitorList; pMonitor != NULL; pMonitor = pMonitor->pMonitorNext)
+    {
+        if (cMonitors < cMax)
+            prcl[cMonitors] = pMonitor->rcMonitor;
+        cMonitors++;
+    }
+    return cMonitors;
 }
 
 /* IntGetMonitorsFromRect
@@ -330,7 +374,7 @@ IntGetMonitorsFromRect(OPTIONAL IN LPCRECTL pRect,
 {
     PMONITOR pMonitor, pNearestMonitor = NULL, pPrimaryMonitor = NULL;
     UINT cMonitors = 0;
-    ULONG iNearestDistance = 0xffffffff;
+    ULONGLONG iNearestDistance = MAXULONGLONG;
 
     /* Find monitors which intersects the rectangle */
     for (pMonitor = gMonitorList; pMonitor != NULL; pMonitor = pMonitor->pMonitorNext)
@@ -358,13 +402,15 @@ IntGetMonitorsFromRect(OPTIONAL IN LPCRECTL pRect,
             /* Rects did not intersect */
             if (dwFlags == MONITOR_DEFAULTTONEAREST)
             {
-                ULONG cx, cy, iDistance;
+                ULONGLONG cx, cy, iDistance;
 
                 /* Get x and y distance */
-                cx = min(abs(MonitorRect.left - pRect->right),
-                         abs(pRect->left - MonitorRect.right));
-                cy = min(abs(MonitorRect.top - pRect->bottom),
-                         abs(pRect->top - MonitorRect.bottom));
+                cx = min(llabs((LONGLONG)MonitorRect.left - pRect->right),
+                         llabs((LONGLONG)pRect->left - MonitorRect.right));
+                cy = min(llabs((LONGLONG)MonitorRect.top - pRect->bottom),
+                         llabs((LONGLONG)pRect->top - MonitorRect.bottom));
+                cx = min(cx, MAXLONG);
+                cy = min(cy, MAXLONG);
 
                 /* Calculate distance square */
                 iDistance = cx * cx + cy * cy;

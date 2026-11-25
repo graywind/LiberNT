@@ -41,12 +41,19 @@ typedef struct _MI_CONTROL_AREA
     BOOLEAN Image;
     BOOLEAN Image64;
     BOOLEAN Physical;
+    BOOLEAN CfgScp;
     PVOID BasedAddress;
     ULONG64 ImageSize;
     SECTION_IMAGE_INFORMATION ImageInformation;
     PMI_IMAGE_WINDOW ImageWindow;
     ULONG64 ImageWindowBase;
+    ULONG64 ImageWindowSize;
+    LONG SigningState;
 } MI_CONTROL_AREA, *PMI_CONTROL_AREA;
+
+#define MI_IMAGE_SIGNING_UNKNOWN    0
+#define MI_IMAGE_SIGNING_VERIFIED   1
+#define MI_IMAGE_SIGNING_UNVERIFIED 2
 
 typedef struct _MI_SECTION_OBJECT
 {
@@ -202,7 +209,7 @@ VOID MiSyncProcessCounters(_Inout_ PEPROCESS Process);
 BOOLEAN MiChargeProcessCommit(_In_ PVOID Owner, _In_ LONG64 Pages);
 VOID MiReturnProcessCommit(_In_ PVOID Owner, _In_ LONG64 Pages);
 BOOLEAN MiDynamicCodeBlocked(_In_ PEPROCESS Process);
-NTSTATUS MiValidateImageSigningPolicy(_In_ PFILE_OBJECT FileObject);
+NTSTATUS MiValidateImageSigningPolicy(_In_ PFILE_OBJECT FileObject, _Inout_ PLONG SigningState);
 BOOLEAN MiFrameIsRam(_In_ ULONG64 Frame);
 BOOLEAN MiSecureRangeConflict(_In_ PEPROCESS Process, _In_ ULONG64 Start, _In_ ULONG64 End, _In_ BOOLEAN Release,
                               _In_ ULONG NewProtection);

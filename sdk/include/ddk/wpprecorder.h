@@ -299,4 +299,35 @@ imp_WppRecorderLogDumpLiveData(
 }
 #endif
 
+typedef struct _RECORDER_CONFIGURE_PARAMS_V1 {
+  ULONG Size;
+  BOOLEAN CreateDefaultLog;
+} RECORDER_CONFIGURE_PARAMS_V1, *PRECORDER_CONFIGURE_PARAMS_V1;
+
+typedef struct _RECORDER_LOG_CREATE_PARAMS_V1 {
+  ULONG Size;
+  ULONG LogTag;
+  ULONG TotalBufferSize;
+  ULONG ErrorPartitionSize;
+  ULONG_PTR LogIdentifierAppendValue;
+  BOOLEAN LogIdentifierAppendValueSet;
+  ULONG LogIdentifierSize;
+  CHAR LogIdentifier[16];
+} RECORDER_LOG_CREATE_PARAMS_V1, *PRECORDER_LOG_CREATE_PARAMS_V1;
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+#if (defined(_KERNEL_MODE))
+void RECORDER_LOG_CREATE_PARAMS_INIT_APPEND_POINTER(PRECORDER_LOG_CREATE_PARAMS Params, PCSTR LogIdentifier, const void *LogIdentifierAppendPointer);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

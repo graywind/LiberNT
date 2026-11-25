@@ -93,6 +93,7 @@ RxConjureOriginalName(
 
 #if (_WIN32_WINNT >= 0x0600)
 NTSTATUS
+NTAPI
 RxCompleteMdl(
     _In_ PRX_CONTEXT RxContext,
     _In_ PIRP Irp);
@@ -679,7 +680,7 @@ PVOID
 RxAllocateFcbObject(
     _In_ PRDBSS_DEVICE_OBJECT RxDeviceObject,
     _In_ NODE_TYPE_CODE NodeType,
-    _In_ POOL_TYPE PoolType,
+    _In_ POOL_FLAGS PoolFlags,
     _In_ ULONG NameSize,
     _In_opt_ PVOID AlreadyAllocatedObject);
 
@@ -807,5 +808,129 @@ RxCancelRoutine(
     BooleanFlagOn((F)->FcbState, FCB_STATE_WRITECACHING_ENABLED) && \
     !BooleanFlagOn((S)->Flags, SRVOPEN_FLAG_DONTUSE_WRITE_CACHING))
 #endif
+
+typedef union _UCHAR1 {
+  UCHAR Uchar[1];
+  UCHAR ForceAlignment;
+} UCHAR1, *PUCHAR1;
+
+typedef union _UCHAR2 {
+  UCHAR Uchar[2];
+  USHORT ForceAlignment;
+} UCHAR2, *PUCHAR2;
+
+typedef union _UCHAR4 {
+  UCHAR Uchar[4];
+  ULONG ForceAlignment;
+} UCHAR4, *PUCHAR4;
+
+#define RX_FCBTRACKER_PARAMS , ULONG LineNumber, PSZ FileName, ULONG SerialNumber
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+NTSTATUS NTAPI DuplicateTransportAddress(PTRANSPORT_ADDRESS *Copy, PTRANSPORT_ADDRESS Original, POOL_FLAGS PoolFlags);
+void NTAPI RxAcquireFileForNtCreateSection(PFILE_OBJECT FileObject);
+NTSTATUS NTAPI RxAcquireForCcFlush(PFILE_OBJECT FileObject, PDEVICE_OBJECT DeviceObject);
+BOOLEAN NTAPI RxCancelOperationInOverflowQueue(PRX_CONTEXT RxContext);
+BOOLEAN NTAPI RxCcLogError(PDEVICE_OBJECT DeviceObject, PUNICODE_STRING FileName, NTSTATUS Error, NTSTATUS DeviceError, UCHAR IrpMajorCode, PVOID Context);
+TYPE_OF_OPEN RxDecodeFileObject(PFILE_OBJECT FileObject, PFCB *Fcb, PFOBX *Fobx);
+void NTAPI RxDeregisterAsynchronousRequest(PRDBSS_DEVICE_OBJECT RxDeviceObject);
+void NTAPI RxFinalizeNetTable(PRDBSS_DEVICE_OBJECT RxDeviceObject, BOOLEAN ForceFinalization);
+void NTAPI RxForceFinalizeAllVNetRoots(PNET_ROOT NetRoot);
+PRX_LOG_ENTRY_HEADER NTAPI RxGetNextLogEntry(void);
+void NTAPI RxIndicateChangeOfBufferingState(PMRX_SRV_CALL SrvCall, PVOID SrvOpenKey, PVOID Context);
+BOOLEAN NTAPI RxIsPrefixTableEmpty(PRX_PREFIX_TABLE ThisTable);
+BOOLEAN NTAPI RxLockEnumerator(PMRX_SRV_OPEN SrvOpen, PVOID *ContinuationHandle, PLARGE_INTEGER FileOffset, PLARGE_INTEGER LockRange, PBOOLEAN IsLockExclusive);
+void NTAPI RxLogEventWithBufferDirect(PVOID DeviceOrDriverObject, PUNICODE_STRING OriginatorId, ULONG EventId, NTSTATUS Status, PVOID DataBuffer, USHORT DataBufferLength, ULONG LineNumber);
+NTSTATUS NTAPI RxLowIoFsCtlShell(PRX_CONTEXT RxContext, PIRP Irp, PFCB Fcb, PFOBX Fobx);
+NTSTATUS NTAPI RxLowIoFsCtlShellCompletion(PRX_CONTEXT RxContext);
+NTSTATUS NTAPI RxLowIoSubmitRETRY(PRX_CONTEXT RxContext, PIRP Irp);
+PVOID NTAPI RxMapUserBuffer(PRX_CONTEXT RxContext, PIRP Irp);
+void NTAPI RxPopUpFileCorrupt(PRX_CONTEXT RxContext, PFCB Fcb);
+NTSTATUS NTAPI RxPrepareRequestForHandling(PCHANGE_BUFFERING_STATE_REQUEST Request);
+void NTAPI RxPrintLog(ULONG EntriesToPrint);
+void NTAPI RxpSpinUpWorkerThreads(PRX_WORK_QUEUE WorkQueue);
+void NTAPI RxPurgeAllFobxs(PRDBSS_DEVICE_OBJECT RxDeviceObject);
+void NTAPI RxRecurrentTimerWorkItemDispatcher(PVOID Context);
+NTSTATUS NTAPI RxRegisterAsynchronousRequest(PRDBSS_DEVICE_OBJECT RxDeviceObject);
+void NTAPI RxReleaseFileForNtCreateSection(PFILE_OBJECT FileObject);
+NTSTATUS NTAPI RxReleaseForCcFlush(PFILE_OBJECT FileObject, PDEVICE_OBJECT DeviceObject);
+void NTAPI RxScavengeAllFobxs(PRDBSS_DEVICE_OBJECT RxDeviceObject);
+NTSTATUS NTAPI RxSetSrvCallDomainName(PMRX_SRV_CALL SrvCall, PUNICODE_STRING DomainName);
+NTSTATUS NTAPI RxShadowFastLowIo(PRX_CONTEXT RxContext, PIRP Irp);
+NTSTATUS NTAPI RxShadowLowIo(PRX_CONTEXT RxContext, PIRP Irp, PFCB Fcb);
+void NTAPI RxSpinDownOutstandingAsynchronousRequests(PRDBSS_DEVICE_OBJECT RxDeviceObject);
+void NTAPI RxStackOverflowRead(PVOID Context, PKEVENT Event);
+void NTAPI RxSyncUninitializeCacheMap(PRX_CONTEXT RxContext, PFILE_OBJECT FileObject);
+void NTAPI RxTearDownWorkQueue(PRX_WORK_QUEUE WorkQueue);
+void NTAPI RxTearDownWorkQueueDispatcher(PRX_WORK_QUEUE_DISPATCHER Dispatcher);
+void NTAPI RxWorkerThreadDispatcher(PRX_WORK_QUEUE WorkQueue);
+void NTAPI RxWorkItemDispatcher(PVOID Context);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+typedef struct _RX_CALLOUT_PARAMETERS_BLOCK_ *PRX_CALLOUT_PARAMETERS_BLOCK;
+
+typedef struct _RX_CREATE_CONNECTION_CALLOUT_CONTEXT_ *PRX_CREATE_CONNECTION_CALLOUT_CONTEXT;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+void NTAPI RxCeCleanupConnectCallOutContext(PRX_CREATE_CONNECTION_CALLOUT_CONTEXT CreateConnectionContext);
+NTSTATUS NTAPI RxCeInitiateConnectRequest(PRX_CALLOUT_PARAMETERS_BLOCK ParameterBlock);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+NTSTATUS NTAPI DuplicateConnectionInformation(PRXCE_CONNECTION_INFORMATION *Copy, PRXCE_CONNECTION_INFORMATION Original, POOL_FLAGS PoolFlags);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define CopyU4char(Dst, Src) { * ((UNALIGNED UCHAR4 *) (Dst)) = * ((UCHAR4 *) (Src)); }
+#define CopyUchar1(Dst, Src) { * ((UCHAR1 *) (Dst)) = * ((UNALIGNED UCHAR1 *) (Src)); }
+#define CopyUchar2(Dst, Src) { * ((UCHAR2 *) (Dst)) = * ((UNALIGNED UCHAR2 *) (Src)); }
+#define CopyUchar4(Dst, Src) { * ((UCHAR4 *) (Dst)) = * ((UNALIGNED UCHAR4 *) (Src)); }
+#define DbgDoit(X) { X; }
+#define DEBUG_ONLY_DECL(X) X
+#define DebugDoit(X) { X; }
+#define IsPtrQuadAligned(Ptr) (QuadAlignPtr(Ptr) == (PVOID) (Ptr))
+#define LongAlign(Val) (ALIGN_UP(Val, LONG))
+#define LongAlignPtr(Ptr) (ALIGN_UP_POINTER(Ptr, LONG))
+#define QuadAlignPtr(Ptr) (ALIGN_UP_POINTER(Ptr, ULONGLONG))
+#define RxAcquireSharedFcbStarveEx(RXCONTEXT, FCB) __RxAcquireFcb((FCB), (RXCONTEXT), FCB_MODE_SHARED_STARVE_EXCLUSIVE, __LINE__, __FILE__, 0)
+#define RxCompleteRequest_OLD(RXCONTEXT, IRP, STATUS) { RxCompleteRequest_Real(RXCONTEXT, IRP, STATUS); (IRP) = NULL; (RXCONTEXT) = NULL; }
+#define RxFcbAcquiredShared(RXCONTEXT, FCB) (ExIsResourceAcquiredSharedLite((FCB) -> Header . Resource))
+#define RxForceNetTableFinalization(RxDeviceObject) RxFinalizeNetTable(RxDeviceObject, TRUE)
+#define RxFsdPostRequestWithResume(RXCONTEXT, RESUMEROUTINE) (((RXCONTEXT) -> ResumeRoutine = (RESUMEROUTINE)), RxFsdPostRequest((RXCONTEXT)))
+#define RxLogEvent(_DeviceObject, _OriginatorId, _EventId, _Status) RxLogEventDirect(_DeviceObject, _OriginatorId, _EventId, _Status, __LINE__)
+#define RxLogFailureWithBuffer(_DeviceObject, _OriginatorId, _EventId, _Status, _Buffer, _Length) RxLogEventWithBufferDirect(_DeviceObject, _OriginatorId, _EventId, _Status, _Buffer, _Length, __LINE__)
+#define RxUpcaseEaName(RXCONTEXT, NAME, UPCASEDNAME) RtlUpperString(UPCASEDNAME, NAME)
+#define WordAlign(Val) (ALIGN_UP(Val, WORD))
+#define WordAlignPtr(Ptr) (ALIGN_UP_POINTER(Ptr, WORD))
+
+#define RxNotifyReportChange(I, V, F, FL, A) RxDbgTrace(0, Dbg, ("RxNotifyReportChange PRETENDING Fcb %08lx %wZ Filter/Action = %08lx/%08lx\n", (F), & ((F) -> FcbTableEntry . Path), (FL), (A)))
+
+/* TODO: RxCepInitializeConnection and RxCepInitializeVC, which need the RXCE address, connection and VC types */
 
 #endif

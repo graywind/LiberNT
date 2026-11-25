@@ -136,4 +136,18 @@ SQLRETURN SQL_API SQLSetStmtAttrW(SQLHSTMT,SQLINTEGER,SQLPOINTER,SQLINTEGER);
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+SQLRETURN SQL_API SQLDescribeParamA(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT *pfSqlType, SQLUINTEGER *pcbParamDef, SQLSMALLINT *pibScale, SQLSMALLINT *pfNullable);
+SQLRETURN SQL_API SQLGetStmtOptionA(SQLHSTMT hstmt, SQLUSMALLINT fOption, SQLPOINTER pvParam);
+SQLRETURN SQL_API SQLSetStmtOptionA(SQLHSTMT hstmt, SQLUSMALLINT fOption, SQLULEN vParam);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* ndef _SQLUCODE_H */

@@ -575,6 +575,8 @@ typedef struct _D3DKMT_FLIPMANAGER_AUXILIARYPRESENTINFO
     // than the previous present
     BOOL customDurationChanged;
 
+    void* pFlipManagerProcessedEvent;
+
     // out: The adapter LUID/VidPn source of the flip output
     LUID FlipAdapterLuid;
     D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
@@ -857,7 +859,8 @@ typedef struct _D3DKMT_CANCEL_PRESENTS_FLAGS
 typedef enum D3DKMT_CANCEL_PRESENTS_OPERATION
 {
     D3DKMT_CANCEL_PRESENTS_OPERATION_CANCEL_FROM            = 0,
-    D3DKMT_CANCEL_PRESENTS_OPERATION_REPROGRAM_INTERRUPT    = 1
+    D3DKMT_CANCEL_PRESENTS_OPERATION_REPROGRAM_INTERRUPT    = 1,
+    D3DKMT_CANCEL_PRESENTS_OPERATION_FLUSH_COMPLETED_PRESENTS = 2,
 } D3DKMT_CANCEL_PRESENTS_OPERATION;
 
 typedef struct _D3DKMT_CANCEL_PRESENTS
@@ -869,6 +872,7 @@ typedef struct _D3DKMT_CANCEL_PRESENTS
     D3DKMT_ALIGN64 UINT64               CancelFromPresentId;
     LUID                                CompSurfaceLuid;
     D3DKMT_ALIGN64 UINT64               BindId;
+    HANDLE                              hFlipManagerProcessedEvent;
 }D3DKMT_CANCEL_PRESENTS;
 #endif
 
@@ -1733,6 +1737,7 @@ typedef struct _D3DKMT_OPENNATIVEFENCEFROMNTHANDLE
     D3DDDI_SYNCHRONIZATIONOBJECT_FLAGS  Flags;              // in: Flags.
     D3DKMT_HANDLE                       hSyncObject;        // out: Handle to the opened fence object
     D3DDDI_NATIVEFENCEMAPPING           NativeFenceMapping; // out: process mapping information for the fence object
+    BYTE                                PrivateDriverData[D3DDDI_NATIVE_FENCE_PDD_SIZE];
     BYTE                                Reserved[32];
 } D3DKMT_OPENNATIVEFENCEFROMNTHANDLE;
 
@@ -6515,5 +6520,15 @@ typedef enum _DXGKMT_POWER_SHARED_TYPE
 
 #endif /* WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) */
 #pragma endregion
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+NTSTATUS APIENTRY D3DKMTRegisterVailProcess(GUID *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _D3DKMTHK_H_ */

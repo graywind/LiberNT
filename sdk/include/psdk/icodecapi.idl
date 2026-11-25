@@ -61,3 +61,4 @@ interface ICodecAPI : IUnknown
 
     HRESULT SetAllSettingsWithNotify([in] IStream* stream, [out, size_is(,*count)] GUID **param, [out] ULONG *count);
 }
+

@@ -12,10 +12,10 @@
 #include <ntdll.h>
 #include <winnls.h>
 #include <apisets.h>
-#include <reactos/chpe.h>
+#include <libernt/chpe.h>
 
 #ifdef WOW64_I386_RUNTIME
-#include <reactos/wow64shared.h>
+#include <libernt/wow64shared.h>
 #define EXPLICIT_64BIT
 #include <ndk/peb_teb.h>
 #undef EXPLICIT_64BIT
@@ -35,6 +35,13 @@ RtlpCheckForActiveDebugger(VOID)
 {
     /* Return the flag in the PEB */
     return NtCurrentPeb()->BeingDebugged;
+}
+
+BOOLEAN
+NTAPI
+RtlpKernelDebuggerEnabled(VOID)
+{
+    return (SharedUserData->KdDebuggerEnabled & 1) != 0;
 }
 
 ULONG

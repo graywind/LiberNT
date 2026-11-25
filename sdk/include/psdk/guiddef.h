@@ -30,6 +30,7 @@ typedef struct _GUID
     unsigned short Data3;
     unsigned char  Data4[ 8 ];
 } GUID;
+
 #endif
 
 #ifndef FAR
@@ -162,6 +163,10 @@ inline bool operator!=(const GUID& guidOne, const GUID& guidOther)
     return !(guidOne == guidOther);
 }
 #endif
+#endif
+
+#if (!defined (__midl))
+#define _SYS_GUID_OPERATORS_
 #endif
 
 #endif /* _GUIDDEF_H_ */

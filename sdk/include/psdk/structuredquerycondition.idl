@@ -19,7 +19,6 @@
  *
  */
 
-
 import "oaidl.idl";
 import "ocidl.idl";
 import "objidl.idl";
@@ -129,3 +128,16 @@ interface ICondition2 : ICondition
                                        [out] CONDITION_OPERATION *pcop,
                                        [out] PROPVARIANT *ppropvar);
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

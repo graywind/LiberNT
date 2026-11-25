@@ -7,6 +7,8 @@
 
 #pragma once
 
+#define IDI_SYSTEMSETTINGS             1
+
 #define IDS_APP_TITLE                  100
 #define IDS_FIND_SETTING               101
 #define IDS_BACK                       102
@@ -424,6 +426,18 @@
 #define IDS_PASSWORD_INCORRECT         903
 #define IDS_CREATE_PASSWORD            904
 #define IDS_PASSWORD_HINT_CONTAINS     905
+#define IDS_MULTIPLE_DISPLAYS          910
+#define IDS_MULTIPLE_DISPLAYS_DESC     911
+#define IDS_EXTEND_DISPLAYS            912
+#define IDS_SHOW_ONLY_ON               913
+#define IDS_IDENTIFY                   914
+#define IDS_IDENTIFY_DESC              915
+#define IDS_IDENTIFY_BUTTON            916
+#define IDS_DISPLAY_POSITION           917
+#define IDS_DISPLAY_POSITION_DESC      918
+#define IDS_RIGHT_OF_MAIN              919
+#define IDS_BELOW_MAIN                 920
+#define IDS_RESTART_DISPLAYS           921
 #define IDS_SIGNIN_EXTRA               511
 #define IDS_REQUIRE_SIGNIN             512
 #define IDS_REQUIRE_SIGNIN_DESC        513

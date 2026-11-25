@@ -14,15 +14,6 @@
 #ifndef _RPI5VC4_PCH_
 #define _RPI5VC4_PCH_
 
-/* Mirror dxgkrnl/softgpu: the WDDM2 structures in dispmprt.h are gated on
- * NTDDI_WIN7 and DXGKDDI_INTERFACE_VERSION (see CMakeLists.txt). */
-#undef  _WIN32_WINNT
-#define _WIN32_WINNT  0x0601
-#undef  WINVER
-#define WINVER        0x0601
-#undef  NTDDI_VERSION
-#define NTDDI_VERSION 0x06010000
-
 #ifndef DXGKDDI_INTERFACE_VERSION
 #define DXGKDDI_INTERFACE_VERSION 0x5023 /* DXGKDDI_INTERFACE_VERSION_WDDM2_0 */
 #endif
@@ -31,11 +22,11 @@
 #include <wdm.h>
 #include <windef.h>
 #include <dispmprt.h>
-#include <reactos/rddm/rxgkpresent.h>
-#include <reactos/loader_framebuffer.h>
+#include <libernt/rddm/rxgkpresent.h>
+#include <libernt/loader_framebuffer.h>
 #include "rpi5vc4_pointer.h"
-#include <reactos/rpi5vc4_umd.h>
-#include <reactos/rpi5vc4_xpdm.h>
+#include <libernt/rpi5vc4_umd.h>
+#include <libernt/rpi5vc4_xpdm.h>
 
 #ifndef DXGKDDI_INTERFACE_VERSION_WDDM2_0
 #define DXGKDDI_INTERFACE_VERSION_WDDM2_0 0x5023

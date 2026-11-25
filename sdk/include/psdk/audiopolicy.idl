@@ -238,3 +238,11 @@ interface IAudioSessionManager2 : IAudioSessionManager
         [in] IAudioVolumeDuckNotification *duckNotification
     );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

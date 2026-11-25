@@ -414,7 +414,10 @@ typedef enum _SI_PAGE_TYPE
     SI_PAGE_PERM = 0,
     SI_PAGE_ADVPERM,
     SI_PAGE_AUDIT,
-    SI_PAGE_OWNER
+    SI_PAGE_OWNER,
+    SI_PAGE_EFFECTIVE = 4,
+    SI_PAGE_TAKEOWNERSHIP = 5,
+    SI_PAGE_SHARE = 6,
 } SI_PAGE_TYPE;
 
 typedef struct _FN_OBJECT_MGR_FUNCTIONS
@@ -493,5 +496,88 @@ typedef INHERITED_FROMA INHERITED_FROM, *PINHERITED_FROM;
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef ACTRL_PERM_1
+#define ACTRL_PERM_1 0x00000001
+#endif
+#ifndef ACTRL_PERM_10
+#define ACTRL_PERM_10 0x00000200
+#endif
+#ifndef ACTRL_PERM_11
+#define ACTRL_PERM_11 0x00000400
+#endif
+#ifndef ACTRL_PERM_12
+#define ACTRL_PERM_12 0x00000800
+#endif
+#ifndef ACTRL_PERM_13
+#define ACTRL_PERM_13 0x00001000
+#endif
+#ifndef ACTRL_PERM_14
+#define ACTRL_PERM_14 0x00002000
+#endif
+#ifndef ACTRL_PERM_15
+#define ACTRL_PERM_15 0x00004000
+#endif
+#ifndef ACTRL_PERM_16
+#define ACTRL_PERM_16 0x00008000
+#endif
+#ifndef ACTRL_PERM_17
+#define ACTRL_PERM_17 0x00010000
+#endif
+#ifndef ACTRL_PERM_18
+#define ACTRL_PERM_18 0x00020000
+#endif
+#ifndef ACTRL_PERM_19
+#define ACTRL_PERM_19 0x00040000
+#endif
+#ifndef ACTRL_PERM_2
+#define ACTRL_PERM_2 0x00000002
+#endif
+#ifndef ACTRL_PERM_20
+#define ACTRL_PERM_20 0x00080000
+#endif
+#ifndef ACTRL_PERM_3
+#define ACTRL_PERM_3 0x00000004
+#endif
+#ifndef ACTRL_PERM_4
+#define ACTRL_PERM_4 0x00000008
+#endif
+#ifndef ACTRL_PERM_5
+#define ACTRL_PERM_5 0x00000010
+#endif
+#ifndef ACTRL_PERM_6
+#define ACTRL_PERM_6 0x00000020
+#endif
+#ifndef ACTRL_PERM_7
+#define ACTRL_PERM_7 0x00000040
+#endif
+#ifndef ACTRL_PERM_8
+#define ACTRL_PERM_8 0x00000080
+#endif
+#ifndef ACTRL_PERM_9
+#define ACTRL_PERM_9 0x00000100
+#endif
+
+#if (!(defined(UNICODE)))
+typedef ACTRL_PROPERTY_ENTRYA ACTRL_PROPERTY_ENTRY;
+typedef PACTRL_PROPERTY_ENTRYA PACTRL_PROPERTY_ENTRY;
+#else
+typedef ACTRL_PROPERTY_ENTRYW ACTRL_PROPERTY_ENTRY;
+typedef PACTRL_PROPERTY_ENTRYW PACTRL_PROPERTY_ENTRY;
+#endif
+
+#define ACTRL_STD_RIGHT_REQUIRED 0x78000000
+
+struct _INHERITED_FROMA
+{
+    LONG GenerationGap;
+    LPSTR AncestorName;
+};
+
+struct _INHERITED_FROMW
+{
+    LONG GenerationGap;
+    LPWSTR AncestorName;
+};
 
 #endif /* _ACCCTRL_H */

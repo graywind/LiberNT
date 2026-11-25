@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <reactos/dwmframe.h>
+#include <libernt/dwmframe.h>
 
 extern BOOL gbCompositionEnabled;
 
@@ -120,7 +120,7 @@ VOID IntCompositionUnload(VOID);
 
 /* User-mode dwm.exe frame pull (ONEPARAM_ROUTINE_DWMGETFRAME): fills the
  * dwm-provided buffer with the Z-ordered compositable windows + their backing
- * pixels. See sdk/include/reactos/dwmframe.h for the layout. */
+ * pixels. See sdk/include/libernt/dwmframe.h for the layout. */
 NTSTATUS IntCompositionDwmGetFrame(_In_ PVOID pUser);
 NTSTATUS IntCompositionDwmFlush(VOID);
 NTSTATUS IntCompositionDwmPresented(_In_ DWORD_PTR Param);
@@ -240,9 +240,13 @@ VOID IntCompositionDamageFromGdi(VOID);
 BOOL IntCompositionIsAttachedProcess(VOID);
 BOOL IntCompositionIsGpuOutputWindow(_In_opt_ PWND Window);
 HWND IntCompositionGetGpuOutputWindow(VOID);
+NTSTATUS D3dkmtQueryDisplayDeviceSource(_In_ PCWSTR DeviceName,
+                                        _Out_ LUID *AdapterLuid,
+                                        _Out_ ULONG *VidPnSourceId);
 BOOL IntCompositionIsGpuOutputPresent(_In_opt_ HWND Window,
                                       _In_ const RECT *SourceRect,
-                                      _In_ const RECT *DestinationRect);
+                                      _In_ const RECT *DestinationRect,
+                                      _Out_opt_ PULONG VidPnSourceId);
 
 /* BeginPaint/EndPaint bracket for redirected composition. */
 VOID IntCompositionPaintBegin(_In_ PWND Wnd);

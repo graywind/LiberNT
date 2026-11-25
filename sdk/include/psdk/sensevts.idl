@@ -114,3 +114,9 @@ interface ISensLogon2 : IDispatch
         [in] BSTR bstrUserName,
         [in] DWORD dwSessionId );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct SENS SENS;")

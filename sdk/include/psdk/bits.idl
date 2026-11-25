@@ -64,7 +64,6 @@ interface IBackgroundCopyFile : IUnknown
     );
 }
 
-
 [
     uuid(ca51e165-c365-424c-8d41-24aaa4ff3c40),
     odl
@@ -92,7 +91,6 @@ interface IEnumBackgroundCopyFiles: IUnknown
     );
 }
 
-
 [
     uuid(19c613a0-fcb8-4f28-81ae-897c3d078f81),
     odl
@@ -108,7 +106,8 @@ interface IBackgroundCopyError : IUnknown
         BG_ERROR_CONTEXT_REMOTE_FILE = 5,
         BG_ERROR_CONTEXT_GENERAL_TRANSPORT = 6,
         BG_ERROR_CONTEXT_REMOTE_APPLICATION =7,
-    } BG_ERROR_CONTEXT;
+        BG_ERROR_CONTEXT_SERVER_CERTIFICATE_CALLBACK = 8,
+} BG_ERROR_CONTEXT;
 
     HRESULT GetError(
             [out,ref] BG_ERROR_CONTEXT *pContext,
@@ -133,8 +132,6 @@ interface IBackgroundCopyError : IUnknown
             [out,ref] LPWSTR *pProtocol
     );
 }
-
-
 
 [
     uuid(37668d37-507e-4160-9316-26306d150b12),
@@ -191,7 +188,6 @@ interface IBackgroundCopyJob : IUnknown
         BG_JOB_PROXY_USAGE_OVERRIDE,
         BG_JOB_PROXY_USAGE_AUTODETECT
     } BG_JOB_PROXY_USAGE;
-
 
     HRESULT AddFileSet(
             [in] ULONG cFileCount,
@@ -345,7 +341,6 @@ interface IEnumBackgroundCopyJobs : IUnknown
     );
 }
 
-
 [
     uuid(97ea99c7-0186-4ad4-8df9-c5b4e0ed6b22),
     odl
@@ -397,7 +392,6 @@ interface IBackgroundCopyManager : IUnknown
             [out] LPWSTR *pErrorDescription);
 }
 
-
 [
     uuid(1deeb74f-7915-4560-b558-918c83f176a6),
     version(1.0)
@@ -422,3 +416,32 @@ cpp_quote("#include \"bits1_5.h\"")
 #else
 cpp_quote("#include \"bits1_5.h\"")
 #endif
+
+cpp_quote("#ifndef __bits_cpp_quote_1_DEFINED__")
+cpp_quote("#define __bits_cpp_quote_1_DEFINED__")
+cpp_quote("#ifndef BG_NOTIFY_FILE_RANGES_TRANSFERRED")
+cpp_quote("#define BG_NOTIFY_FILE_RANGES_TRANSFERRED 0x0020")
+cpp_quote("#endif")
+
+cpp_quote("typedef struct AsyncIBackgroundCopyCallback AsyncIBackgroundCopyCallback;")
+cpp_quote("")
+cpp_quote("struct AsyncIBackgroundCopyCallbackVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(AsyncIBackgroundCopyCallback *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(AsyncIBackgroundCopyCallback *);")
+cpp_quote("    ULONG (WINAPI *Release)(AsyncIBackgroundCopyCallback *);")
+cpp_quote("    HRESULT (WINAPI *Begin_JobTransferred)(AsyncIBackgroundCopyCallback *, IBackgroundCopyJob *);")
+cpp_quote("    HRESULT (WINAPI *Finish_JobTransferred)(AsyncIBackgroundCopyCallback *);")
+cpp_quote("    HRESULT (WINAPI *Begin_JobError)(AsyncIBackgroundCopyCallback *, IBackgroundCopyJob *, IBackgroundCopyError *);")
+cpp_quote("    HRESULT (WINAPI *Finish_JobError)(AsyncIBackgroundCopyCallback *);")
+cpp_quote("    HRESULT (WINAPI *Begin_JobModification)(AsyncIBackgroundCopyCallback *, IBackgroundCopyJob *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *Finish_JobModification)(AsyncIBackgroundCopyCallback *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#endif")

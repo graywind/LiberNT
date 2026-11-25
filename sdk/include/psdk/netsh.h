@@ -282,4 +282,39 @@ RegisterHelper(
 }
 #endif
 
+#ifndef MAX_NAME_LEN
+#define MAX_NAME_LEN 48
+#endif
+#ifndef NETSH_MAX_CMD_TOKEN_LENGTH
+#define NETSH_MAX_CMD_TOKEN_LENGTH 128
+#endif
+#ifndef NETSH_MAX_TOKEN_LENGTH
+#define NETSH_MAX_TOKEN_LENGTH 64
+#endif
+#ifndef NETSH_VERSION_50
+#define NETSH_VERSION_50 0x0005000
+#endif
+
+enum NS_EVENTS {
+    NS_EVENT_LOOP = 0x10000,
+    NS_EVENT_LAST_N = 1,
+    NS_EVENT_LAST_SECS = 2,
+    NS_EVENT_FROM_N = 4,
+    NS_EVENT_FROM_START = 8
+};
+
+typedef const struct _NS_CONTEXT_ATTRIBUTES * PCNS_CONTEXT_ATTRIBUTES;
+
+#define GET_RESOURCE_STRING_FN_NAME "GetResourceString"
+#define NETSH_ARG_DELIMITER L"="
+#define NETSH_CMD_DELIMITER L" "
+#define NS_GET_EVENT_IDS_FN_NAME "GetEventIds"
+
+typedef DWORD WINAPI NS_DLL_STOP_FN(DWORD);
+
+typedef NS_DLL_STOP_FN *PNS_DLL_STOP_FN;
+
+#define NUM_TAGS_IN_TABLE(TagsArray) sizeof (TagsArray) / sizeof (TAG_TYPE)
+#define NUM_TOKENS_IN_TABLE(TokenArray) sizeof (TokenArray) / sizeof (TOKEN_VALUE)
+
 #endif /* _NETSH_H_ */

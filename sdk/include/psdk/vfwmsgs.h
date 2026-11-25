@@ -171,7 +171,11 @@
 
 #ifndef E_PROP_ID_UNSUPPORTED
 #define E_PROP_ID_UNSUPPORTED                        ((HRESULT)0x80070490)
+
 #endif
 #ifndef E_PROP_SET_UNSUPPORTED
 #define E_PROP_SET_UNSUPPORTED                       ((HRESULT)0x80070492)
+
+#define VFW_S_DVD_RENDER_STATUS ((HRESULT)0x40320)
+
 #endif

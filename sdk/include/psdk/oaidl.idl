@@ -1591,7 +1591,6 @@ interface ICreateTypeLib2 : ICreateTypeLib
     [in] LPOLESTR szFileName);
 }
 
-
 /*****************************************************************************
  * IErrorLog interface
  */
@@ -1608,7 +1607,6 @@ interface IErrorLog : IUnknown
     [in] LPCOLESTR pszPropName,
     [in] EXCEPINFO *pExcepInfo);
 }
-
 
 /*****************************************************************************
  * IPropertyBag interface
@@ -1640,3 +1638,67 @@ interface IPropertyBag : IUnknown
     [in] LPCOLESTR pszPropName,
     [in] VARIANT *pVar);
 }
+
+cpp_quote("#ifndef __oaidl_cpp_quote_1_DEFINED__")
+cpp_quote("#define __oaidl_cpp_quote_1_DEFINED__")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct ITypeLibRegistration ITypeLibRegistration;")
+cpp_quote("")
+cpp_quote("typedef struct ITypeLibRegistrationReader ITypeLibRegistrationReader;")
+cpp_quote("")
+cpp_quote("struct ITypeLibRegistrationReaderVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(ITypeLibRegistrationReader *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(ITypeLibRegistrationReader *);")
+cpp_quote("    ULONG (WINAPI *Release)(ITypeLibRegistrationReader *);")
+cpp_quote("    HRESULT (WINAPI *EnumTypeLibRegistrations)(ITypeLibRegistrationReader *, IEnumUnknown **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("struct ITypeLibRegistrationVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(ITypeLibRegistration *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(ITypeLibRegistration *);")
+cpp_quote("    ULONG (WINAPI *Release)(ITypeLibRegistration *);")
+cpp_quote("    HRESULT (WINAPI *GetGuid)(ITypeLibRegistration *, GUID *);")
+cpp_quote("    HRESULT (WINAPI *GetVersion)(ITypeLibRegistration *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetLcid)(ITypeLibRegistration *, LCID *);")
+cpp_quote("    HRESULT (WINAPI *GetWin32Path)(ITypeLibRegistration *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetWin64Path)(ITypeLibRegistration *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetDisplayName)(ITypeLibRegistration *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetFlags)(ITypeLibRegistration *, DWORD *);")
+cpp_quote("    HRESULT (WINAPI *GetHelpDir)(ITypeLibRegistration *, BSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("void CLEANLOCALSTORAGE_UserFree64(unsigned long *, CLEANLOCALSTORAGE *);")
+cpp_quote("unsigned char * CLEANLOCALSTORAGE_UserMarshal64(unsigned long *, unsigned char *, CLEANLOCALSTORAGE *);")
+cpp_quote("unsigned long CLEANLOCALSTORAGE_UserSize64(unsigned long *, unsigned long, CLEANLOCALSTORAGE *);")
+cpp_quote("unsigned char * CLEANLOCALSTORAGE_UserUnmarshal64(unsigned long *, unsigned char *, CLEANLOCALSTORAGE *);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+cpp_quote("#endif")

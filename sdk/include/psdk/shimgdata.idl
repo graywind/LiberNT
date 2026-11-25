@@ -98,3 +98,12 @@ interface IShellImageDataFactory : IUnknown
     HRESULT CreateImageFromStream([in] IStream *stream, [out] IShellImageData **data);
     HRESULT GetDataFormatFromPath([in] LPCWSTR path, [out] GUID *format);
 }
+
+cpp_quote("#define E_NOTVALIDFORANIMATEDIMAGE (-2147221503)")
+cpp_quote("#define SHIMGKEY_QUALITY L\"Compression\"")
+cpp_quote("#define SHIMGKEY_RAWFORMAT L\"RawDataFormat\"")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct ShellImageDataFactory ShellImageDataFactory;")

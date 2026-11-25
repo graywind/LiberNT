@@ -111,4 +111,38 @@ HRESULT WINAPI GetDeviceIDString(_Out_writes_to_opt_(cchWindowsAIK, *pcchResult)
 }
 #endif
 
+#ifndef TPM_WNF_INFO_CLEAR_SUCCESSFUL
+#define TPM_WNF_INFO_CLEAR_SUCCESSFUL 0x00000001
+#endif
+#ifndef TPM_WNF_INFO_NO_REBOOT_REQUIRED
+#define TPM_WNF_INFO_NO_REBOOT_REQUIRED 1
+#endif
+#ifndef TPM_WNF_INFO_OWNERSHIP_SUCCESSFUL
+#define TPM_WNF_INFO_OWNERSHIP_SUCCESSFUL 0x00000002
+#endif
+
+typedef const BOOL * PCBOOL;
+typedef const BYTE * PCBYTE;
+typedef const INT32 * PCINT32;
+typedef const UINT32 * PCUINT32;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+TBS_RESULT WINAPI Tbsi_Create_Windows_Key(TBS_HANDLE keyHandle);
+
+#ifdef __cplusplus
+}
+#endif
+
+struct tdTPM_WNF_PROVISIONING
+{
+    UINT32 status;
+    BYTE message[28];
+};
+
+typedef struct tdTPM_WNF_PROVISIONING TPM_WNF_PROVISIONING;
+
 #endif /* _TBS_H_ */

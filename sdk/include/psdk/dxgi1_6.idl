@@ -139,3 +139,20 @@ interface IDXGIFactory7 : IDXGIFactory6
         [in] DWORD cookie
     );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("HRESULT WINAPI DXGIDeclareAdapterRemovalSupport(void);")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("HRESULT WINAPI DXGIDisableVBlankVirtualization(void);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

@@ -91,3 +91,35 @@ interface ITfInputScope : IUnknown
     HRESULT GetSRGS([out] BSTR *pbstrSRGS);
     HRESULT GetXML([out] BSTR *pbstrXML);
 }
+
+cpp_quote("#ifndef __inputscope_cpp_quote_1_DEFINED__")
+cpp_quote("#define __inputscope_cpp_quote_1_DEFINED__")
+cpp_quote("typedef struct ITfInputScope2 ITfInputScope2;")
+cpp_quote("")
+cpp_quote("struct ITfInputScope2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(ITfInputScope2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(ITfInputScope2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(ITfInputScope2 *);")
+cpp_quote("    HRESULT (WINAPI *GetInputScopes)(ITfInputScope2 *, InputScope **, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetPhrase)(ITfInputScope2 *, BSTR **, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetRegularExpression)(ITfInputScope2 *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetSRGS)(ITfInputScope2 *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *GetXML)(ITfInputScope2 *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *EnumWordList)(ITfInputScope2 *, IEnumString **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("HRESULT WINAPI SetInputScopes2(HWND hwnd, const InputScope *pInputScopes, UINT cInputScopes, IEnumString *pEnumString, PWSTR pszRegExp, PWSTR pszSRGS);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+cpp_quote("#endif")
+
+

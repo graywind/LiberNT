@@ -76,7 +76,12 @@ typedef USHORT ADDRESS_FAMILY;
 #define AF_MAX          33
 #else
 #define AF_LINK         33
+#if (_WIN32_WINNT < 0x0604)
 #define AF_MAX          34
+#else
+#define AF_HYPERV       34
+#define AF_MAX          35
+#endif /* (_WIN32_WINNT < 0x0604) */
 #endif /* (_WIN32_WINNT < 0x0601) */
 
 #endif /* (_WIN32_WINNT < 0x0600) */
@@ -478,7 +483,8 @@ typedef enum {
   IPPROTO_RESERVED_RAW = 257,
   IPPROTO_RESERVED_IPSEC = 258,
   IPPROTO_RESERVED_IPSECOFFLOAD = 259,
-  IPPROTO_RESERVED_MAX = 260
+  IPPROTO_RESERVED_WNV = 260,
+  IPPROTO_RESERVED_MAX = 261
 } IPPROTO, *PIPROTO;
 
 typedef enum {
@@ -724,3 +730,295 @@ typedef struct addrinfoexW {
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef ADDRINFOEX_VERSION_2
+#define ADDRINFOEX_VERSION_2 2
+#endif
+#ifndef ADDRINFOEX_VERSION_3
+#define ADDRINFOEX_VERSION_3 3
+#endif
+#ifndef ADDRINFOEX_VERSION_4
+#define ADDRINFOEX_VERSION_4 4
+#endif
+#ifndef ADDRINFOEX_VERSION_5
+#define ADDRINFOEX_VERSION_5 5
+#endif
+#ifndef ADDRINFOEX_VERSION_6
+#define ADDRINFOEX_VERSION_6 6
+#endif
+#ifndef ADDRINFOEX_VERSION_7
+#define ADDRINFOEX_VERSION_7 7
+#endif
+#ifndef AI_BYPASS_DNS_CACHE
+#define AI_BYPASS_DNS_CACHE 0x00000040
+#endif
+#ifndef AI_DNS_RESPONSE_HOSTFILE
+#define AI_DNS_RESPONSE_HOSTFILE 0x2
+#endif
+#ifndef AI_DNS_RESPONSE_SECURE
+#define AI_DNS_RESPONSE_SECURE 0x1
+#endif
+#ifndef AI_DNS_SERVER_TYPE_DOH
+#define AI_DNS_SERVER_TYPE_DOH 0x2
+#endif
+#ifndef AI_DNS_SERVER_TYPE_DOT
+#define AI_DNS_SERVER_TYPE_DOT 0x3
+#endif
+#ifndef AI_DNS_SERVER_TYPE_UDP
+#define AI_DNS_SERVER_TYPE_UDP 0x1
+#endif
+#ifndef AI_DNS_SERVER_UDP_FALLBACK
+#define AI_DNS_SERVER_UDP_FALLBACK 0x1
+#endif
+#ifndef AI_EXCLUSIVE_CUSTOM_SERVERS
+#define AI_EXCLUSIVE_CUSTOM_SERVERS 0x00200000
+#endif
+#ifndef AI_EXTENDED
+#define AI_EXTENDED 0x80000000
+#endif
+#ifndef AI_EXTRA_DNSSEC_REQUIRED
+#define AI_EXTRA_DNSSEC_REQUIRED 0x0000000000000001
+#endif
+#ifndef AI_FORCE_CLEAR_TEXT
+#define AI_FORCE_CLEAR_TEXT 0x00000020
+#endif
+#ifndef AI_REQUIRE_SECURE
+#define AI_REQUIRE_SECURE 0x20000000
+#endif
+#ifndef AI_RESOLUTION_HANDLE
+#define AI_RESOLUTION_HANDLE 0x40000000
+#endif
+#ifndef AI_RETURN_RESPONSE_FLAGS
+#define AI_RETURN_RESPONSE_FLAGS 0x10000000
+#endif
+#ifndef AI_RETURN_TTL
+#define AI_RETURN_TTL 0x00000080
+#endif
+#ifndef AI_SECURE_WITH_FALLBACK
+#define AI_SECURE_WITH_FALLBACK 0x00100000
+#endif
+#ifndef MSG_ERRQUEUE
+#define MSG_ERRQUEUE 0x1000
+#endif
+#ifndef SO_ORIGINAL_DST
+#define SO_ORIGINAL_DST 0x300F
+#endif
+#ifndef SO_RECEIVED_HOPLIMIT
+#define SO_RECEIVED_HOPLIMIT 0x3010
+#endif
+#ifndef SO_RECEIVED_PROCESSOR
+#define SO_RECEIVED_PROCESSOR 0x3011
+#endif
+#ifndef SO_REUSE_MULTICASTPORT
+#define SO_REUSE_MULTICASTPORT 0x3008
+#endif
+#ifndef SO_REUSE_UNICASTPORT
+#define SO_REUSE_UNICASTPORT 0x3007
+#endif
+
+typedef struct _SOCKET_PROCESSOR_AFFINITY {
+  PROCESSOR_NUMBER Processor;
+  USHORT NumaNodeId;
+  USHORT Reserved;
+} SOCKET_PROCESSOR_AFFINITY, *PSOCKET_PROCESSOR_AFFINITY;
+
+#define IP6T_SO_ORIGINAL_DST 0x300F
+#define SIO_QUERY_RSS_PROCESSOR_INFO 0x48000025
+#define SOL_IP 0xFFFB
+#define SOL_IPV6 0xFFFA
+
+struct addrinfo_dns_server
+{
+    unsigned int ai_servertype;
+    unsigned long long ai_flags;
+    unsigned int ai_addrlen;
+    struct sockaddr *ai_addr;
+    union
+    {
+        PWSTR ai_template;
+        PWSTR ai_hostname;
+    };
+};
+
+typedef struct addrinfo_dns_server ADDRINFO_DNS_SERVER;
+
+struct addrinfoex2A
+{
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    size_t ai_addrlen;
+    char *ai_canonname;
+    struct sockaddr *ai_addr;
+    void *ai_blob;
+    size_t ai_bloblen;
+    LPGUID ai_provider;
+    struct addrinfoex2A *ai_next;
+    int ai_version;
+    char *ai_fqdn;
+};
+
+typedef struct addrinfoex2A ADDRINFOEX2A;
+
+struct addrinfoex2W
+{
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    size_t ai_addrlen;
+    PWSTR ai_canonname;
+    struct sockaddr *ai_addr;
+    void *ai_blob;
+    size_t ai_bloblen;
+    LPGUID ai_provider;
+    struct addrinfoex2W *ai_next;
+    int ai_version;
+    PWSTR ai_fqdn;
+};
+
+typedef struct addrinfoex2W ADDRINFOEX2W;
+
+struct addrinfoex3
+{
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    size_t ai_addrlen;
+    PWSTR ai_canonname;
+    struct sockaddr *ai_addr;
+    void *ai_blob;
+    size_t ai_bloblen;
+    LPGUID ai_provider;
+    struct addrinfoex3 *ai_next;
+    int ai_version;
+    PWSTR ai_fqdn;
+    int ai_interfaceindex;
+};
+
+typedef struct addrinfoex3 ADDRINFOEX3;
+
+struct addrinfoex4
+{
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    size_t ai_addrlen;
+    PWSTR ai_canonname;
+    struct sockaddr *ai_addr;
+    void *ai_blob;
+    size_t ai_bloblen;
+    GUID *ai_provider;
+    struct addrinfoex4 *ai_next;
+    int ai_version;
+    PWSTR ai_fqdn;
+    int ai_interfaceindex;
+    HANDLE ai_resolutionhandle;
+};
+
+typedef struct addrinfoex4 ADDRINFOEX4;
+
+struct addrinfoex5
+{
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    size_t ai_addrlen;
+    PWSTR ai_canonname;
+    struct sockaddr *ai_addr;
+    void *ai_blob;
+    size_t ai_bloblen;
+    GUID *ai_provider;
+    struct addrinfoex5 *ai_next;
+    int ai_version;
+    PWSTR ai_fqdn;
+    int ai_interfaceindex;
+    HANDLE ai_resolutionhandle;
+    unsigned int ai_ttl;
+};
+
+typedef struct addrinfoex5 ADDRINFOEX5;
+
+struct addrinfoex6
+{
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    size_t ai_addrlen;
+    PWSTR ai_canonname;
+    struct sockaddr *ai_addr;
+    void *ai_blob;
+    size_t ai_bloblen;
+    GUID *ai_provider;
+    struct addrinfoex5 *ai_next;
+    int ai_version;
+    PWSTR ai_fqdn;
+    int ai_interfaceindex;
+    HANDLE ai_resolutionhandle;
+    unsigned int ai_ttl;
+    unsigned int ai_numservers;
+    ADDRINFO_DNS_SERVER *ai_servers;
+    ULONG64 ai_responseflags;
+};
+
+typedef struct addrinfoex6 ADDRINFOEX6;
+
+struct addrinfoex7
+{
+    int ai_flags;
+    int ai_family;
+    int ai_socktype;
+    int ai_protocol;
+    size_t ai_addrlen;
+    PWSTR ai_canonname;
+    struct sockaddr *ai_addr;
+    void *ai_blob;
+    size_t ai_bloblen;
+    GUID *ai_provider;
+    struct addrinfoex7 *ai_next;
+    int ai_version;
+    PWSTR ai_fqdn;
+    int ai_interfaceindex;
+    HANDLE ai_resolutionhandle;
+    unsigned int ai_ttl;
+    unsigned int ai_numservers;
+    ADDRINFO_DNS_SERVER *ai_servers;
+    ULONG64 ai_responseflags;
+    ULONG64 ai_extraflags;
+};
+
+typedef struct addrinfoex7 ADDRINFOEX7;
+
+typedef struct addrinfoex2A *LPADDRINFOEX2A;
+
+typedef struct addrinfoex2W *LPADDRINFOEX2W;
+
+typedef struct addrinfoex3 *LPADDRINFOEX3;
+
+typedef struct addrinfoex4 *LPADDRINFOEX4;
+
+typedef struct addrinfoex5 *LPADDRINFOEX5;
+
+typedef struct addrinfoex2A *PADDRINFOEX2A;
+
+typedef struct addrinfoex2W *PADDRINFOEX2W;
+
+typedef struct addrinfoex3 *PADDRINFOEX3;
+
+typedef struct addrinfoex4 *PADDRINFOEX4;
+
+typedef struct addrinfoex5 *PADDRINFOEX5;
+
+typedef struct addrinfoex6 *PADDRINFOEX6;
+
+typedef struct addrinfoex7 *PADDRINFOEX7;
+
+#if (!(((defined(_WINSOCK_DEPRECATED_NO_WARNINGS) || defined(BUILD_WINDOWS)) && !defined(_WINSOCK_DEPRECATE_WARNINGS)) || defined(MIDL_PASS)))
+#define _WINSOCK_DEPRECATED_BY(replacement) __declspec(deprecated("Use " replacement " instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings"))
+#endif
+

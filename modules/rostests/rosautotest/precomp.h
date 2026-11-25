@@ -31,8 +31,9 @@ using namespace std;
 #include <wininet.h>
 #include <winreg.h>
 
+#include <dpfilter.h>
 #include <ndk/rtlfuncs.h>
-#include <reactos/buildno.h>
+#include <libernt/buildno.h>
 
 /* Class includes */
 #include "auto_array_ptr.h"

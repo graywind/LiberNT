@@ -51,10 +51,8 @@ interface IDataConvert : IUnknown
                                 [in] BYTE bScale,
                                 [in] DBDATACONVERT dwFlags);
 
-
     HRESULT CanConvert([in] DBTYPE wSrcType,
                        [in] DBTYPE wDstType);
-
 
     [local] HRESULT GetConversionSize([in] DBTYPE wSrcType,
                                       [in] DBTYPE wDstType,
@@ -90,3 +88,7 @@ interface IDCInfo : IUnknown
     HRESULT SetInfo([in] ULONG cInfo,
                     [in, size_is(cInfo)] DCINFO prgInfo[]);
 };
+
+cpp_quote("#define OLEDBDECLSPEC __declspec(selectany)")
+cpp_quote("")
+cpp_quote("")

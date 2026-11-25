@@ -1571,7 +1571,8 @@ NtCreateUserProcess(
                                    Section,
                                    Attributes.DebugPort,
                                    CapturedHandleList,
-                                   Attributes.HandleCount);
+                                   Attributes.HandleCount,
+                                   Attributes.MitigationOptions[0]);
     if (CapturedHandleList != NULL)
         ExFreePoolWithTag(CapturedHandleList, TAG_PS_HANDLE_LIST);
     if (!NT_SUCCESS(Status))
@@ -1805,8 +1806,7 @@ NtCreateUserProcess(
     Info.SuccessState.UserProcessParametersNative =
         (ULONGLONG)(ULONG_PTR)RemoteParameters;
     Info.SuccessState.UserProcessParametersWow64 = RemoteParameters32;
-    Info.SuccessState.CurrentParameterFlags =
-        (ProcessParameters != NULL) ? ProcessParameters->Flags : 0;
+    Info.SuccessState.CurrentParameterFlags = 0;
     Info.SuccessState.PebAddressNative =
         (ULONGLONG)(ULONG_PTR)Process->Peb;
     Info.SuccessState.PebAddressWow64 =
@@ -1827,6 +1827,11 @@ NtCreateUserProcess(
     {
         _SEH2_TRY
         {
+            if (ProcessParameters != NULL)
+            {
+                Info.SuccessState.CurrentParameterFlags = ProcessParameters->Flags;
+            }
+
             *CreateInfo = Info;
             *ProcessHandle = NewProcess;
             *ThreadHandle = NewThread;
@@ -1839,6 +1844,11 @@ NtCreateUserProcess(
     }
     else
     {
+        if (ProcessParameters != NULL)
+        {
+            Info.SuccessState.CurrentParameterFlags = ProcessParameters->Flags;
+        }
+
         *CreateInfo = Info;
         *ProcessHandle = NewProcess;
         *ThreadHandle = NewThread;

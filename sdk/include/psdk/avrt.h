@@ -72,4 +72,6 @@ BOOL WINAPI AvQuerySystemResponsiveness(HANDLE AvrtHandle, PULONG SystemResponsi
 }
 #endif
 
+#define AVRTAPI DECLSPEC_IMPORT
+
 #endif /*_AVRT_*/

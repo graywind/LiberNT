@@ -38,4 +38,122 @@ WINBASEAPI HANDLE WINAPI CreateFile2(LPCWSTR,DWORD,DWORD,DWORD,LPCREATEFILE2_EXT
 }
 #endif
 
+typedef enum DIRECTORY_FLAGS {
+    DIRECTORY_FLAGS_NONE = 0,
+    DIRECTORY_FLAGS_DISALLOW_PATH_REDIRECTS = 1
+} DIRECTORY_FLAGS;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+DWORD WINAPI GetTempPath2A(DWORD BufferLength, LPSTR Buffer);
+DWORD WINAPI GetTempPath2W(DWORD BufferLength, LPWSTR Buffer);
+BOOL WINAPI GetVolumeInformationByHandleW(HANDLE hFile, LPWSTR lpVolumeNameBuffer, DWORD nVolumeNameSize, LPDWORD lpVolumeSerialNumber, LPDWORD lpMaximumComponentLength, LPDWORD lpFileSystemFlags, LPWSTR lpFileSystemNameBuffer, DWORD nFileSystemNameSize);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _CREATEFILE3_EXTENDED_PARAMETERS {
+  DWORD dwSize;
+  DWORD dwFileAttributes;
+  DWORD dwFileFlags;
+  DWORD dwSecurityQosFlags;
+  LPSECURITY_ATTRIBUTES lpSecurityAttributes;
+  HANDLE hTemplateFile;
+} CREATEFILE3_EXTENDED_PARAMETERS, *PCREATEFILE3_EXTENDED_PARAMETERS, *LPCREATEFILE3_EXTENDED_PARAMETERS;
+
+typedef struct DISK_SPACE_INFORMATION {
+  ULONGLONG ActualTotalAllocationUnits;
+  ULONGLONG ActualAvailableAllocationUnits;
+  ULONGLONG ActualPoolUnavailableAllocationUnits;
+  ULONGLONG CallerTotalAllocationUnits;
+  ULONGLONG CallerAvailableAllocationUnits;
+  ULONGLONG CallerPoolUnavailableAllocationUnits;
+  ULONGLONG UsedAllocationUnits;
+  ULONGLONG TotalReservedAllocationUnits;
+  ULONGLONG VolumeStorageReserveAllocationUnits;
+  ULONGLONG AvailableCommittedAllocationUnits;
+  ULONGLONG PoolAvailableAllocationUnits;
+  DWORD SectorsPerAllocationUnit;
+  DWORD BytesPerSector;
+} DISK_SPACE_INFORMATION;
+
+#define _APISETFILE_
+#ifdef UNICODE
+#define CreateDirectory2 CreateDirectory2W
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreateDirectory2 CreateDirectory2W
+#else
+#define CreateDirectory2 CreateDirectory2A
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define DeleteFile2 DeleteFile2W
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define DeleteFile2 DeleteFile2W
+#else
+#define DeleteFile2 DeleteFile2A
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define GetDiskSpaceInformation GetDiskSpaceInformationW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GetDiskSpaceInformation GetDiskSpaceInformationW
+#else
+#define GetDiskSpaceInformation GetDiskSpaceInformationA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define GetTempPath2 GetTempPath2W
+#else
+#if (!defined(UNICODE))
+#ifdef UNICODE
+#define GetTempPath2 GetTempPath2W
+#else
+#define GetTempPath2 GetTempPath2A
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RemoveDirectory2 RemoveDirectory2W
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RemoveDirectory2 RemoveDirectory2W
+#else
+#define RemoveDirectory2 RemoveDirectory2A
+#endif
+#endif
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+HRESULT WINAPI GetDiskSpaceInformationA(LPCSTR rootPath, DISK_SPACE_INFORMATION *diskSpaceInfo);
+HRESULT WINAPI GetDiskSpaceInformationW(LPCWSTR rootPath, DISK_SPACE_INFORMATION *diskSpaceInfo);
+
+/* TODO: LiberNT does not implement the functions below yet */
+WINBASEAPI BOOL WINAPI AreShortNamesEnabled(HANDLE Handle, BOOL *Enabled);
+WINBASEAPI HANDLE WINAPI CreateDirectory2A(LPCSTR lpPathName, DWORD dwDesiredAccess, DWORD dwShareMode, DIRECTORY_FLAGS DirectoryFlags, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+WINBASEAPI HANDLE WINAPI CreateDirectory2W(LPCWSTR lpPathName, DWORD dwDesiredAccess, DWORD dwShareMode, DIRECTORY_FLAGS DirectoryFlags, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+HANDLE CreateFile3(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE3_EXTENDED_PARAMETERS pCreateExParams);
+WINBASEAPI BOOL WINAPI DeleteFile2A(LPCSTR lpFileName, DWORD Flags);
+WINBASEAPI BOOL WINAPI DeleteFile2W(LPCWSTR lpFileName, DWORD Flags);
+WINBASEAPI BOOL WINAPI RemoveDirectory2A(LPCSTR lpPathName, DIRECTORY_FLAGS DirectoryFlags);
+WINBASEAPI BOOL WINAPI RemoveDirectory2W(LPCWSTR lpPathName, DIRECTORY_FLAGS DirectoryFlags);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* __WINE_FILEAPI_H */

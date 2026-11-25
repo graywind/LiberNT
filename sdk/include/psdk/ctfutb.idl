@@ -500,3 +500,20 @@ interface ITfSystemLangBarItemText : IUnknown
     HRESULT GetItemText(
         [out] BSTR *pbstrText);
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+
+

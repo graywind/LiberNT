@@ -120,8 +120,6 @@ typedef struct _SFFDISK_DEVICE_RPMB_DATA_FRAME {
     UCHAR RequestOrResponseType[2];
 } SFFDISK_DEVICE_RPMB_DATA_FRAME, *PSFFDISK_DEVICE_RPMB_DATA_FRAME;
 
-#pragma pack(pop)
-
 typedef struct _SFFDISK_DEVICE_PARTITION_ACCESS_DATA {
     ULONG Size;
     SFFDISK_PARTITION_ACCESS Command;
@@ -189,8 +187,17 @@ typedef struct _SFFDISK_BKOPS_STATUS_DATA {
     UCHAR BkopsStatus;
 } SFFDISK_BKOPS_STATUS_DATA, *PSFFDISK_BKOPS_STATUS_DATA;
 
+#pragma pack(pop)
+
 #ifdef __cplusplus
 }
 #endif
+
+struct __SFFDISK_BKOPS_STATUS_DATA
+{
+    UCHAR BkopsIsSupported;
+    UCHAR BkopsIsEnabled;
+    UCHAR BkopsStatus;
+};
 
 #endif /* __SFFDISK_H__ */

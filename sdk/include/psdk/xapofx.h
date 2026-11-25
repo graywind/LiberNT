@@ -41,4 +41,122 @@ DEFINE_GUID(CLSID_FXEcho27, 0xa90bc001, 0xe897, 0xe897, 0x74, 0x39, 0x43, 0x55, 
 /* xaudio >= 2.8 */
 DEFINE_GUID(CLSID_FXEcho, 0x5039d740, 0xf736, 0x449a, 0x84, 0xd3, 0xa5, 0x62, 0x02, 0x55, 0x7b, 0x87);
 
+#ifndef FXEQ_MAX_FRAMERATE
+#define FXEQ_MAX_FRAMERATE 48000
+#endif
+#ifndef FXEQ_MIN_FRAMERATE
+#define FXEQ_MIN_FRAMERATE 22000
+#endif
+#ifndef FXLOUDNESS_DEFAULT_MOMENTARY_MS
+#define FXLOUDNESS_DEFAULT_MOMENTARY_MS 400
+#endif
+#ifndef FXLOUDNESS_DEFAULT_SHORTTERM_MS
+#define FXLOUDNESS_DEFAULT_SHORTTERM_MS 3000
+#endif
+#ifndef FXMASTERINGLIMITER_DEFAULT_LOUDNESS
+#define FXMASTERINGLIMITER_DEFAULT_LOUDNESS 1000
+#endif
+#ifndef FXMASTERINGLIMITER_DEFAULT_RELEASE
+#define FXMASTERINGLIMITER_DEFAULT_RELEASE 6
+#endif
+#ifndef FXMASTERINGLIMITER_MAX_LOUDNESS
+#define FXMASTERINGLIMITER_MAX_LOUDNESS 1800
+#endif
+#ifndef FXMASTERINGLIMITER_MAX_RELEASE
+#define FXMASTERINGLIMITER_MAX_RELEASE 20
+#endif
+#ifndef FXMASTERINGLIMITER_MIN_LOUDNESS
+#define FXMASTERINGLIMITER_MIN_LOUDNESS 1
+#endif
+#ifndef FXMASTERINGLIMITER_MIN_RELEASE
+#define FXMASTERINGLIMITER_MIN_RELEASE 1
+#endif
+
+#pragma pack(push, 1)
+typedef struct FXECHO_INITDATA {
+  float MaxDelay;
+} FXECHO_INITDATA;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct FXECHO_PARAMETERS {
+  float WetDryMix;
+  float Feedback;
+  float Delay;
+} FXECHO_PARAMETERS;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct FXEQ_PARAMETERS {
+  float FrequencyCenter0;
+  float Gain0;
+  float Bandwidth0;
+  float FrequencyCenter1;
+  float Gain1;
+  float Bandwidth1;
+  float FrequencyCenter2;
+  float Gain2;
+  float Bandwidth2;
+  float FrequencyCenter3;
+  float Gain3;
+  float Bandwidth3;
+} FXEQ_PARAMETERS;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct FXMASTERINGLIMITER_PARAMETERS {
+  UINT32 Release;
+  UINT32 Loudness;
+} FXMASTERINGLIMITER_PARAMETERS;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct FXREVERB_PARAMETERS {
+  float Diffusion;
+  float RoomSize;
+} FXREVERB_PARAMETERS;
+#pragma pack(pop)
+
+#define FXECHO_DEFAULT_DELAY 0x1F4
+#define FXECHO_DEFAULT_FEEDBACK 0
+#define FXECHO_DEFAULT_WETDRYMIX 0
+#define FXECHO_MAX_DELAY 0x7D0
+#define FXECHO_MAX_FEEDBACK 1
+#define FXECHO_MAX_WETDRYMIX 1
+#define FXECHO_MIN_DELAY 1
+#define FXECHO_MIN_FEEDBACK 0
+#define FXECHO_MIN_WETDRYMIX 0
+#define FXEQ_DEFAULT_BANDWIDTH 1
+#define FXEQ_DEFAULT_FREQUENCY_CENTER_0 0x64
+#define FXEQ_DEFAULT_FREQUENCY_CENTER_1 0x320
+#define FXEQ_DEFAULT_FREQUENCY_CENTER_2 0x7D0
+#define FXEQ_DEFAULT_FREQUENCY_CENTER_3 0x2710
+#define FXEQ_DEFAULT_GAIN 1
+#define FXEQ_MAX_BANDWIDTH 2
+#define FXEQ_MAX_FREQUENCY_CENTER 0x4E20
+#define FXEQ_MAX_GAIN 7
+#define FXEQ_MIN_BANDWIDTH 0
+#define FXEQ_MIN_FREQUENCY_CENTER 0x14
+#define FXEQ_MIN_GAIN 0
+#define FXREVERB_DEFAULT_DIFFUSION 0
+#define FXREVERB_DEFAULT_ROOMSIZE 0
+#define FXREVERB_MAX_DIFFUSION 1
+#define FXREVERB_MAX_ROOMSIZE 1
+#define FXREVERB_MIN_DIFFUSION 0
+#define FXREVERB_MIN_ROOMSIZE 0
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef XAPOFX1_VER
+HRESULT __cdecl CreateFX(const IID *const clsid, IUnknown **pEffect, const void *pInitDat, UINT32 InitDataByteSize);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#define FX_API_(type) STDAPIV_(type)
+
 #endif

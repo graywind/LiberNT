@@ -186,3 +186,57 @@ GetSystemTimePreciseAsFileTime(
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#ifndef USER_CET_ENVIRONMENT_SGX2_ENCLAVE
+#define USER_CET_ENVIRONMENT_SGX2_ENCLAVE 0x00000002
+#endif
+typedef enum DEVELOPER_DRIVE_ENABLEMENT_STATE {
+    DeveloperDriveEnablementStateError = 0,
+    DeveloperDriveEnabled = 1,
+    DeveloperDriveDisabledBySystemPolicy = 2,
+    DeveloperDriveDisabledByGroupPolicy = 3
+} DEVELOPER_DRIVE_ENABLEMENT_STATE;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+BOOL WINAPI DnsHostnameToComputerNameExW(LPCWSTR Hostname, LPWSTR ComputerName, LPDWORD nSize);
+BOOL WINAPI GetLogicalProcessorInformation(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer, PDWORD ReturnedLength);
+BOOL WINAPI GetProcessorSystemCycleTime(USHORT Group, PSYSTEM_PROCESSOR_CYCLE_TIME_INFORMATION Buffer, PDWORD ReturnedLength);
+#ifdef __cplusplus
+}
+#endif
+
+#define NOT_BUILD_WINDOWS_DEPRECATE __declspec(deprecated)
+#define SCEX2_ALT_NETBIOS_NAME 0x00000001
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+HRESULT WINAPI GetIntegratedDisplaySize(double *sizeInInches);
+BOOL WINAPI GetPhysicallyInstalledSystemMemory(PULONGLONG TotalMemoryInKilobytes);
+
+/* TODO: LiberNT does not implement the functions below yet */
+WINBASEAPI DEVELOPER_DRIVE_ENABLEMENT_STATE WINAPI GetDeveloperDriveEnablementState(void);
+WINBASEAPI BOOL WINAPI GetOsManufacturingMode(PBOOL pbEnabled);
+WINBASEAPI BOOL WINAPI GetSystemLeapSecondInformation(PBOOL Enabled, PDWORD Flags);
+WINBASEAPI BOOL WINAPI GetSystemTimeAdjustmentPrecise(PDWORD64 lpTimeAdjustment, PDWORD64 lpTimeIncrement, PBOOL lpTimeAdjustmentDisabled);
+WINBASEAPI BOOL WINAPI InstallELAMCertificateInfo(HANDLE ELAMFile);
+WINBASEAPI BOOL WINAPI IsUserCetAvailableInEnvironment(DWORD UserCetEnvironment);
+WINBASEAPI BOOL WINAPI SetComputerNameEx2W(COMPUTER_NAME_FORMAT NameType, DWORD Flags, LPCWSTR lpBuffer);
+WINBASEAPI BOOL WINAPI SetSystemTimeAdjustmentPrecise(DWORD64 dwTimeAdjustment, BOOL bTimeAdjustmentDisabled);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef USER_CET_ENVIRONMENT_VBS_BASIC_ENCLAVE
+#define USER_CET_ENVIRONMENT_VBS_BASIC_ENCLAVE 0x00000011
+#endif
+#ifndef USER_CET_ENVIRONMENT_VBS_ENCLAVE
+#define USER_CET_ENVIRONMENT_VBS_ENCLAVE 0x00000010
+#endif
+#ifndef USER_CET_ENVIRONMENT_WIN32_PROCESS
+#define USER_CET_ENVIRONMENT_WIN32_PROCESS 0x00000000
+#endif

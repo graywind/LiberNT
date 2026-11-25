@@ -18,8 +18,8 @@ extern "C" {
 #define LOGON_GRACE_LOGON 16777216
 #define LSA_MODE_PASSWORD_PROTECTED 1
 #define LSA_MODE_INDIVIDUAL_ACCOUNTS 2
-#define LSA_MODE_MANDATORY_ACCESS 3
-#define LSA_MODE_LOG_FULL 4
+#define LSA_MODE_MANDATORY_ACCESS 4
+#define LSA_MODE_LOG_FULL 8
 #define LSA_SUCCESS(x) ((LONG)(x)>=0)
 #define MICROSOFT_KERBEROS_NAME_A "Kerberos"
 #define MICROSOFT_KERBEROS_NAME_W L"Kerberos"
@@ -32,7 +32,7 @@ extern "C" {
 #define MSV1_0_CRED_VERSION 0
 #define MSV1_0_DONT_TRY_GUEST_ACCOUNT 16
 #define MSV1_0_LANMAN_SESSION_KEY_LENGTH 8
-#define MSV1_0_MAX_NTLM3_LIFE 1800
+#define MSV1_0_MAX_NTLM3_LIFE 129600
 #define MSV1_0_MAX_AVL_SIZE 64000
 #define MSV1_0_MNS_LOGON 16777216
 #define MSV1_0_NTLM3_RESPONSE_LENGTH 16
@@ -114,7 +114,7 @@ extern "C" {
 #define TRUST_ATTRIBUTE_NON_TRANSITIVE 1
 #define TRUST_ATTRIBUTE_UPLEVEL_ONLY 2
 #define TRUST_ATTRIBUTE_TREE_PARENT 4194304
-#define TRUST_ATTRIBUTES_VALID  -16580609
+#define TRUST_ATTRIBUTES_VALID  0xFF03FFFF
 #define TRUST_AUTH_TYPE_NONE 0
 #define TRUST_AUTH_TYPE_NT4OWF 1
 #define TRUST_AUTH_TYPE_CLEAR 2
@@ -196,7 +196,16 @@ typedef enum _KERB_LOGON_SUBMIT_TYPE
   KerbInteractiveLogon = 2,
   KerbS4ULogon = 12,
   KerbTicketLogon = 10,
-  KerbTicketUnlockLogon = 11
+  KerbTicketUnlockLogon = 11,
+  KerbSmartCardLogon = 6,
+  KerbWorkstationUnlockLogon = 7,
+  KerbSmartCardUnlockLogon = 8,
+  KerbProxyLogon = 9,
+  KerbCertificateLogon = 0xD,
+  KerbCertificateS4ULogon = 0xE,
+  KerbCertificateUnlockLogon = 0xF,
+  KerbNoElevationLogon = 0x53,
+  KerbLuidLogon = 0x54,
 } KERB_LOGON_SUBMIT_TYPE, *PKERB_LOGON_SUBMIT_TYPE;
 typedef enum _MSV1_0_LOGON_SUBMIT_TYPE {
   MsV1_0InteractiveLogon = 2,
@@ -271,12 +280,7 @@ typedef enum _POLICY_AUDIT_EVENT_TYPE {
   AuditCategoryAccountLogon
 } POLICY_AUDIT_EVENT_TYPE, *PPOLICY_AUDIT_EVENT_TYPE;
 typedef enum _POLICY_DOMAIN_INFORMATION_CLASS {
-  PolicyDomainIPSecReferenceInformation = 1,
-  PolicyDomainQualityOfServiceInformation,
-  PolicyDomainEfsInformation,
-  PolicyDomainPublicKeyInformation,
-  PolicyDomainPasswordPolicyInformation,
-  PolicyDomainLockoutInformation,
+  PolicyDomainEfsInformation = 2,
   PolicyDomainKerberosTicketInformation
 } POLICY_DOMAIN_INFORMATION_CLASS, *PPOLICY_DOMAIN_INFORMATION_CLASS;
 typedef enum _POLICY_NOTIFICATION_INFORMATION_CLASS {
@@ -353,7 +357,9 @@ typedef enum _LSA_FOREST_TRUST_RECORD_TYPE {
   ForestTrustTopLevelName,
   ForestTrustTopLevelNameEx,
   ForestTrustDomainInfo,
-  ForestTrustRecordTypeLast = ForestTrustDomainInfo
+  ForestTrustRecordTypeLast = ForestTrustDomainInfo,
+  ForestTrustBinaryInfo = 3,
+  ForestTrustScannerInfo = 4,
 } LSA_FOREST_TRUST_RECORD_TYPE;
 typedef enum _LSA_FOREST_TRUST_COLLISION_RECORD_TYPE {
   CollisionTdo,
@@ -815,4 +821,1386 @@ typedef BOOLEAN (NTAPI *PSAM_PASSWORD_FILTER_ROUTINE)(PUNICODE_STRING,PUNICODE_S
 #ifdef __cplusplus
 }
 #endif
+#ifndef AUDIT_ENUMERATE_USERS
+#define AUDIT_ENUMERATE_USERS 0x0010
+#endif
+#ifndef AUDIT_QUERY_MISC_POLICY
+#define AUDIT_QUERY_MISC_POLICY 0x0040
+#endif
+#ifndef AUDIT_QUERY_SYSTEM_POLICY
+#define AUDIT_QUERY_SYSTEM_POLICY 0x0002
+#endif
+#ifndef AUDIT_QUERY_USER_POLICY
+#define AUDIT_QUERY_USER_POLICY 0x0008
+#endif
+#ifndef AUDIT_SET_MISC_POLICY
+#define AUDIT_SET_MISC_POLICY 0x0020
+#endif
+#ifndef AUDIT_SET_SYSTEM_POLICY
+#define AUDIT_SET_SYSTEM_POLICY 0x0001
+#endif
+#ifndef AUDIT_SET_USER_POLICY
+#define AUDIT_SET_USER_POLICY 0x0004
+#endif
+#ifndef AUTH_REQ_ALLOW_ENC_TKT_IN_SKEY
+#define AUTH_REQ_ALLOW_ENC_TKT_IN_SKEY 0x00000020
+#endif
+#ifndef AUTH_REQ_ALLOW_FORWARDABLE
+#define AUTH_REQ_ALLOW_FORWARDABLE 0x00000001
+#endif
+#ifndef AUTH_REQ_ALLOW_NOADDRESS
+#define AUTH_REQ_ALLOW_NOADDRESS 0x00000010
+#endif
+#ifndef AUTH_REQ_ALLOW_POSTDATE
+#define AUTH_REQ_ALLOW_POSTDATE 0x00000004
+#endif
+#ifndef AUTH_REQ_ALLOW_PROXIABLE
+#define AUTH_REQ_ALLOW_PROXIABLE 0x00000002
+#endif
+#ifndef AUTH_REQ_ALLOW_RENEWABLE
+#define AUTH_REQ_ALLOW_RENEWABLE 0x00000008
+#endif
+#ifndef AUTH_REQ_ALLOW_S4U_DELEGATE
+#define AUTH_REQ_ALLOW_S4U_DELEGATE 0x00000800
+#endif
+#ifndef AUTH_REQ_ALLOW_VALIDATE
+#define AUTH_REQ_ALLOW_VALIDATE 0x00000040
+#endif
+#ifndef AUTH_REQ_OK_AS_DELEGATE
+#define AUTH_REQ_OK_AS_DELEGATE 0x00000100
+#endif
+#ifndef AUTH_REQ_PREAUTH_REQUIRED
+#define AUTH_REQ_PREAUTH_REQUIRED 0x00000200
+#endif
+#ifndef AUTH_REQ_TRANSITIVE_TRUST
+#define AUTH_REQ_TRANSITIVE_TRUST 0x00000400
+#endif
+#ifndef AUTH_REQ_VALIDATE_CLIENT
+#define AUTH_REQ_VALIDATE_CLIENT 0x00000080
+#endif
+#ifndef CENTRAL_ACCESS_POLICY_OWNER_RIGHTS_PRESENT_FLAG
+#define CENTRAL_ACCESS_POLICY_OWNER_RIGHTS_PRESENT_FLAG 0x00000001
+#endif
+#ifndef CENTRAL_ACCESS_POLICY_STAGED_FLAG
+#define CENTRAL_ACCESS_POLICY_STAGED_FLAG 0x00010000
+#endif
+#ifndef CENTRAL_ACCESS_POLICY_STAGED_OWNER_RIGHTS_PRESENT_FLAG
+#define CENTRAL_ACCESS_POLICY_STAGED_OWNER_RIGHTS_PRESENT_FLAG 0x00000100
+#endif
+#ifndef DS_UNKNOWN_ADDRESS_TYPE
+#define DS_UNKNOWN_ADDRESS_TYPE 0
+#endif
+#ifndef KERBEROS_REVISION
+#define KERBEROS_REVISION 6
+#endif
+#ifndef KERBEROS_VERSION
+#define KERBEROS_VERSION 5
+#endif
+#ifndef KERB_CERTIFICATE_LOGON_FLAG_CHECK_DUPLICATES
+#define KERB_CERTIFICATE_LOGON_FLAG_CHECK_DUPLICATES 0x1
+#endif
+#ifndef KERB_CERTIFICATE_LOGON_FLAG_USE_CERTIFICATE_INFO
+#define KERB_CERTIFICATE_LOGON_FLAG_USE_CERTIFICATE_INFO 0x2
+#endif
+#ifndef KERB_CERTIFICATE_S4U_LOGON_FLAG_CHECK_DUPLICATES
+#define KERB_CERTIFICATE_S4U_LOGON_FLAG_CHECK_DUPLICATES 0x1
+#endif
+#ifndef KERB_CERTIFICATE_S4U_LOGON_FLAG_CHECK_LOGONHOURS
+#define KERB_CERTIFICATE_S4U_LOGON_FLAG_CHECK_LOGONHOURS 0x2
+#endif
+#ifndef KERB_CERTIFICATE_S4U_LOGON_FLAG_FAIL_IF_NT_AUTH_POLICY_REQUIRED
+#define KERB_CERTIFICATE_S4U_LOGON_FLAG_FAIL_IF_NT_AUTH_POLICY_REQUIRED 0x4
+#endif
+#ifndef KERB_CERTIFICATE_S4U_LOGON_FLAG_IDENTIFY
+#define KERB_CERTIFICATE_S4U_LOGON_FLAG_IDENTIFY 0x8
+#endif
+#ifndef KERB_CHECKSUM_CRC32
+#define KERB_CHECKSUM_CRC32 1
+#endif
+#ifndef KERB_CHECKSUM_DES_MAC
+#define KERB_CHECKSUM_DES_MAC (-133)
+#endif
+#ifndef KERB_CHECKSUM_DES_MAC_MD5
+#define KERB_CHECKSUM_DES_MAC_MD5 (-134)
+#endif
+#ifndef KERB_CHECKSUM_HMAC_MD5
+#define KERB_CHECKSUM_HMAC_MD5 (-138)
+#endif
+#ifndef KERB_CHECKSUM_HMAC_SHA1_96_AES128
+#define KERB_CHECKSUM_HMAC_SHA1_96_AES128 15
+#endif
+#ifndef KERB_CHECKSUM_HMAC_SHA1_96_AES128_Ki
+#define KERB_CHECKSUM_HMAC_SHA1_96_AES128_Ki (-150)
+#endif
+#ifndef KERB_CHECKSUM_HMAC_SHA1_96_AES256
+#define KERB_CHECKSUM_HMAC_SHA1_96_AES256 16
+#endif
+#ifndef KERB_CHECKSUM_HMAC_SHA1_96_AES256_Ki
+#define KERB_CHECKSUM_HMAC_SHA1_96_AES256_Ki (-151)
+#endif
+#ifndef KERB_CHECKSUM_KRB_DES_MAC
+#define KERB_CHECKSUM_KRB_DES_MAC 4
+#endif
+#ifndef KERB_CHECKSUM_KRB_DES_MAC_K
+#define KERB_CHECKSUM_KRB_DES_MAC_K 5
+#endif
+#ifndef KERB_CHECKSUM_LM
+#define KERB_CHECKSUM_LM (-130)
+#endif
+#ifndef KERB_CHECKSUM_MD25
+#define KERB_CHECKSUM_MD25 (-135)
+#endif
+#ifndef KERB_CHECKSUM_MD4
+#define KERB_CHECKSUM_MD4 2
+#endif
+#ifndef KERB_CHECKSUM_MD5
+#define KERB_CHECKSUM_MD5 7
+#endif
+#ifndef KERB_CHECKSUM_MD5_DES
+#define KERB_CHECKSUM_MD5_DES 8
+#endif
+#ifndef KERB_CHECKSUM_MD5_HMAC
+#define KERB_CHECKSUM_MD5_HMAC (-137)
+#endif
+#ifndef KERB_CHECKSUM_NONE
+#define KERB_CHECKSUM_NONE 0
+#endif
+#ifndef KERB_CHECKSUM_RC4_MD5
+#define KERB_CHECKSUM_RC4_MD5 (-136)
+#endif
+#ifndef KERB_CHECKSUM_REAL_CRC32
+#define KERB_CHECKSUM_REAL_CRC32 (-132)
+#endif
+#ifndef KERB_CHECKSUM_SHA1
+#define KERB_CHECKSUM_SHA1 (-131)
+#endif
+#ifndef KERB_CHECKSUM_SHA1_NEW
+#define KERB_CHECKSUM_SHA1_NEW 14
+#endif
+#ifndef KERB_CHECKSUM_SHA256
+#define KERB_CHECKSUM_SHA256 (-139)
+#endif
+#ifndef KERB_CHECKSUM_SHA384
+#define KERB_CHECKSUM_SHA384 (-140)
+#endif
+#ifndef KERB_CHECKSUM_SHA512
+#define KERB_CHECKSUM_SHA512 (-141)
+#endif
+#ifndef KERB_CLOUD_KERBEROS_DEBUG_DATA_VERSION
+#define KERB_CLOUD_KERBEROS_DEBUG_DATA_VERSION 1
+#endif
+#ifndef KERB_DECRYPT_FLAG_DEFAULT_KEY
+#define KERB_DECRYPT_FLAG_DEFAULT_KEY 0x00000001
+#endif
+#ifndef KERB_ETYPE_AES128_CTS_HMAC_SHA256
+#define KERB_ETYPE_AES128_CTS_HMAC_SHA256 19
+#endif
+#ifndef KERB_ETYPE_AES256_CTS_HMAC_SHA384
+#define KERB_ETYPE_AES256_CTS_HMAC_SHA384 20
+#endif
+#ifndef KERB_ETYPE_DEFAULT
+#define KERB_ETYPE_DEFAULT 0x0
+#endif
+#ifndef KERB_LOGON_FLAG_ALLOW_EXPIRED_TICKET
+#define KERB_LOGON_FLAG_ALLOW_EXPIRED_TICKET 0x1
+#endif
+#ifndef KERB_LOGON_FLAG_REDIRECTED
+#define KERB_LOGON_FLAG_REDIRECTED 0x2
+#endif
+#ifndef KERB_PURGE_ALL_TICKETS
+#define KERB_PURGE_ALL_TICKETS 1
+#endif
+#ifndef KERB_QUERY_DOMAIN_EXTENDED_POLICIES_RESPONSE_FLAG_DAC_DISABLED
+#define KERB_QUERY_DOMAIN_EXTENDED_POLICIES_RESPONSE_FLAG_DAC_DISABLED 0x1
+#endif
+#ifndef KERB_REFRESH_POLICY_KDC
+#define KERB_REFRESH_POLICY_KDC 0x2
+#endif
+#ifndef KERB_REFRESH_POLICY_KERBEROS
+#define KERB_REFRESH_POLICY_KERBEROS 0x1
+#endif
+#ifndef KERB_REFRESH_SCCRED_GETTGT
+#define KERB_REFRESH_SCCRED_GETTGT 0x1
+#endif
+#ifndef KERB_REFRESH_SCCRED_RELEASE
+#define KERB_REFRESH_SCCRED_RELEASE 0x0
+#endif
+#ifndef KERB_REQUEST_ADD_CREDENTIAL
+#define KERB_REQUEST_ADD_CREDENTIAL 1
+#endif
+#ifndef KERB_REQUEST_CRED_LOCAL_ACCOUNT
+#define KERB_REQUEST_CRED_LOCAL_ACCOUNT 8
+#endif
+#ifndef KERB_REQUEST_REMOVE_CREDENTIAL
+#define KERB_REQUEST_REMOVE_CREDENTIAL 4
+#endif
+#ifndef KERB_REQUEST_REPLACE_CREDENTIAL
+#define KERB_REQUEST_REPLACE_CREDENTIAL 2
+#endif
+#ifndef KERB_RETRIEVE_TICKET_AS_KERB_CRED
+#define KERB_RETRIEVE_TICKET_AS_KERB_CRED 0x8
+#endif
+#ifndef KERB_RETRIEVE_TICKET_CACHE_TICKET
+#define KERB_RETRIEVE_TICKET_CACHE_TICKET 0x20
+#endif
+#ifndef KERB_RETRIEVE_TICKET_DEFAULT
+#define KERB_RETRIEVE_TICKET_DEFAULT 0x0
+#endif
+#ifndef KERB_RETRIEVE_TICKET_DONT_USE_CACHE
+#define KERB_RETRIEVE_TICKET_DONT_USE_CACHE 0x1
+#endif
+#ifndef KERB_RETRIEVE_TICKET_MAX_LIFETIME
+#define KERB_RETRIEVE_TICKET_MAX_LIFETIME 0x40
+#endif
+#ifndef KERB_RETRIEVE_TICKET_USE_CACHE_ONLY
+#define KERB_RETRIEVE_TICKET_USE_CACHE_ONLY 0x2
+#endif
+#ifndef KERB_RETRIEVE_TICKET_USE_CREDHANDLE
+#define KERB_RETRIEVE_TICKET_USE_CREDHANDLE 0x4
+#endif
+#ifndef KERB_RETRIEVE_TICKET_WITH_SEC_CRED
+#define KERB_RETRIEVE_TICKET_WITH_SEC_CRED 0x10
+#endif
+#ifndef KERB_S4U2PROXY_CACHE_ENTRY_INFO_FLAG_NEGATIVE
+#define KERB_S4U2PROXY_CACHE_ENTRY_INFO_FLAG_NEGATIVE 0x1
+#endif
+#ifndef KERB_S4U2PROXY_CRED_FLAG_NEGATIVE
+#define KERB_S4U2PROXY_CRED_FLAG_NEGATIVE 0x1
+#endif
+#ifndef KERB_S4U_LOGON_FLAG_CHECK_LOGONHOURS
+#define KERB_S4U_LOGON_FLAG_CHECK_LOGONHOURS 0x2
+#endif
+#ifndef KERB_S4U_LOGON_FLAG_IDENTIFY
+#define KERB_S4U_LOGON_FLAG_IDENTIFY 0x8
+#endif
+#ifndef KERB_SETPASS_USE_CREDHANDLE
+#define KERB_SETPASS_USE_CREDHANDLE 2
+#endif
+#ifndef KERB_SETPASS_USE_LOGONID
+#define KERB_SETPASS_USE_LOGONID 1
+#endif
+#ifndef KERB_TICKET_FLAGS_enc_pa_rep
+#define KERB_TICKET_FLAGS_enc_pa_rep 0x00010000
+#endif
+#ifndef KERB_TRANSFER_CRED_CLEANUP_CREDENTIALS
+#define KERB_TRANSFER_CRED_CLEANUP_CREDENTIALS 0x2
+#endif
+#ifndef KERB_TRANSFER_CRED_WITH_TICKETS
+#define KERB_TRANSFER_CRED_WITH_TICKETS 0x1
+#endif
+#ifndef KERB_USE_DEFAULT_TICKET_FLAGS
+#define KERB_USE_DEFAULT_TICKET_FLAGS 0x0
+#endif
+#ifndef KRB_NT_ENTERPRISE_PRINCIPAL
+#define KRB_NT_ENTERPRISE_PRINCIPAL 10
+#endif
+#ifndef KRB_NT_ENT_PRINCIPAL_AND_ID
+#define KRB_NT_ENT_PRINCIPAL_AND_ID (-130)
+#endif
+#ifndef KRB_NT_MS_BRANCH_ID
+#define KRB_NT_MS_BRANCH_ID (-133)
+#endif
+#ifndef KRB_NT_MS_PRINCIPAL
+#define KRB_NT_MS_PRINCIPAL (-128)
+#endif
+#ifndef KRB_NT_MS_PRINCIPAL_AND_ID
+#define KRB_NT_MS_PRINCIPAL_AND_ID (-129)
+#endif
+#ifndef KRB_NT_PRINCIPAL
+#define KRB_NT_PRINCIPAL 1
+#endif
+#ifndef KRB_NT_PRINCIPAL_AND_ID
+#define KRB_NT_PRINCIPAL_AND_ID (-131)
+#endif
+#ifndef KRB_NT_SRV_HST
+#define KRB_NT_SRV_HST 3
+#endif
+#ifndef KRB_NT_SRV_INST
+#define KRB_NT_SRV_INST 2
+#endif
+#ifndef KRB_NT_SRV_INST_AND_ID
+#define KRB_NT_SRV_INST_AND_ID (-132)
+#endif
+#ifndef KRB_NT_SRV_XHST
+#define KRB_NT_SRV_XHST 4
+#endif
+#ifndef KRB_NT_UID
+#define KRB_NT_UID 5
+#endif
+#ifndef KRB_NT_UNKNOWN
+#define KRB_NT_UNKNOWN 0
+#endif
+#ifndef KRB_NT_WELLKNOWN
+#define KRB_NT_WELLKNOWN 11
+#endif
+#ifndef KRB_NT_X500_PRINCIPAL
+#define KRB_NT_X500_PRINCIPAL 6
+#endif
+#ifndef LSAD_AES_BLOCK_SIZE
+#define LSAD_AES_BLOCK_SIZE 16
+#endif
+#ifndef LSAD_AES_CRYPT_SHA512_HASH_SIZE
+#define LSAD_AES_CRYPT_SHA512_HASH_SIZE 64
+#endif
+#ifndef LSAD_AES_KEY_SIZE
+#define LSAD_AES_KEY_SIZE 16
+#endif
+#ifndef LSAD_AES_SALT_SIZE
+#define LSAD_AES_SALT_SIZE 16
+#endif
+#ifndef LSASETCAPS_RELOAD_FLAG
+#define LSASETCAPS_RELOAD_FLAG 0x00000001
+#endif
+#ifndef LSA_FTRECORD_DISABLED_REASONS
+#define LSA_FTRECORD_DISABLED_REASONS 0x0000FFFFL
+#endif
+#ifndef LSA_NB_DISABLED_ADMIN
+#define LSA_NB_DISABLED_ADMIN 0x00000004L
+#endif
+#ifndef LSA_NB_DISABLED_CONFLICT
+#define LSA_NB_DISABLED_CONFLICT 0x00000008L
+#endif
+#ifndef LSA_SCANNER_INFO_DISABLE_AUTH_TARGET_VALIDATION
+#define LSA_SCANNER_INFO_DISABLE_AUTH_TARGET_VALIDATION 0x00000001L
+#endif
+#ifndef LSA_SID_DISABLED_ADMIN
+#define LSA_SID_DISABLED_ADMIN 0x00000001L
+#endif
+#ifndef LSA_SID_DISABLED_CONFLICT
+#define LSA_SID_DISABLED_CONFLICT 0x00000002L
+#endif
+#ifndef LSA_TLN_DISABLED_ADMIN
+#define LSA_TLN_DISABLED_ADMIN 0x00000002L
+#endif
+#ifndef LSA_TLN_DISABLED_CONFLICT
+#define LSA_TLN_DISABLED_CONFLICT 0x00000004L
+#endif
+#ifndef LSA_TLN_DISABLED_NEW
+#define LSA_TLN_DISABLED_NEW 0x00000001L
+#endif
+#ifndef MAXIMUM_CAPES_PER_CAP
+#define MAXIMUM_CAPES_PER_CAP 0x7F
+#endif
+#ifndef MAX_RECORDS_IN_FOREST_TRUST_INFO
+#define MAX_RECORDS_IN_FOREST_TRUST_INFO 4000
+#endif
+#ifndef NEGOTIATE_MAX_PREFIX
+#define NEGOTIATE_MAX_PREFIX 32
+#endif
+#ifndef PER_USER_AUDIT_FAILURE_EXCLUDE
+#define PER_USER_AUDIT_FAILURE_EXCLUDE 0x08
+#endif
+#ifndef PER_USER_AUDIT_FAILURE_INCLUDE
+#define PER_USER_AUDIT_FAILURE_INCLUDE 0x04
+#endif
+#ifndef PER_USER_AUDIT_NONE
+#define PER_USER_AUDIT_NONE 0x10
+#endif
+#ifndef PER_USER_AUDIT_SUCCESS_EXCLUDE
+#define PER_USER_AUDIT_SUCCESS_EXCLUDE 0x02
+#endif
+#ifndef PER_USER_AUDIT_SUCCESS_INCLUDE
+#define PER_USER_AUDIT_SUCCESS_INCLUDE 0x01
+#endif
+#ifndef PER_USER_POLICY_UNCHANGED
+#define PER_USER_POLICY_UNCHANGED 0x00
+#endif
+#ifndef POLICY_KERBEROS_VALIDATE_CLIENT
+#define POLICY_KERBEROS_VALIDATE_CLIENT 0x00000080
+#endif
+#ifndef RTL_ENCRYPT_OPTION_FOR_SYSTEM
+#define RTL_ENCRYPT_OPTION_FOR_SYSTEM 0x04
+#endif
+#ifndef TRUST_ATTRIBUTES_USER
+#define TRUST_ATTRIBUTES_USER 0xFF000000
+#endif
+#ifndef TRUST_ATTRIBUTE_CROSS_ORGANIZATION
+#define TRUST_ATTRIBUTE_CROSS_ORGANIZATION 0x00000010
+#endif
+#ifndef TRUST_ATTRIBUTE_CROSS_ORGANIZATION_ENABLE_TGT_DELEGATION
+#define TRUST_ATTRIBUTE_CROSS_ORGANIZATION_ENABLE_TGT_DELEGATION 0x00000800
+#endif
+#ifndef TRUST_ATTRIBUTE_CROSS_ORGANIZATION_NO_TGT_DELEGATION
+#define TRUST_ATTRIBUTE_CROSS_ORGANIZATION_NO_TGT_DELEGATION 0x00000200
+#endif
+#ifndef TRUST_ATTRIBUTE_DISABLE_AUTH_TARGET_VALIDATION
+#define TRUST_ATTRIBUTE_DISABLE_AUTH_TARGET_VALIDATION 0x00001000
+#endif
+#ifndef TRUST_ATTRIBUTE_FOREST_TRANSITIVE
+#define TRUST_ATTRIBUTE_FOREST_TRANSITIVE 0x00000008
+#endif
+#ifndef TRUST_ATTRIBUTE_PIM_TRUST
+#define TRUST_ATTRIBUTE_PIM_TRUST 0x00000400
+#endif
+#ifndef TRUST_ATTRIBUTE_QUARANTINED_DOMAIN
+#define TRUST_ATTRIBUTE_QUARANTINED_DOMAIN 0x00000004
+#endif
+#ifndef TRUST_ATTRIBUTE_TREAT_AS_EXTERNAL
+#define TRUST_ATTRIBUTE_TREAT_AS_EXTERNAL 0x00000040
+#endif
+#ifndef TRUST_ATTRIBUTE_TRUST_USES_AES_KEYS
+#define TRUST_ATTRIBUTE_TRUST_USES_AES_KEYS 0x00000100
+#endif
+#ifndef TRUST_ATTRIBUTE_TRUST_USES_RC4_ENCRYPTION
+#define TRUST_ATTRIBUTE_TRUST_USES_RC4_ENCRYPTION 0x00000080
+#endif
+#ifndef TRUST_ATTRIBUTE_WITHIN_FOREST
+#define TRUST_ATTRIBUTE_WITHIN_FOREST 0x00000020
+#endif
+#ifndef TRUST_AUTH_TYPE_VERSION
+#define TRUST_AUTH_TYPE_VERSION 3
+#endif
+#ifndef TRUST_TYPE_AAD
+#define TRUST_TYPE_AAD 0x00000005
+#endif
+
+typedef enum _KERB_CERTIFICATE_INFO_TYPE {
+    CertHashInfo = 1
+} KERB_CERTIFICATE_INFO_TYPE, *PKERB_CERTIFICATE_INFO_TYPE;
+
+typedef enum _KERB_PROFILE_BUFFER_TYPE {
+    KerbInteractiveProfile = 2,
+    KerbSmartCardProfile = 4,
+    KerbTicketProfile = 6
+} KERB_PROFILE_BUFFER_TYPE, *PKERB_PROFILE_BUFFER_TYPE;
+
+typedef enum _PKU2U_LOGON_SUBMIT_TYPE {
+    Pku2uCertificateS4ULogon = 14
+} PKU2U_LOGON_SUBMIT_TYPE, *PPKU2U_LOGON_SUBMIT_TYPE;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+NTSTATUS WINAPI LsaQueryForestTrustInformation(LSA_HANDLE PolicyHandle, PLSA_UNICODE_STRING TrustedDomainName, PLSA_FOREST_TRUST_INFORMATION * ForestTrustInfo);
+NTSTATUS WINAPI LsaSetForestTrustInformation(LSA_HANDLE PolicyHandle, PLSA_UNICODE_STRING TrustedDomainName, PLSA_FOREST_TRUST_INFORMATION ForestTrustInfo, BOOLEAN CheckOnly, PLSA_FOREST_TRUST_COLLISION_INFORMATION * CollisionInfo);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _CENTRAL_ACCESS_POLICY_ENTRY {
+  LSA_UNICODE_STRING Name;
+  LSA_UNICODE_STRING Description;
+  LSA_UNICODE_STRING ChangeId;
+  ULONG LengthAppliesTo;
+  PUCHAR AppliesTo;
+  ULONG LengthSD;
+  PSECURITY_DESCRIPTOR SD;
+  ULONG LengthStagedSD;
+  PSECURITY_DESCRIPTOR StagedSD;
+  ULONG Flags;
+} CENTRAL_ACCESS_POLICY_ENTRY, *PCENTRAL_ACCESS_POLICY_ENTRY;
+
+typedef struct _CENTRAL_ACCESS_POLICY {
+  PSID CAPID;
+  LSA_UNICODE_STRING Name;
+  LSA_UNICODE_STRING Description;
+  LSA_UNICODE_STRING ChangeId;
+  ULONG Flags;
+  ULONG CAPECount;
+  PCENTRAL_ACCESS_POLICY_ENTRY * CAPEs;
+} CENTRAL_ACCESS_POLICY, *PCENTRAL_ACCESS_POLICY;
+
+typedef struct _KDC_PROXY_CACHE_ENTRY_DATA {
+  ULONG64 SinceLastUsed;
+  UNICODE_STRING DomainName;
+  UNICODE_STRING ProxyServerName;
+  UNICODE_STRING ProxyServerVdir;
+  USHORT ProxyServerPort;
+  LUID LogonId;
+  UNICODE_STRING CredUserName;
+  UNICODE_STRING CredDomainName;
+  BOOLEAN GlobalCache;
+} KDC_PROXY_CACHE_ENTRY_DATA, *PKDC_PROXY_CACHE_ENTRY_DATA;
+
+typedef struct _KERB_AUTH_DATA {
+  ULONG Type;
+  ULONG Length;
+  PUCHAR Data;
+} KERB_AUTH_DATA, *PKERB_AUTH_DATA;
+
+typedef struct _KERB_BINDING_CACHE_ENTRY_DATA {
+  ULONG64 DiscoveryTime;
+  UNICODE_STRING RealmName;
+  UNICODE_STRING KdcAddress;
+  ULONG AddressType;
+  ULONG Flags;
+  ULONG DcFlags;
+  ULONG CacheFlags;
+  UNICODE_STRING KdcName;
+} KERB_BINDING_CACHE_ENTRY_DATA, *PKERB_BINDING_CACHE_ENTRY_DATA;
+
+typedef struct _KERB_CERTIFICATE_HASHINFO {
+  USHORT StoreNameLength;
+  USHORT HashLength;
+} KERB_CERTIFICATE_HASHINFO, *PKERB_CERTIFICATE_HASHINFO;
+
+typedef struct _KERB_CERTIFICATE_INFO {
+  ULONG CertInfoSize;
+  ULONG InfoType;
+} KERB_CERTIFICATE_INFO, *PKERB_CERTIFICATE_INFO;
+
+typedef struct _KERB_CERTIFICATE_LOGON {
+  KERB_LOGON_SUBMIT_TYPE MessageType;
+  UNICODE_STRING DomainName;
+  UNICODE_STRING UserName;
+  UNICODE_STRING Pin;
+  ULONG Flags;
+  ULONG CspDataLength;
+  PUCHAR CspData;
+} KERB_CERTIFICATE_LOGON, *PKERB_CERTIFICATE_LOGON;
+
+typedef struct _KERB_CERTIFICATE_S4U_LOGON {
+  KERB_LOGON_SUBMIT_TYPE MessageType;
+  ULONG Flags;
+  UNICODE_STRING UserPrincipalName;
+  UNICODE_STRING DomainName;
+  ULONG CertificateLength;
+  PUCHAR Certificate;
+} KERB_CERTIFICATE_S4U_LOGON, *PKERB_CERTIFICATE_S4U_LOGON;
+
+typedef struct _KERB_CERTIFICATE_UNLOCK_LOGON {
+  KERB_CERTIFICATE_LOGON Logon;
+  LUID LogonId;
+} KERB_CERTIFICATE_UNLOCK_LOGON, *PKERB_CERTIFICATE_UNLOCK_LOGON;
+
+typedef struct _KERB_CLOUD_KERBEROS_DEBUG_DATA {
+  unsigned int EnabledByPolicy : 1;
+  unsigned int AsRepCallbackPresent : 1;
+  unsigned int AsRepCallbackUsed : 1;
+  unsigned int CloudReferralTgtAvailable : 1;
+  unsigned int SpnOracleConfigured : 1;
+  unsigned int KdcProxyPresent : 1;
+  unsigned int PublicKeyCredsPresent : 1;
+  unsigned int PasswordKeysPresent : 1;
+  unsigned int PasswordPresent : 1;
+  unsigned int AsRepSourceCred : 8;
+} KERB_CLOUD_KERBEROS_DEBUG_DATA, *PKERB_CLOUD_KERBEROS_DEBUG_DATA;
+
+typedef struct _KERB_CLOUD_KERBEROS_DEBUG_DATA_V0 {
+  unsigned int EnabledByPolicy : 1;
+  unsigned int AsRepCallbackPresent : 1;
+  unsigned int AsRepCallbackUsed : 1;
+  unsigned int CloudReferralTgtAvailable : 1;
+  unsigned int SpnOracleConfigured : 1;
+  unsigned int KdcProxyPresent : 1;
+} KERB_CLOUD_KERBEROS_DEBUG_DATA_V0, *PKERB_CLOUD_KERBEROS_DEBUG_DATA_V0;
+
+typedef struct _KERB_DECRYPT_RESPONSE {
+  UCHAR DecryptedData[1];
+} KERB_DECRYPT_RESPONSE, *PKERB_DECRYPT_RESPONSE;
+
+typedef struct _KERB_INTERACTIVE_PROFILE {
+  KERB_PROFILE_BUFFER_TYPE MessageType;
+  USHORT LogonCount;
+  USHORT BadPasswordCount;
+  LARGE_INTEGER LogonTime;
+  LARGE_INTEGER LogoffTime;
+  LARGE_INTEGER KickOffTime;
+  LARGE_INTEGER PasswordLastSet;
+  LARGE_INTEGER PasswordCanChange;
+  LARGE_INTEGER PasswordMustChange;
+  UNICODE_STRING LogonScript;
+  UNICODE_STRING HomeDirectory;
+  UNICODE_STRING FullName;
+  UNICODE_STRING ProfilePath;
+  UNICODE_STRING HomeDirectoryDrive;
+  UNICODE_STRING LogonServer;
+  ULONG UserFlags;
+} KERB_INTERACTIVE_PROFILE, *PKERB_INTERACTIVE_PROFILE;
+
+typedef struct _KERB_INTERACTIVE_UNLOCK_LOGON {
+  KERB_INTERACTIVE_LOGON Logon;
+  LUID LogonId;
+} KERB_INTERACTIVE_UNLOCK_LOGON, *PKERB_INTERACTIVE_UNLOCK_LOGON;
+
+typedef struct _KERB_NET_ADDRESS {
+  ULONG Family;
+  ULONG Length;
+  PCHAR Address;
+} KERB_NET_ADDRESS, *PKERB_NET_ADDRESS;
+
+typedef struct _KERB_NET_ADDRESSES {
+  ULONG Number;
+  KERB_NET_ADDRESS Addresses[1];
+} KERB_NET_ADDRESSES, *PKERB_NET_ADDRESSES;
+
+typedef struct _KERB_S4U2PROXY_CACHE_ENTRY_INFO {
+  UNICODE_STRING ServerName;
+  ULONG Flags;
+  NTSTATUS LastStatus;
+  LARGE_INTEGER Expiry;
+} KERB_S4U2PROXY_CACHE_ENTRY_INFO, *PKERB_S4U2PROXY_CACHE_ENTRY_INFO;
+
+typedef struct _KERB_S4U2PROXY_CRED {
+  UNICODE_STRING UserName;
+  UNICODE_STRING DomainName;
+  ULONG Flags;
+  NTSTATUS LastStatus;
+  LARGE_INTEGER Expiry;
+  ULONG CountOfEntries;
+  PKERB_S4U2PROXY_CACHE_ENTRY_INFO Entries;
+} KERB_S4U2PROXY_CRED, *PKERB_S4U2PROXY_CRED;
+
+typedef struct _KERB_S4U_LOGON {
+  KERB_LOGON_SUBMIT_TYPE MessageType;
+  ULONG Flags;
+  UNICODE_STRING ClientUpn;
+  UNICODE_STRING ClientRealm;
+} KERB_S4U_LOGON, *PKERB_S4U_LOGON;
+
+typedef struct _KERB_SMART_CARD_LOGON {
+  KERB_LOGON_SUBMIT_TYPE MessageType;
+  UNICODE_STRING Pin;
+  ULONG CspDataLength;
+  PUCHAR CspData;
+} KERB_SMART_CARD_LOGON, *PKERB_SMART_CARD_LOGON;
+
+typedef struct _KERB_SMART_CARD_PROFILE {
+  KERB_INTERACTIVE_PROFILE Profile;
+  ULONG CertificateSize;
+  PUCHAR CertificateData;
+} KERB_SMART_CARD_PROFILE, *PKERB_SMART_CARD_PROFILE;
+
+typedef struct _KERB_SMART_CARD_UNLOCK_LOGON {
+  KERB_SMART_CARD_LOGON Logon;
+  LUID LogonId;
+} KERB_SMART_CARD_UNLOCK_LOGON, *PKERB_SMART_CARD_UNLOCK_LOGON;
+
+typedef struct _KERB_TICKET_LOGON {
+  KERB_LOGON_SUBMIT_TYPE MessageType;
+  ULONG Flags;
+  ULONG ServiceTicketLength;
+  ULONG TicketGrantingTicketLength;
+  PUCHAR ServiceTicket;
+  PUCHAR TicketGrantingTicket;
+} KERB_TICKET_LOGON, *PKERB_TICKET_LOGON;
+
+typedef struct _KERB_TICKET_UNLOCK_LOGON {
+  KERB_TICKET_LOGON Logon;
+  LUID LogonId;
+} KERB_TICKET_UNLOCK_LOGON, *PKERB_TICKET_UNLOCK_LOGON;
+
+typedef struct _LSA_FOREST_TRUST_SCANNER_INFO {
+  PSID DomainSid;
+  LSA_UNICODE_STRING DnsName;
+  LSA_UNICODE_STRING NetbiosName;
+} LSA_FOREST_TRUST_SCANNER_INFO, *PLSA_FOREST_TRUST_SCANNER_INFO;
+
+typedef struct _MSV1_0_PASSTHROUGH_REQUEST {
+  MSV1_0_PROTOCOL_MESSAGE_TYPE MessageType;
+  UNICODE_STRING DomainName;
+  UNICODE_STRING PackageName;
+  ULONG DataLength;
+  PUCHAR LogonData;
+  ULONG Pad;
+} MSV1_0_PASSTHROUGH_REQUEST, *PMSV1_0_PASSTHROUGH_REQUEST;
+
+typedef struct _MSV1_0_PASSTHROUGH_RESPONSE {
+  MSV1_0_PROTOCOL_MESSAGE_TYPE MessageType;
+  ULONG Pad;
+  ULONG DataLength;
+  PUCHAR ValidationData;
+} MSV1_0_PASSTHROUGH_RESPONSE, *PMSV1_0_PASSTHROUGH_RESPONSE;
+
+typedef struct _NEGOTIATE_PACKAGE_PREFIX {
+  ULONG_PTR PackageId;
+  PVOID PackageDataA;
+  PVOID PackageDataW;
+  ULONG_PTR PrefixLen;
+  UCHAR Prefix[32];
+} NEGOTIATE_PACKAGE_PREFIX, *PNEGOTIATE_PACKAGE_PREFIX;
+
+typedef struct _NEGOTIATE_PACKAGE_PREFIXES {
+  ULONG MessageType;
+  ULONG PrefixCount;
+  ULONG Offset;
+  ULONG Pad;
+} NEGOTIATE_PACKAGE_PREFIXES, *PNEGOTIATE_PACKAGE_PREFIXES;
+
+typedef struct _PKU2U_CERT_BLOB {
+  ULONG CertOffset;
+  USHORT CertLength;
+} PKU2U_CERT_BLOB, *PPKU2U_CERT_BLOB;
+
+typedef struct _PKU2U_CERTIFICATE_S4U_LOGON {
+  PKU2U_LOGON_SUBMIT_TYPE MessageType;
+  ULONG Flags;
+  UNICODE_STRING UserPrincipalName;
+  UNICODE_STRING DomainName;
+  ULONG CertificateLength;
+  PUCHAR Certificate;
+} PKU2U_CERTIFICATE_S4U_LOGON, *PPKU2U_CERTIFICATE_S4U_LOGON;
+
+typedef struct _PKU2U_CREDUI_CONTEXT {
+  ULONG64 Version;
+  USHORT cbHeaderLength;
+  ULONG cbStructureLength;
+  USHORT CertArrayCount;
+  ULONG CertArrayOffset;
+} PKU2U_CREDUI_CONTEXT, *PPKU2U_CREDUI_CONTEXT;
+
+typedef struct _POLICY_AUDIT_SID_ARRAY {
+  ULONG UsersCount;
+  PSID * UserSidArray;
+} POLICY_AUDIT_SID_ARRAY, *PPOLICY_AUDIT_SID_ARRAY;
+
+typedef struct _POLICY_AUDIT_SUBCATEGORIES_INFO {
+  ULONG MaximumSubCategoryCount;
+  PPOLICY_AUDIT_EVENT_OPTIONS EventAuditingOptions;
+} POLICY_AUDIT_SUBCATEGORIES_INFO, *PPOLICY_AUDIT_SUBCATEGORIES_INFO;
+
+typedef struct _POLICY_AUDIT_CATEGORIES_INFO {
+  ULONG MaximumCategoryCount;
+  PPOLICY_AUDIT_SUBCATEGORIES_INFO SubCategoriesInfo;
+} POLICY_AUDIT_CATEGORIES_INFO, *PPOLICY_AUDIT_CATEGORIES_INFO;
+
+typedef struct _POLICY_DOMAIN_EFS_INFO {
+  ULONG InfoLength;
+  PUCHAR EfsBlob;
+} POLICY_DOMAIN_EFS_INFO, *PPOLICY_DOMAIN_EFS_INFO;
+
+typedef struct _POLICY_MACHINE_ACCT_INFO {
+  ULONG Rid;
+  PSID Sid;
+} POLICY_MACHINE_ACCT_INFO, *PPOLICY_MACHINE_ACCT_INFO;
+
+typedef struct _POLICY_MACHINE_ACCT_INFO2 {
+  ULONG Rid;
+  PSID Sid;
+  GUID ObjectGuid;
+} POLICY_MACHINE_ACCT_INFO2, *PPOLICY_MACHINE_ACCT_INFO2;
+
+typedef struct _TRUSTED_DOMAIN_INFORMATION_EX2 {
+  LSA_UNICODE_STRING Name;
+  LSA_UNICODE_STRING FlatName;
+  PSID Sid;
+  ULONG TrustDirection;
+  ULONG TrustType;
+  ULONG TrustAttributes;
+  ULONG ForestTrustLength;
+  PUCHAR ForestTrustInfo;
+} TRUSTED_DOMAIN_INFORMATION_EX2, *PTRUSTED_DOMAIN_INFORMATION_EX2;
+
+typedef struct _TRUSTED_DOMAIN_FULL_INFORMATION2 {
+  TRUSTED_DOMAIN_INFORMATION_EX2 Information;
+  TRUSTED_POSIX_OFFSET_INFO PosixOffset;
+  TRUSTED_DOMAIN_AUTH_INFORMATION AuthInformation;
+} TRUSTED_DOMAIN_FULL_INFORMATION2, *PTRUSTED_DOMAIN_FULL_INFORMATION2;
+
+typedef struct KERB_CRYPTO_KEY32 {
+  LONG KeyType;
+  ULONG Length;
+  ULONG Offset;
+} KERB_CRYPTO_KEY32, *PKERB_CRYPTO_KEY32;
+
+#define AUDIT_GENERIC_ALL 0xF007F
+#define AUDIT_GENERIC_EXECUTE 0x20000
+#define AUDIT_GENERIC_READ 0x2005A
+#define AUDIT_GENERIC_WRITE 0x20025
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define AuditLookupCategoryName AuditLookupCategoryNameW
+#else
+#define AuditLookupCategoryName AuditLookupCategoryNameA
+#endif
+#endif
+#ifdef UNICODE
+#define AuditLookupSubCategoryName AuditLookupSubCategoryNameW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define AuditLookupSubCategoryName AuditLookupSubCategoryNameW
+#else
+#define AuditLookupSubCategoryName AuditLookupSubCategoryNameA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define AuditQueryGlobalSacl AuditQueryGlobalSaclW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define AuditQueryGlobalSacl AuditQueryGlobalSaclW
+#else
+#define AuditQueryGlobalSacl AuditQueryGlobalSaclA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define AuditSetGlobalSacl AuditSetGlobalSaclW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define AuditSetGlobalSacl AuditSetGlobalSaclW
+#else
+#define AuditSetGlobalSacl AuditSetGlobalSaclA
+#endif
+#endif
+#endif
+#define AUTH_REQ_PER_USER_FLAGS 0x4F
+#define CENTRAL_ACCESS_POLICY_VALID_FLAG_MASK 0x10101
+#define KRB_ANONYMOUS_STRING L"ANONYMOUS"
+#define KRB_WELLKNOWN_STRING L"WELLKNOWN"
+#define LSA_SCANNER_INFO_ADMIN_ALL_FLAGS 1
+#define LSASETCAPS_VALID_FLAG_MASK 1
+#define MAX_FOREST_TRUST_BINARY_DATA_SIZE 0x20000
+#define PKU2U_CREDUI_CONTEXT_VERSION 0x4154414454524543i64
+#define PKU2U_PACKAGE_NAME L"pku2u"
+#define PKU2U_PACKAGE_NAME_A "pku2u"
+#define PKU2U_PACKAGE_NAME_W PKU2U_PACKAGE_NAME
+#define VALID_PER_USER_AUDIT_POLICY_FLAG 0x1F
+
+struct _LSA_FOREST_TRUST_RECORD2
+{
+    ULONG Flags;
+    LSA_FOREST_TRUST_RECORD_TYPE ForestTrustType;
+    LARGE_INTEGER Time;
+    union
+    {
+        LSA_UNICODE_STRING TopLevelName;
+        LSA_FOREST_TRUST_DOMAIN_INFO DomainInfo;
+        LSA_FOREST_TRUST_BINARY_DATA BinaryData;
+        LSA_FOREST_TRUST_SCANNER_INFO ScannerInfo;
+    } ForestTrustData;
+};
+
+typedef struct _LSA_FOREST_TRUST_RECORD2 LSA_FOREST_TRUST_RECORD2;
+
+typedef const CENTRAL_ACCESS_POLICY *PCCENTRAL_ACCESS_POLICY;
+
+typedef const CENTRAL_ACCESS_POLICY_ENTRY *PCCENTRAL_ACCESS_POLICY_ENTRY;
+
+typedef struct _LSA_FOREST_TRUST_RECORD2 *PLSA_FOREST_TRUST_RECORD2;
+
+struct _LSA_FOREST_TRUST_INFORMATION2
+{
+    ULONG RecordCount;
+    PLSA_FOREST_TRUST_RECORD2 *Entries;
+};
+
+typedef struct _LSA_FOREST_TRUST_INFORMATION2 LSA_FOREST_TRUST_INFORMATION2;
+
+typedef struct _LSA_FOREST_TRUST_INFORMATION2 *PLSA_FOREST_TRUST_INFORMATION2;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+typedef struct _AUDIT_POLICY_INFORMATION *PAUDIT_POLICY_INFORMATION;
+
+BOOLEAN WINAPI AuditComputeEffectivePolicyBySid(const PSID pSid, const GUID *pSubCategoryGuids, ULONG dwPolicyCount, PAUDIT_POLICY_INFORMATION *ppAuditPolicy);
+BOOLEAN WINAPI AuditComputeEffectivePolicyByToken(HANDLE hTokenHandle, const GUID *pSubCategoryGuids, ULONG dwPolicyCount, PAUDIT_POLICY_INFORMATION *ppAuditPolicy);
+BOOLEAN WINAPI AuditEnumerateCategories(GUID **ppAuditCategoriesArray, PULONG pdwCountReturned);
+BOOLEAN WINAPI AuditEnumeratePerUserPolicy(PPOLICY_AUDIT_SID_ARRAY *ppAuditSidArray);
+BOOLEAN WINAPI AuditEnumerateSubCategories(const GUID *pAuditCategoryGuid, BOOLEAN bRetrieveAllSubCategories, GUID **ppAuditSubCategoriesArray, PULONG pdwCountReturned);
+void NTAPI AuditFree(PVOID Buffer);
+BOOLEAN WINAPI AuditLookupCategoryGuidFromCategoryId(POLICY_AUDIT_EVENT_TYPE AuditCategoryId, GUID *pAuditCategoryGuid);
+BOOLEAN WINAPI AuditLookupCategoryIdFromCategoryGuid(const GUID *pAuditCategoryGuid, PPOLICY_AUDIT_EVENT_TYPE pAuditCategoryId);
+BOOLEAN WINAPI AuditLookupCategoryNameA(const GUID *pAuditCategoryGuid, PSTR *ppszCategoryName);
+BOOLEAN WINAPI AuditLookupCategoryNameW(const GUID *pAuditCategoryGuid, PWSTR *ppszCategoryName);
+BOOLEAN WINAPI AuditLookupSubCategoryNameA(const GUID *pAuditSubCategoryGuid, PSTR *ppszSubCategoryName);
+BOOLEAN WINAPI AuditLookupSubCategoryNameW(const GUID *pAuditSubCategoryGuid, PWSTR *ppszSubCategoryName);
+BOOLEAN WINAPI AuditQueryGlobalSaclA(PCSTR ObjectTypeName, PACL *Acl);
+BOOLEAN WINAPI AuditQueryGlobalSaclW(PCWSTR ObjectTypeName, PACL *Acl);
+BOOLEAN WINAPI AuditQueryPerUserPolicy(const PSID pSid, const GUID *pSubCategoryGuids, ULONG dwPolicyCount, PAUDIT_POLICY_INFORMATION *ppAuditPolicy);
+BOOLEAN WINAPI AuditQuerySecurity(SECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR *ppSecurityDescriptor);
+BOOLEAN WINAPI AuditSetGlobalSaclA(PCSTR ObjectTypeName, PACL Acl);
+BOOLEAN WINAPI AuditSetGlobalSaclW(PCWSTR ObjectTypeName, PACL Acl);
+BOOLEAN WINAPI AuditSetSecurity(SECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR pSecurityDescriptor);
+NTSTATUS WINAPI LsaGetAppliedCAPIDs(PLSA_UNICODE_STRING SystemName, PSID **CAPIDs, PULONG CAPIDCount);
+NTSTATUS LsaInsertProtectedProcessAddress(PVOID BufferAddress, ULONG BufferSize);
+NTSTATUS WINAPI LsaLookupSids2(LSA_HANDLE PolicyHandle, ULONG LookupOptions, ULONG Count, PSID *Sids, PLSA_REFERENCED_DOMAIN_LIST *ReferencedDomains, PLSA_TRANSLATED_NAME *Names);
+NTSTATUS WINAPI LsaQueryCAPs(PSID *CAPIDs, ULONG CAPIDCount, PCENTRAL_ACCESS_POLICY *CAPs, PULONG CAPCount);
+NTSTATUS WINAPI LsaQueryForestTrustInformation2(LSA_HANDLE PolicyHandle, PLSA_UNICODE_STRING TrustedDomainName, LSA_FOREST_TRUST_RECORD_TYPE HighestRecordType, PLSA_FOREST_TRUST_INFORMATION2 *ForestTrustInfo);
+NTSTATUS LsaRemoveProtectedProcessAddress(PVOID BufferAddress, ULONG BufferSize);
+NTSTATUS WINAPI LsaSetCAPs(PLSA_UNICODE_STRING CAPDNs, ULONG CAPDNCount, ULONG Flags);
+NTSTATUS WINAPI LsaSetForestTrustInformation2(LSA_HANDLE PolicyHandle, PLSA_UNICODE_STRING TrustedDomainName, LSA_FOREST_TRUST_RECORD_TYPE HighestRecordType, PLSA_FOREST_TRUST_INFORMATION2 ForestTrustInfo, BOOLEAN CheckOnly, PLSA_FOREST_TRUST_COLLISION_INFORMATION *CollisionInfo);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+enum _KERB_PROTOCOL_MESSAGE_TYPE
+{
+    KerbDebugRequestMessage = 0,
+    KerbQueryTicketCacheMessage = 1,
+    KerbChangeMachinePasswordMessage = 2,
+    KerbVerifyPacMessage = 3,
+    KerbRetrieveTicketMessage = 4,
+    KerbUpdateAddressesMessage = 5,
+    KerbPurgeTicketCacheMessage = 6,
+    KerbChangePasswordMessage = 7,
+    KerbRetrieveEncodedTicketMessage = 8,
+    KerbDecryptDataMessage = 9,
+    KerbAddBindingCacheEntryMessage = 0xA,
+    KerbSetPasswordMessage = 0xB,
+    KerbSetPasswordExMessage = 0xC,
+    KerbVerifyCredentialsMessage = 0xD,
+    KerbQueryTicketCacheExMessage = 0xE,
+    KerbPurgeTicketCacheExMessage = 0xF,
+    KerbRefreshSmartcardCredentialsMessage = 0x10,
+    KerbAddExtraCredentialsMessage = 0x11,
+    KerbQuerySupplementalCredentialsMessage = 0x12,
+    KerbTransferCredentialsMessage = 0x13,
+    KerbQueryTicketCacheEx2Message = 0x14,
+    KerbSubmitTicketMessage = 0x15,
+    KerbAddExtraCredentialsExMessage = 0x16,
+    KerbQueryKdcProxyCacheMessage = 0x17,
+    KerbPurgeKdcProxyCacheMessage = 0x18,
+    KerbQueryTicketCacheEx3Message = 0x19,
+    KerbCleanupMachinePkinitCredsMessage = 0x1A,
+    KerbAddBindingCacheEntryExMessage = 0x1B,
+    KerbQueryBindingCacheMessage = 0x1C,
+    KerbPurgeBindingCacheMessage = 0x1D,
+    KerbPinKdcMessage = 0x1E,
+    KerbUnpinAllKdcsMessage = 0x1F,
+    KerbQueryDomainExtendedPoliciesMessage = 0x20,
+    KerbQueryS4U2ProxyCacheMessage = 0x21,
+    KerbRetrieveKeyTabMessage = 0x22,
+    KerbRefreshPolicyMessage = 0x23,
+    KerbPrintCloudKerberosDebugMessage = 0x24,
+    KerbNetworkTicketLogonMessage = 0x25,
+    KerbNlChangeMachinePasswordMessage = 0x26,
+};
+
+typedef enum _KERB_PROTOCOL_MESSAGE_TYPE KERB_PROTOCOL_MESSAGE_TYPE;
+
+struct _KERB_ADD_BINDING_CACHE_ENTRY_EX_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    UNICODE_STRING RealmName;
+    UNICODE_STRING KdcAddress;
+    ULONG AddressType;
+    ULONG DcFlags;
+};
+
+struct _KERB_ADD_BINDING_CACHE_ENTRY_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    UNICODE_STRING RealmName;
+    UNICODE_STRING KdcAddress;
+    ULONG AddressType;
+};
+
+struct _KERB_ADD_CREDENTIALS_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    UNICODE_STRING UserName;
+    UNICODE_STRING DomainName;
+    UNICODE_STRING Password;
+    LUID LogonId;
+    ULONG Flags;
+};
+
+struct _KERB_CHANGEMACHINEPASSWORD_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    BOOLEAN ForcePasswordChange;
+};
+
+struct _KERB_CHANGEPASSWORD_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    UNICODE_STRING DomainName;
+    UNICODE_STRING AccountName;
+    UNICODE_STRING OldPassword;
+    UNICODE_STRING NewPassword;
+    BOOLEAN Impersonating;
+};
+
+struct _KERB_CLEANUP_MACHINE_PKINIT_CREDS_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID LogonId;
+};
+
+struct _KERB_CLOUD_KERBEROS_DEBUG_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID LogonId;
+};
+
+struct _KERB_CLOUD_KERBEROS_DEBUG_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Version;
+    ULONG Length;
+    ULONG Data[1];
+};
+
+typedef struct KERB_CRYPTO_KEY KERB_CRYPTO_KEY;
+
+struct KERB_CRYPTO_KEY
+{
+    LONG KeyType;
+    ULONG Length;
+    PUCHAR Value;
+};
+
+struct _KERB_DECRYPT_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID LogonId;
+    ULONG Flags;
+    LONG CryptoType;
+    LONG KeyUsage;
+    KERB_CRYPTO_KEY Key;
+    ULONG EncryptedDataSize;
+    ULONG InitialVectorSize;
+    PUCHAR InitialVector;
+    PUCHAR EncryptedData;
+};
+
+struct _KERB_PURGE_BINDING_CACHE_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+};
+
+struct _KERB_PURGE_KDC_PROXY_CACHE_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+    LUID LogonId;
+};
+
+struct _KERB_PURGE_KDC_PROXY_CACHE_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG CountOfPurged;
+};
+
+struct _KERB_TICKET_CACHE_INFO_EX
+{
+    UNICODE_STRING ClientName;
+    UNICODE_STRING ClientRealm;
+    UNICODE_STRING ServerName;
+    UNICODE_STRING ServerRealm;
+    LARGE_INTEGER StartTime;
+    LARGE_INTEGER EndTime;
+    LARGE_INTEGER RenewTime;
+    LONG EncryptionType;
+    ULONG TicketFlags;
+};
+
+typedef struct _KERB_TICKET_CACHE_INFO_EX KERB_TICKET_CACHE_INFO_EX;
+
+struct _KERB_PURGE_TKT_CACHE_EX_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID LogonId;
+    ULONG Flags;
+    KERB_TICKET_CACHE_INFO_EX TicketTemplate;
+};
+
+struct _KERB_QUERY_BINDING_CACHE_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+};
+
+struct _KERB_QUERY_BINDING_CACHE_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG CountOfEntries;
+    PKERB_BINDING_CACHE_ENTRY_DATA Entries;
+};
+
+struct _KERB_QUERY_DOMAIN_EXTENDED_POLICIES_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+    UNICODE_STRING DomainName;
+};
+
+struct _KERB_QUERY_DOMAIN_EXTENDED_POLICIES_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+    ULONG ExtendedPolicies;
+    ULONG DsFlags;
+};
+
+struct _KERB_QUERY_KDC_PROXY_CACHE_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+    LUID LogonId;
+};
+
+struct _KERB_QUERY_KDC_PROXY_CACHE_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG CountOfEntries;
+    PKDC_PROXY_CACHE_ENTRY_DATA Entries;
+};
+
+struct _KERB_QUERY_S4U2PROXY_CACHE_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+    LUID LogonId;
+};
+
+struct _KERB_QUERY_S4U2PROXY_CACHE_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG CountOfCreds;
+    PKERB_S4U2PROXY_CRED Creds;
+};
+
+struct _KERB_REFRESH_POLICY_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+};
+
+struct _KERB_REFRESH_POLICY_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+};
+
+struct _KERB_REFRESH_SCCRED_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    UNICODE_STRING CredentialBlob;
+    LUID LogonId;
+    ULONG Flags;
+};
+
+struct _KERB_RETRIEVE_KEY_TAB_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG Flags;
+    UNICODE_STRING UserName;
+    UNICODE_STRING DomainName;
+    UNICODE_STRING Password;
+};
+
+struct _KERB_RETRIEVE_KEY_TAB_RESPONSE
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    ULONG KeyTabLength;
+    PUCHAR KeyTab;
+};
+
+#ifndef __SECHANDLE_DEFINED__
+struct _SecHandle
+{
+    ULONG_PTR dwLower;
+    ULONG_PTR dwUpper;
+};
+
+typedef struct _SecHandle SecHandle;
+typedef struct _SecHandle *PSecHandle;
+#define __SECHANDLE_DEFINED__
+#endif
+
+struct _KERB_SETPASSWORD_EX_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID LogonId;
+    SecHandle CredentialsHandle;
+    ULONG Flags;
+    UNICODE_STRING AccountRealm;
+    UNICODE_STRING AccountName;
+    UNICODE_STRING Password;
+    UNICODE_STRING ClientRealm;
+    UNICODE_STRING ClientName;
+    BOOLEAN Impersonating;
+    UNICODE_STRING KdcAddress;
+    ULONG KdcAddressType;
+};
+
+struct _KERB_SETPASSWORD_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID LogonId;
+    SecHandle CredentialsHandle;
+    ULONG Flags;
+    UNICODE_STRING DomainName;
+    UNICODE_STRING AccountName;
+    UNICODE_STRING Password;
+};
+
+struct _KERB_SUBMIT_TKT_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID LogonId;
+    ULONG Flags;
+    KERB_CRYPTO_KEY32 Key;
+    ULONG KerbCredSize;
+    ULONG KerbCredOffset;
+};
+
+struct _KERB_TICKET_PROFILE
+{
+    KERB_INTERACTIVE_PROFILE Profile;
+    KERB_CRYPTO_KEY SessionKey;
+};
+
+struct _KERB_TRANSFER_CRED_REQUEST
+{
+    KERB_PROTOCOL_MESSAGE_TYPE MessageType;
+    LUID OriginLogonId;
+    LUID DestinationLogonId;
+    ULONG Flags;
+};
+
+typedef struct _KERB_ADD_BINDING_CACHE_ENTRY_EX_REQUEST KERB_ADD_BINDING_CACHE_ENTRY_EX_REQUEST;
+
+typedef struct _KERB_ADD_BINDING_CACHE_ENTRY_REQUEST KERB_ADD_BINDING_CACHE_ENTRY_REQUEST;
+
+typedef struct _KERB_ADD_CREDENTIALS_REQUEST KERB_ADD_CREDENTIALS_REQUEST;
+
+struct _KERB_ADD_CREDENTIALS_REQUEST_EX
+{
+    KERB_ADD_CREDENTIALS_REQUEST Credentials;
+    ULONG PrincipalNameCount;
+    UNICODE_STRING PrincipalNames[1];
+};
+
+typedef struct _KERB_ADD_CREDENTIALS_REQUEST_EX KERB_ADD_CREDENTIALS_REQUEST_EX;
+
+typedef struct _KERB_CHANGEMACHINEPASSWORD_REQUEST KERB_CHANGEMACHINEPASSWORD_REQUEST;
+
+typedef struct _KERB_CHANGEPASSWORD_REQUEST KERB_CHANGEPASSWORD_REQUEST;
+
+typedef struct _KERB_CLEANUP_MACHINE_PKINIT_CREDS_REQUEST KERB_CLEANUP_MACHINE_PKINIT_CREDS_REQUEST;
+
+typedef struct _KERB_CLOUD_KERBEROS_DEBUG_REQUEST KERB_CLOUD_KERBEROS_DEBUG_REQUEST;
+
+typedef struct _KERB_CLOUD_KERBEROS_DEBUG_RESPONSE KERB_CLOUD_KERBEROS_DEBUG_RESPONSE;
+
+typedef struct _KERB_DECRYPT_REQUEST KERB_DECRYPT_REQUEST;
+
+typedef struct _KERB_PURGE_BINDING_CACHE_REQUEST KERB_PURGE_BINDING_CACHE_REQUEST;
+
+typedef struct _KERB_PURGE_KDC_PROXY_CACHE_REQUEST KERB_PURGE_KDC_PROXY_CACHE_REQUEST;
+
+typedef struct _KERB_PURGE_KDC_PROXY_CACHE_RESPONSE KERB_PURGE_KDC_PROXY_CACHE_RESPONSE;
+
+typedef struct _KERB_PURGE_TKT_CACHE_EX_REQUEST KERB_PURGE_TKT_CACHE_EX_REQUEST;
+
+typedef struct _KERB_QUERY_BINDING_CACHE_REQUEST KERB_QUERY_BINDING_CACHE_REQUEST;
+
+typedef struct _KERB_QUERY_BINDING_CACHE_RESPONSE KERB_QUERY_BINDING_CACHE_RESPONSE;
+
+typedef struct _KERB_QUERY_DOMAIN_EXTENDED_POLICIES_REQUEST KERB_QUERY_DOMAIN_EXTENDED_POLICIES_REQUEST;
+
+typedef struct _KERB_QUERY_DOMAIN_EXTENDED_POLICIES_RESPONSE KERB_QUERY_DOMAIN_EXTENDED_POLICIES_RESPONSE;
+
+typedef struct _KERB_QUERY_KDC_PROXY_CACHE_REQUEST KERB_QUERY_KDC_PROXY_CACHE_REQUEST;
+
+typedef struct _KERB_QUERY_KDC_PROXY_CACHE_RESPONSE KERB_QUERY_KDC_PROXY_CACHE_RESPONSE;
+
+typedef struct _KERB_QUERY_S4U2PROXY_CACHE_REQUEST KERB_QUERY_S4U2PROXY_CACHE_REQUEST;
+
+typedef struct _KERB_QUERY_S4U2PROXY_CACHE_RESPONSE KERB_QUERY_S4U2PROXY_CACHE_RESPONSE;
+
+typedef struct _KERB_REFRESH_POLICY_REQUEST KERB_REFRESH_POLICY_REQUEST;
+
+typedef struct _KERB_REFRESH_POLICY_RESPONSE KERB_REFRESH_POLICY_RESPONSE;
+
+typedef struct _KERB_REFRESH_SCCRED_REQUEST KERB_REFRESH_SCCRED_REQUEST;
+
+typedef struct _KERB_RETRIEVE_KEY_TAB_REQUEST KERB_RETRIEVE_KEY_TAB_REQUEST;
+
+typedef struct _KERB_RETRIEVE_KEY_TAB_RESPONSE KERB_RETRIEVE_KEY_TAB_RESPONSE;
+
+typedef struct _KERB_SETPASSWORD_EX_REQUEST KERB_SETPASSWORD_EX_REQUEST;
+
+typedef struct _KERB_SETPASSWORD_REQUEST KERB_SETPASSWORD_REQUEST;
+
+typedef struct _KERB_SUBMIT_TKT_REQUEST KERB_SUBMIT_TKT_REQUEST;
+
+typedef struct _KERB_TICKET_PROFILE KERB_TICKET_PROFILE;
+
+typedef struct _KERB_TRANSFER_CRED_REQUEST KERB_TRANSFER_CRED_REQUEST;
+
+typedef const PAUDIT_POLICY_INFORMATION LPCAUDIT_POLICY_INFORMATION;
+
+typedef const PAUDIT_POLICY_INFORMATION PCAUDIT_POLICY_INFORMATION;
+
+typedef struct _KERB_ADD_BINDING_CACHE_ENTRY_EX_REQUEST *PKERB_ADD_BINDING_CACHE_ENTRY_EX_REQUEST;
+
+typedef struct _KERB_ADD_BINDING_CACHE_ENTRY_REQUEST *PKERB_ADD_BINDING_CACHE_ENTRY_REQUEST;
+
+typedef struct _KERB_ADD_CREDENTIALS_REQUEST *PKERB_ADD_CREDENTIALS_REQUEST;
+
+typedef struct _KERB_ADD_CREDENTIALS_REQUEST_EX *PKERB_ADD_CREDENTIALS_REQUEST_EX;
+
+typedef struct _KERB_CHANGEMACHINEPASSWORD_REQUEST *PKERB_CHANGEMACHINEPASSWORD_REQUEST;
+
+typedef struct _KERB_CHANGEPASSWORD_REQUEST *PKERB_CHANGEPASSWORD_REQUEST;
+
+typedef struct _KERB_CLEANUP_MACHINE_PKINIT_CREDS_REQUEST *PKERB_CLEANUP_MACHINE_PKINIT_CREDS_REQUEST;
+
+typedef struct _KERB_CLOUD_KERBEROS_DEBUG_REQUEST *PKERB_CLOUD_KERBEROS_DEBUG_REQUEST;
+
+typedef struct _KERB_CLOUD_KERBEROS_DEBUG_RESPONSE *PKERB_CLOUD_KERBEROS_DEBUG_RESPONSE;
+
+typedef struct _KERB_DECRYPT_REQUEST *PKERB_DECRYPT_REQUEST;
+
+typedef struct _KERB_PURGE_BINDING_CACHE_REQUEST *PKERB_PURGE_BINDING_CACHE_REQUEST;
+
+typedef struct _KERB_PURGE_KDC_PROXY_CACHE_REQUEST *PKERB_PURGE_KDC_PROXY_CACHE_REQUEST;
+
+typedef struct _KERB_PURGE_KDC_PROXY_CACHE_RESPONSE *PKERB_PURGE_KDC_PROXY_CACHE_RESPONSE;
+
+typedef struct _KERB_PURGE_TKT_CACHE_EX_REQUEST *PKERB_PURGE_TKT_CACHE_EX_REQUEST;
+
+typedef struct _KERB_QUERY_BINDING_CACHE_REQUEST *PKERB_QUERY_BINDING_CACHE_REQUEST;
+
+typedef struct _KERB_QUERY_BINDING_CACHE_RESPONSE *PKERB_QUERY_BINDING_CACHE_RESPONSE;
+
+typedef struct _KERB_QUERY_DOMAIN_EXTENDED_POLICIES_REQUEST *PKERB_QUERY_DOMAIN_EXTENDED_POLICIES_REQUEST;
+
+typedef struct _KERB_QUERY_DOMAIN_EXTENDED_POLICIES_RESPONSE *PKERB_QUERY_DOMAIN_EXTENDED_POLICIES_RESPONSE;
+
+typedef struct _KERB_QUERY_KDC_PROXY_CACHE_REQUEST *PKERB_QUERY_KDC_PROXY_CACHE_REQUEST;
+
+typedef struct _KERB_QUERY_KDC_PROXY_CACHE_RESPONSE *PKERB_QUERY_KDC_PROXY_CACHE_RESPONSE;
+
+typedef struct _KERB_QUERY_S4U2PROXY_CACHE_REQUEST *PKERB_QUERY_S4U2PROXY_CACHE_REQUEST;
+
+typedef struct _KERB_QUERY_S4U2PROXY_CACHE_RESPONSE *PKERB_QUERY_S4U2PROXY_CACHE_RESPONSE;
+
+typedef struct _KERB_REFRESH_POLICY_REQUEST *PKERB_REFRESH_POLICY_REQUEST;
+
+typedef struct _KERB_REFRESH_POLICY_RESPONSE *PKERB_REFRESH_POLICY_RESPONSE;
+
+typedef struct _KERB_REFRESH_SCCRED_REQUEST *PKERB_REFRESH_SCCRED_REQUEST;
+
+typedef struct _KERB_RETRIEVE_KEY_TAB_REQUEST *PKERB_RETRIEVE_KEY_TAB_REQUEST;
+
+typedef struct _KERB_RETRIEVE_KEY_TAB_RESPONSE *PKERB_RETRIEVE_KEY_TAB_RESPONSE;
+
+typedef struct _KERB_SETPASSWORD_EX_REQUEST *PKERB_SETPASSWORD_EX_REQUEST;
+
+typedef struct _KERB_SETPASSWORD_REQUEST *PKERB_SETPASSWORD_REQUEST;
+
+typedef struct _KERB_SUBMIT_TKT_REQUEST *PKERB_SUBMIT_TKT_REQUEST;
+
+typedef struct _KERB_TICKET_PROFILE *PKERB_TICKET_PROFILE;
+
+typedef struct _KERB_TRANSFER_CRED_REQUEST *PKERB_TRANSFER_CRED_REQUEST;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOLEAN WINAPI AuditSetPerUserPolicy(const PSID pSid, PCAUDIT_POLICY_INFORMATION pAuditPolicy, ULONG dwPolicyCount);
+BOOLEAN WINAPI AuditSetSystemPolicy(PCAUDIT_POLICY_INFORMATION pAuditPolicy, ULONG dwPolicyCount);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define KERB_IS_MS_PRINCIPAL(_x_) (((_x_) <= KRB_NT_MS_PRINCIPAL) || ((_x_) >= KRB_NT_ENTERPRISE_PRINCIPAL))
+#define STAGING_FLAG(Effective) ((Effective & 0xF) << 8)
+
 #endif /* _NTSECAPI_H */

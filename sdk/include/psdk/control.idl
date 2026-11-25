@@ -58,7 +58,6 @@ library QuartzTypeLib
         HRESULT StopWhenReady();
     }
 
-
     /***************************************************************************
      * IBasicAudio interface
      */
@@ -75,7 +74,6 @@ library QuartzTypeLib
         [propput] HRESULT Balance( [in] LONG lBalance );
         [propget] HRESULT Balance( [out, retval] LONG *plBalance );
     }
-
 
     /***************************************************************************
      * IVideoWindow interface
@@ -128,7 +126,6 @@ library QuartzTypeLib
         HRESULT HideCursor( [in] LONG HideCursor );
         HRESULT IsCursorHidden( [out] LONG *CursorHidden );
     }
-
 
     /***************************************************************************
      * IBasicVideo interface
@@ -190,7 +187,6 @@ library QuartzTypeLib
         HRESULT GetPreferredAspectRatio([out] LONG *plAspectX, [out] LONG *plAspectY);
     }
 
-
     /***************************************************************************
      * IMediaEvent interface
      */
@@ -210,7 +206,6 @@ library QuartzTypeLib
         HRESULT FreeEventParams( [in] LONG lEvCode, [in] LONG_PTR lParam1, [in] LONG_PTR lParam2 );
     }
 
-
     /***************************************************************************
      * IMediaEventEx interface
      */
@@ -224,7 +219,6 @@ library QuartzTypeLib
         HRESULT SetNotifyFlags( [in] LONG lNoNotifyFlags );
         HRESULT GetNotifyFlags( [out] LONG *lplNoNotifyFlags );
     }
-
 
     /***************************************************************************
      * IMediaPosition interface
@@ -251,3 +245,152 @@ library QuartzTypeLib
     }
 
 } /* library QuartzTypeLib */
+
+cpp_quote("#ifndef __control_cpp_quote_1_DEFINED__")
+cpp_quote("#define __control_cpp_quote_1_DEFINED__")
+cpp_quote("typedef struct FilgraphManager FilgraphManager;")
+cpp_quote("")
+cpp_quote("typedef struct IAMCollection IAMCollection;")
+cpp_quote("")
+cpp_quote("struct IAMCollectionVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IAMCollection *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IAMCollection *);")
+cpp_quote("    ULONG (WINAPI *Release)(IAMCollection *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IAMCollection *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IAMCollection *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IAMCollection *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IAMCollection *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_Count)(IAMCollection *, LONG *);")
+cpp_quote("    HRESULT (WINAPI *Item)(IAMCollection *, long, IUnknown **);")
+cpp_quote("    HRESULT (WINAPI *get__NewEnum)(IAMCollection *, IUnknown **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IAMStats IAMStats;")
+cpp_quote("")
+cpp_quote("struct IAMStatsVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IAMStats *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IAMStats *);")
+cpp_quote("    ULONG (WINAPI *Release)(IAMStats *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IAMStats *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IAMStats *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IAMStats *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IAMStats *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *Reset)(IAMStats *);")
+cpp_quote("    HRESULT (WINAPI *get_Count)(IAMStats *, LONG *);")
+cpp_quote("    HRESULT (WINAPI *GetValueByIndex)(IAMStats *, long, BSTR *, long *, double *, double *, double *, double *, double *);")
+cpp_quote("    HRESULT (WINAPI *GetValueByName)(IAMStats *, BSTR, long *, long *, double *, double *, double *, double *, double *);")
+cpp_quote("    HRESULT (WINAPI *GetIndex)(IAMStats *, BSTR, long, long *);")
+cpp_quote("    HRESULT (WINAPI *AddValue)(IAMStats *, long, double);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IDeferredCommand IDeferredCommand;")
+cpp_quote("")
+cpp_quote("struct IDeferredCommandVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IDeferredCommand *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IDeferredCommand *);")
+cpp_quote("    ULONG (WINAPI *Release)(IDeferredCommand *);")
+cpp_quote("    HRESULT (WINAPI *Cancel)(IDeferredCommand *);")
+cpp_quote("    HRESULT (WINAPI *Confidence)(IDeferredCommand *, LONG *);")
+cpp_quote("    HRESULT (WINAPI *Postpone)(IDeferredCommand *, REFTIME);")
+cpp_quote("    HRESULT (WINAPI *GetHResult)(IDeferredCommand *, HRESULT *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IFilterInfo IFilterInfo;")
+cpp_quote("")
+cpp_quote("struct IFilterInfoVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IFilterInfo *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IFilterInfo *);")
+cpp_quote("    ULONG (WINAPI *Release)(IFilterInfo *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IFilterInfo *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IFilterInfo *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IFilterInfo *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IFilterInfo *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *FindPin)(IFilterInfo *, BSTR, IDispatch **);")
+cpp_quote("    HRESULT (WINAPI *get_Name)(IFilterInfo *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *get_VendorInfo)(IFilterInfo *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *get_Filter)(IFilterInfo *, IUnknown **);")
+cpp_quote("    HRESULT (WINAPI *get_Pins)(IFilterInfo *, IDispatch **);")
+cpp_quote("    HRESULT (WINAPI *get_IsFileSource)(IFilterInfo *, LONG *);")
+cpp_quote("    HRESULT (WINAPI *get_Filename)(IFilterInfo *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *put_Filename)(IFilterInfo *, BSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IMediaTypeInfo IMediaTypeInfo;")
+cpp_quote("")
+cpp_quote("struct IMediaTypeInfoVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IMediaTypeInfo *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IMediaTypeInfo *);")
+cpp_quote("    ULONG (WINAPI *Release)(IMediaTypeInfo *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IMediaTypeInfo *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IMediaTypeInfo *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IMediaTypeInfo *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IMediaTypeInfo *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_Type)(IMediaTypeInfo *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *get_Subtype)(IMediaTypeInfo *, BSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IPinInfo IPinInfo;")
+cpp_quote("")
+cpp_quote("struct IPinInfoVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IPinInfo *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IPinInfo *);")
+cpp_quote("    ULONG (WINAPI *Release)(IPinInfo *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IPinInfo *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IPinInfo *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IPinInfo *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IPinInfo *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_Pin)(IPinInfo *, IUnknown **);")
+cpp_quote("    HRESULT (WINAPI *get_ConnectedTo)(IPinInfo *, IDispatch **);")
+cpp_quote("    HRESULT (WINAPI *get_ConnectionMediaType)(IPinInfo *, IDispatch **);")
+cpp_quote("    HRESULT (WINAPI *get_FilterInfo)(IPinInfo *, IDispatch **);")
+cpp_quote("    HRESULT (WINAPI *get_Name)(IPinInfo *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *get_Direction)(IPinInfo *, LONG *);")
+cpp_quote("    HRESULT (WINAPI *get_PinID)(IPinInfo *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *get_MediaTypes)(IPinInfo *, IDispatch **);")
+cpp_quote("    HRESULT (WINAPI *Connect)(IPinInfo *, IUnknown *);")
+cpp_quote("    HRESULT (WINAPI *ConnectDirect)(IPinInfo *, IUnknown *);")
+cpp_quote("    HRESULT (WINAPI *ConnectWithType)(IPinInfo *, IUnknown *, IDispatch *);")
+cpp_quote("    HRESULT (WINAPI *Disconnect)(IPinInfo *);")
+cpp_quote("    HRESULT (WINAPI *Render)(IPinInfo *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IQueueCommand IQueueCommand;")
+cpp_quote("")
+cpp_quote("struct IQueueCommandVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IQueueCommand *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IQueueCommand *);")
+cpp_quote("    ULONG (WINAPI *Release)(IQueueCommand *);")
+cpp_quote("    HRESULT (WINAPI *InvokeAtStreamTime)(IQueueCommand *, IDeferredCommand **, REFTIME, GUID *, long, short, long, VARIANT *, VARIANT *, short *);")
+cpp_quote("    HRESULT (WINAPI *InvokeAtPresentationTime)(IQueueCommand *, IDeferredCommand **, REFTIME, GUID *, long, short, long, VARIANT *, VARIANT *, short *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IRegFilterInfo IRegFilterInfo;")
+cpp_quote("")
+cpp_quote("struct IRegFilterInfoVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IRegFilterInfo *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IRegFilterInfo *);")
+cpp_quote("    ULONG (WINAPI *Release)(IRegFilterInfo *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfoCount)(IRegFilterInfo *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetTypeInfo)(IRegFilterInfo *, UINT, LCID, ITypeInfo **);")
+cpp_quote("    HRESULT (WINAPI *GetIDsOfNames)(IRegFilterInfo *, const IID *const , LPOLESTR *, UINT, LCID, DISPID *);")
+cpp_quote("    HRESULT (WINAPI *Invoke)(IRegFilterInfo *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *get_Name)(IRegFilterInfo *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *Filter)(IRegFilterInfo *, IDispatch **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("#endif")

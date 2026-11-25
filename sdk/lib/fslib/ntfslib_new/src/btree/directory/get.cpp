@@ -408,6 +408,7 @@ Directory::LoadDirectNode(_In_ ULONG Depth,
 
     if (*HeaderBytes < sizeof(IndexNodeHeader) ||
         (*Header)->IndexOffset < sizeof(IndexNodeHeader) ||
+        ((*Header)->IndexOffset & 7) != 0 ||
         (*Header)->IndexOffset > (*Header)->TotalIndexSize ||
         (*Header)->TotalIndexSize > *HeaderBytes)
     {
@@ -937,6 +938,23 @@ Directory::GetFileBothDirInfoDirect(
 
     if (PreviousBuffer)
         PreviousBuffer->NextEntryOffset = 0;
+    return Status;
+}
+
+NTSTATUS
+Directory::VisitNames(PFileRecord File, PNtfsDirectoryNameCallback Callback, void* Context)
+{
+    NTSTATUS Status = LoadDirectoryForEnumeration(File);
+
+    while (NT_SUCCESS(Status))
+    {
+        PIndexEntry Entry;
+        Status = GetNextDirectEntry(&Entry);
+        if (!NT_SUCCESS(Status))
+            return Status == STATUS_NO_MORE_FILES ? STATUS_SUCCESS : Status;
+        if (IsEligibleForFileDir(Entry, NULL))
+            Status = Callback(Context, Entry->Data.Directory.IndexedFile, (const FileNameEx*)Entry->IndexStream);
+    }
     return Status;
 }
 

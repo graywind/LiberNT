@@ -2117,7 +2117,7 @@
 @ stdcall -arch=win64 ExAllocateFromLookasideListEx(ptr) ExiAllocateFromLookasideListEx
 @ stdcall -arch=win64 ExAllocateFromNPagedLookasideList(ptr) ExiAllocateFromNPagedLookasideList
 @ stdcall ExAllocatePool2(int64 ptr long)
-@ stdcall -arch=win64 ExAllocatePool3(int64 long long ptr long)
+@ stdcall ExAllocatePool3(int64 ptr long ptr long)
 @ stdcall -version=0x603+ ExAllocateTimer(ptr ptr long)
 @ fastcall -arch=win64 ExBlockOnAddressPushLock(ptr ptr ptr int64 ptr)
 @ stub -arch=win64 ExCancelDpcEventWait
@@ -2586,8 +2586,8 @@
 @ stdcall KeQueryLogicalProcessorRelationship(ptr long ptr ptr)
 @ stdcall KeQueryMaximumGroupCount()
 @ stdcall KeQueryNodeActiveAffinity(long ptr ptr)
-@ stdcall KeQueryNodeActiveAffinity2(long ptr ptr)
-@ stdcall -arch=win64 KeQueryNodeActiveProcessorCount(long)
+@ stdcall KeQueryNodeActiveAffinity2(long ptr long ptr)
+@ stdcall KeQueryNodeActiveProcessorCount(long)
 @ stdcall -arch=win64 KeQueryNodeMaximumProcessorCount(long)
 @ stdcall -arch=win64 KeQueryPrcbAddress(long)
 @ stub -arch=win64 KeQuerySystemCpuPartitionAffinity
@@ -2609,13 +2609,13 @@
 @ stub -arch=win64 KeReportCacheIncoherentDevice
 @ stdcall -arch=win64 KeRestoreExtendedProcessorState(ptr)
 @ stub -arch=arm64 KeRestoreProcessorState
-@ stdcall -arch=win64 KeRevertToUserGroupAffinityThread(ptr)
+@ stdcall KeRevertToUserGroupAffinityThread(ptr)
 @ stdcall -arch=win64 KeSaveExtendedProcessorState(int64 ptr)
 @ stdcall -arch=win64 KeSetActualBasePriorityThread(ptr long)
 @ stdcall -arch=win64 KeSetHardwareCounterConfiguration(ptr long)
 @ stdcall -arch=win64 KeSetHeteroCpuPolicyThread(ptr long long)
 @ stdcall -arch=win64 KeSetSelectedCpuSetsThread(ptr long ptr)
-@ stdcall -arch=win64,arm KeSetSystemGroupAffinityThread(ptr ptr)
+@ stdcall KeSetSystemGroupAffinityThread(ptr ptr)
 @ stdcall KeSetTargetProcessorDpcEx(ptr ptr)
 @ stdcall -version=0x603+ -arch=arm64 KeSetTimer2(ptr int64 int64 ptr)
 @ stdcall -arch=win64,arm KeShouldYieldProcessor()

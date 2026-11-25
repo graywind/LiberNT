@@ -545,3 +545,12 @@ interface ID3D11Device1 : ID3D11Device
             REFIID returnedInterface,
             void **ppResource);
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

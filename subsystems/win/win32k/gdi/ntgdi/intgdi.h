@@ -1,6 +1,6 @@
 #pragma once
 
-#include <reactos/rddm/rxgkinterface.h>
+#include <libernt/rddm/rxgkinterface.h>
 
 /* Convert WIN32 ROP into an ENG ROP */
 #define WIN32_ROP3_TO_ENG_ROP4(dwRop4) ((((dwRop4) & 0x00FF0000) >> 16) | (((dwRop4) & 0x00FF0000) >> 8))
@@ -20,6 +20,9 @@ extern HSEMAPHORE hsemDriverMgmt;
 
 MIX FASTCALL
 IntGdiLineMix(DC *dc);
+
+BOOL
+IntIsMappedUserRange(const VOID *Address, SIZE_T Size);
 
 BOOL FASTCALL
 IntGdiLineTo(DC  *dc,

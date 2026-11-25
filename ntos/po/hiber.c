@@ -6,8 +6,8 @@
  */
 
 #include <ntoskrnl.h>
-#include <reactos/drivers/dumpstor.h>
-#include <reactos/hiberfil.h>
+#include <libernt/drivers/dumpstor.h>
+#include <libernt/hiberfil.h>
 #define NDEBUG
 #include <debug.h>
 
@@ -737,7 +737,8 @@ PopHiberReadPolicy(
 {
     RTL_QUERY_REGISTRY_TABLE Table[3];
 
-    *Enabled = 1;
+    /* TODO: default to enabled once hibernate and resume are ready */
+    *Enabled = 0;
     *Percent = POP_HIBER_DEFAULT_PERCENT;
 
     RtlZeroMemory(Table, sizeof(Table));
