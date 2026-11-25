@@ -211,7 +211,7 @@ MupAllocateUncProvider(ULONG RedirectorDeviceNameLength)
 {
     PMUP_UNC UncProvider;
 
-    UncProvider = ExAllocatePoolWithTag(PagedPool, sizeof(MUP_UNC) + RedirectorDeviceNameLength, TAG_MUP);
+    UncProvider = ExAllocatePoolZero(PagedPool, sizeof(MUP_UNC) + RedirectorDeviceNameLength, TAG_MUP);
     if (UncProvider == NULL)
     {
         return NULL;
@@ -1158,31 +1158,55 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
         UncProvider->MailslotsSupported = RegInfo->MailslotsSupported;
         ++UncProvider->NodeReferences;
 
-        /* Open a handle to the device */
-        InitializeObjectAttributes(&ObjectAttributes,
-                                   &UncProvider->DeviceName,
-                                   OBJ_CASE_INSENSITIVE,
-                                   NULL,
-                                   NULL);
-        Status = NtOpenFile(&UncProvider->DeviceHandle,
-                            FILE_TRAVERSE,
-                            &ObjectAttributes,
-                            &IoStatusBlock,
-                            FILE_SHARE_READ | FILE_SHARE_WRITE,
-                            FILE_DIRECTORY_FILE);
-        if (NT_SUCCESS(Status))
+        /* A provider registered by FsRtlRegisterUncProviderEx hands us its device object */
+        if ((RegInfo->DeviceObject != NULL) &&
+            (UncProvider->DeviceObject == NULL))
         {
-            Status = IoStatusBlock.Status;
+            Status = ObReferenceObjectByPointer(RegInfo->DeviceObject,
+                                                0,
+                                                NULL,
+                                                KernelMode);
+            if (NT_SUCCESS(Status))
+            {
+                UncProvider->DeviceObject = RegInfo->DeviceObject;
+            }
+        }
+        else
+        {
+            /* Open a handle to the device */
+            InitializeObjectAttributes(&ObjectAttributes,
+                                       &UncProvider->DeviceName,
+                                       OBJ_CASE_INSENSITIVE,
+                                       NULL,
+                                       NULL);
+            Status = NtOpenFile(&UncProvider->DeviceHandle,
+                                FILE_TRAVERSE,
+                                &ObjectAttributes,
+                                &IoStatusBlock,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                FILE_DIRECTORY_FILE);
+            if (NT_SUCCESS(Status))
+            {
+                Status = IoStatusBlock.Status;
+            }
         }
 
         /* And return the provider (as CCB) */
         if (NT_SUCCESS(Status))
         {
             Stack->FileObject->FsContext2 = UncProvider;
-            Status = ObReferenceObjectByHandle(UncProvider->DeviceHandle, 0, NULL, KernelMode, (PVOID *)&UncProvider->FileObject, &HandleInfo);
-            if (!NT_SUCCESS(Status))
+
+            if (UncProvider->DeviceHandle == NULL)
             {
-                NtClose(UncProvider->DeviceHandle);
+                Status = STATUS_SUCCESS;
+            }
+            else
+            {
+                Status = ObReferenceObjectByHandle(UncProvider->DeviceHandle, 0, NULL, KernelMode, (PVOID *)&UncProvider->FileObject, &HandleInfo);
+                if (!NT_SUCCESS(Status))
+                {
+                    NtClose(UncProvider->DeviceHandle);
+                }
             }
         }
 
@@ -1192,7 +1216,10 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
         }
         else
         {
-            UncProvider->DeviceObject = IoGetRelatedDeviceObject(UncProvider->FileObject);
+            if (UncProvider->DeviceObject == NULL)
+            {
+                UncProvider->DeviceObject = IoGetRelatedDeviceObject(UncProvider->FileObject);
+            }
 
             /* Now, insert the provider in our global list
              * They are sorted by order
@@ -1344,11 +1371,10 @@ BroadcastOpen(PIRP Irp)
     PLIST_ENTRY Entry;
     PMUP_CCB Ccb = NULL;
     PMUP_UNC UncProvider;
-    UNICODE_STRING FullPath;
     PFILE_OBJECT FileObject;
     PIO_STACK_LOCATION Stack;
     NTSTATUS Status, LastFailed;
-    ULONG TotalLength, LastOrder;
+    ULONG LastOrder;
     IO_STATUS_BLOCK IoStatusBlock;
     OBJECT_ATTRIBUTES ObjectAttributes;
     OBJECT_HANDLE_INFORMATION HandleInfo;
@@ -1387,30 +1413,15 @@ BroadcastOpen(PIRP Irp)
             ExReleaseResourceLite(&MupGlobalLock);
             Locked = FALSE;
 
-            TotalLength = UncProvider->DeviceName.Length + FileObject->FileName.Length;
-            if (UncProvider->MailslotsSupported && TotalLength <= MAXUSHORT)
+            if (UncProvider->MailslotsSupported)
             {
-                /* Provide the correct name for the mailslot (ie, happened the device name of the provider) */
-                FullPath.Buffer = ExAllocatePoolWithTag(PagedPool, TotalLength, TAG_MUP);
-                if (FullPath.Buffer == NULL)
-                {
-                    ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
-                }
-
-                FullPath.Length = TotalLength;
-                FullPath.MaximumLength = TotalLength;
-                RtlMoveMemory(FullPath.Buffer, UncProvider->DeviceName.Buffer, UncProvider->DeviceName.Length);
-                RtlMoveMemory((PWSTR)((ULONG_PTR)FullPath.Buffer + UncProvider->DeviceName.Length),
-                              FileObject->FileName.Buffer,
-                              FileObject->FileName.Length);
-
-                /* And just forward the creation request */
+                /* The provider's device is reached through its object, not its name */
                 InitializeObjectAttributes(&ObjectAttributes,
-                                           &FullPath,
+                                           &FileObject->FileName,
                                            OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
                                            NULL,
                                            NULL);
-                Status = IoCreateFile(&Handle,
+                Status = IoCreateFileSpecifyDeviceObjectHint(&Handle,
                                       Stack->Parameters.Create.SecurityContext->DesiredAccess & FILE_SIMPLE_RIGHTS_MASK,
                                       &ObjectAttributes,
                                       &IoStatusBlock,
@@ -1423,9 +1434,8 @@ BroadcastOpen(PIRP Irp)
                                       0,
                                       CreateFileTypeNone,
                                       NULL,
-                                      IO_NO_PARAMETER_CHECKING);
-
-                ExFreePoolWithTag(FullPath.Buffer, TAG_MUP);
+                                      IO_NO_PARAMETER_CHECKING,
+                                      UncProvider->DeviceObject);
 
                 /* If opening succeed */
                 if (NT_SUCCESS(Status))

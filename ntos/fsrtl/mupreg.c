@@ -46,6 +46,7 @@ NTSTATUS
 FsRtlpRegisterProviderWithMUP(
     _In_ HANDLE MupHandle,
     _In_ PCUNICODE_STRING RedirectorDeviceName,
+    _In_opt_ PVOID DeviceObject,
     _In_ BOOLEAN MailslotsSupported)
 {
     PMUP_PROVIDER_REGISTRATION_INFO Registration;
@@ -64,6 +65,7 @@ FsRtlpRegisterProviderWithMUP(
     Registration->RedirectorDeviceNameOffset =
         sizeof(MUP_PROVIDER_REGISTRATION_INFO);
     Registration->RedirectorDeviceNameLength = RedirectorDeviceName->Length;
+    Registration->DeviceObject = DeviceObject;
     Registration->MailslotsSupported = MailslotsSupported;
 
     RtlCopyMemory((PUCHAR)Registration +
@@ -87,24 +89,18 @@ FsRtlpRegisterProviderWithMUP(
     return Status;
 }
 
-/* PUBLIC FUNCTIONS ***********************************************************/
-
+static
 NTSTATUS
-NTAPI
-FsRtlRegisterUncProvider(
+FsRtlpRegisterUncProvider(
     _Out_ PHANDLE MupHandle,
     _In_ PCUNICODE_STRING RedirectorDeviceName,
+    _In_opt_ PVOID DeviceObject,
     _In_ BOOLEAN MailslotsSupported)
 {
     HANDLE Handle;
     NTSTATUS Status;
 
     PAGED_CODE();
-
-    if ((MupHandle == NULL) || (RedirectorDeviceName == NULL))
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
 
     *MupHandle = NULL;
 
@@ -113,6 +109,7 @@ FsRtlRegisterUncProvider(
 
     Status = FsRtlpRegisterProviderWithMUP(Handle,
                                            RedirectorDeviceName,
+                                           DeviceObject,
                                            MailslotsSupported);
 
     if (!NT_SUCCESS(Status))
@@ -124,6 +121,28 @@ FsRtlRegisterUncProvider(
     *MupHandle = Handle;
 
     return STATUS_SUCCESS;
+}
+
+/* PUBLIC FUNCTIONS ***********************************************************/
+
+NTSTATUS
+NTAPI
+FsRtlRegisterUncProvider(
+    _Out_ PHANDLE MupHandle,
+    _In_ PCUNICODE_STRING RedirectorDeviceName,
+    _In_ BOOLEAN MailslotsSupported)
+{
+    PAGED_CODE();
+
+    if ((MupHandle == NULL) || (RedirectorDeviceName == NULL))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    return FsRtlpRegisterUncProvider(MupHandle,
+                                     RedirectorDeviceName,
+                                     NULL,
+                                     MailslotsSupported);
 }
 
 NTSTATUS
@@ -150,9 +169,10 @@ FsRtlRegisterUncProviderEx(
         return STATUS_OBJECT_TYPE_MISMATCH;
     }
 
-    return FsRtlRegisterUncProvider(
+    return FsRtlpRegisterUncProvider(
                MupHandle,
                RedirDevName,
+               DeviceObject,
                (Flags & FSRTL_UNC_PROVIDER_FLAGS_MAILSLOTS_SUPPORTED) != 0);
 }
 
