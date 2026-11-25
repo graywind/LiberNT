@@ -184,6 +184,9 @@ KdPullRemoteFile(
                                      NULL,
                                      NULL);
             }
+            /* The usual next step is a reboot, which writes back nothing still in the cache */
+            if (NT_SUCCESS(Status))
+                Status = ZwFlushBuffersFile(FileHandle, &IoStatusBlock);
             ZwClose(FileHandle);
         }
     }
@@ -405,6 +408,14 @@ KdpReloadService(
     DPRINT1("KD: Reloaded %lu %wZ device(s), status 0x%lx\n", Reload->Count, Service, Status);
     ExFreePoolWithTag(Reload, TAG_KDBG);
     return Status;
+}
+
+BOOLEAN
+KdpFileRequestInProgress(VOID)
+{
+    LONG Request = InterlockedCompareExchange(&KdpFileRequest, KDP_FILE_REQUEST_NONE, KDP_FILE_REQUEST_NONE);
+
+    return Request == KD_FILE_REQUEST_PULL || Request == KD_FILE_REQUEST_RELOAD;
 }
 
 static

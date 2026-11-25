@@ -5,7 +5,6 @@
  * COPYRIGHT:   Copyright 2026 Ahmed ARIF <arif.ing@outlook.com>
  */
 
-#include <blefi.h>
 #include "../../winload/winload.h"
 
 #define I386_LOADER_PAGES    0x40000
@@ -33,7 +32,7 @@
 #define I386_USER_CODE       0xFB
 #define I386_USER_DATA       0xF3
 #define I386_TSS_ACCESS      0x89
-#define I386_TEB_LIMIT       0xFFF
+#define I386_TEB_LIMIT       (sizeof(TEB) - 1)
 #define I386_VDM_BASE        0x400
 #define I386_VDM_LIMIT       0xFFFF
 
@@ -346,12 +345,6 @@ OslArchReserveFirmwareMemory(
     UNREFERENCED_PARAMETER(LoaderBlock);
 }
 
-VOID
-FwExitBootServices(VOID)
-{
-    UefiExitBootServices();
-}
-
 BOOLEAN
 OslArchPrepareHandoff(
     _Inout_ PLOADER_PARAMETER_BLOCK LoaderBlock)
@@ -366,6 +359,7 @@ OslArchPrepareHandoff(
     }
 
     FwExitBootServices();
+    FwSetVirtualAddressMap();
     WinLdrSetProcessorContext(OSL_NT_VERSION);
     return TRUE;
 }

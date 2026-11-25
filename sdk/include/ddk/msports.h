@@ -59,4 +59,5 @@ ComDBResizeDatabase(IN HCOMDB hComDB,
 }
 #endif
 
+
 #endif /* _MSPORTS_ */

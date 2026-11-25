@@ -65,10 +65,12 @@ std::string InstallerArguments(const InstallerEntry &installer, InstallMode mode
         if (!installer.switches.silent.empty())
             return installer.switches.silent;
     }
-    if (AsciiEquals(installer.type, "inno")) return "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
+    const bool progress = mode == InstallMode::Default;
+    if (AsciiEquals(installer.type, "inno"))
+        return progress ? "/SILENT /SUPPRESSMSGBOXES /NORESTART /SP-" : "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
     if (AsciiEquals(installer.type, "nullsoft")) return "/S";
-    if (AsciiEquals(installer.type, "burn")) return "/quiet /norestart";
-    if (AsciiEquals(installer.type, "wix") || AsciiEquals(installer.type, "msi")) return "/quiet /norestart";
+    if (AsciiEquals(installer.type, "burn") || AsciiEquals(installer.type, "wix") || AsciiEquals(installer.type, "msi"))
+        return progress ? "/passive /norestart" : "/quiet /norestart";
     return std::string();
 }
 
@@ -261,6 +263,11 @@ Status ExtractArchive(const std::wstring &archivePath, const std::wstring &desti
     return Status::Ok();
 }
 
+bool SamePath(const std::wstring &left, const std::wstring &right)
+{
+    return _wcsicmp(left.c_str(), right.c_str()) == 0;
+}
+
 } // namespace
 
 Status ExtractArchiveInto(const std::wstring &archivePath, const std::wstring &destination)
@@ -315,6 +322,18 @@ Status InstallerService::Download(const PackageRecord &package, const InstallerE
     return Status::Ok();
 }
 
+void InstallerService::RemoveInstaller(const PackageRecord &package, const std::wstring &path) const
+{
+    const std::wstring versionDirectory = DefaultPackageDirectory(package);
+    if (!SamePath(ParentPath(path), versionDirectory))
+        return;
+    DeleteTree(path + L".extracted");
+    if (!DeleteFileW(path.c_str()))
+        TraceInstaller("cannot remove the installer " + Utf8FromWide(path) + ": " + WindowsErrorMessage(GetLastError()));
+    if (RemoveDirectoryW(versionDirectory.c_str()))
+        RemoveDirectoryW(ParentPath(versionDirectory).c_str());
+}
+
 Status InstallerService::Execute(const std::wstring &commandLine, const std::wstring &workingDirectory, DWORD &exitCode) const
 {
     STARTUPINFOW startup{};
@@ -340,7 +359,7 @@ Status InstallerService::Execute(const std::wstring &commandLine, const std::wst
 }
 
 Status InstallerService::Install(const PackageRecord &package, const InstallerEntry &installer, const std::wstring &path,
-                                 InstallMode mode, DWORD &exitCode, TrackedPackage *tracked)
+                                 InstallMode mode, DWORD &exitCode, TrackedPackage *tracked, InstallLockWait *wait)
 {
     const std::wstring ownedPath(path);
     HANDLE lockedInstaller = CreateFileW(ownedPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
@@ -356,6 +375,13 @@ Status InstallerService::Install(const PackageRecord &package, const InstallerEn
         CloseHandle(lockedInstaller);
         return Status::Fail(status.code, "installer changed after download verification: " + status.message);
     }
+    InstallLock lock;
+    status = lock.Acquire(wait);
+    if (!status)
+    {
+        CloseHandle(lockedInstaller);
+        return status;
+    }
 
     if (AsciiEquals(EffectiveInstallerType(installer), "portable"))
     {
@@ -367,6 +393,7 @@ Status InstallerService::Install(const PackageRecord &package, const InstallerEn
         if (!status)
             return status;
         TrackInstalledPackage(package, installer, before, tracked);
+        RemoveInstaller(package, path);
         return Status::Ok();
     }
 
@@ -429,6 +456,7 @@ Status InstallerService::Install(const PackageRecord &package, const InstallerEn
         return Status::Fail(exitCode, "installer returned exit code " + DecimalString(exitCode) + response);
     }
     TrackInstalledPackage(package, effective, before, tracked);
+    RemoveInstaller(package, path);
     return Status::Ok();
 }
 
@@ -456,9 +484,21 @@ Status RunInstallerSelfTests()
     msi.type = "wix";
     msi.switches.custom = "ADD_CMAKE_TO_PATH=System";
     if (InstallerCommandArguments(msi, InstallMode::Silent) != "/quiet /norestart ADD_CMAKE_TO_PATH=System" ||
-        InstallerCommandArguments(msi, InstallMode::Default) != "/quiet /norestart ADD_CMAKE_TO_PATH=System" ||
+        InstallerCommandArguments(msi, InstallMode::Default) != "/passive /norestart ADD_CMAKE_TO_PATH=System" ||
         InstallerCommandArguments(msi, InstallMode::Interactive) != "ADD_CMAKE_TO_PATH=System")
         return Status::Fail(ERROR_ASSERTION_FAILURE, "MSI custom switch self-test failed");
+    InstallerEntry typed;
+    typed.type = "inno";
+    if (InstallerArguments(typed, InstallMode::Silent) != "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" ||
+        InstallerArguments(typed, InstallMode::Default) != "/SILENT /SUPPRESSMSGBOXES /NORESTART /SP-")
+        return Status::Fail(ERROR_ASSERTION_FAILURE, "Inno default switch self-test failed");
+    typed.type = "burn";
+    if (InstallerArguments(typed, InstallMode::Silent) != "/quiet /norestart" ||
+        InstallerArguments(typed, InstallMode::Default) != "/passive /norestart")
+        return Status::Fail(ERROR_ASSERTION_FAILURE, "Burn default switch self-test failed");
+    typed.type = "nullsoft";
+    if (InstallerArguments(typed, InstallMode::Silent) != "/S" || InstallerArguments(typed, InstallMode::Default) != "/S")
+        return Status::Fail(ERROR_ASSERTION_FAILURE, "Nullsoft default switch self-test failed");
     return Status::Ok();
 }
 

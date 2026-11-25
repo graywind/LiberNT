@@ -488,7 +488,13 @@ LDEVOBJ_vDereference(
 
     LDEVOBJ_vDisableDriver(pldev);
 
-    if (LDEVOBJ_bUnloadImage(pldev))
+    if (pldev->pGdiDriverInfo == NULL)
+    {
+        /* A driver built into win32k has no image to unload */
+        RemoveEntryList(&pldev->leLink);
+        LDEVOBJ_vFreeLDEV(pldev);
+    }
+    else if (LDEVOBJ_bUnloadImage(pldev))
     {
         /* Remove ldev from the list */
         RemoveEntryList(&pldev->leLink);
@@ -825,6 +831,8 @@ LDEVOBJ_bProbeAndCaptureDevmode(
             dmSearch.dmPelsHeight = RequestedMode->dmPelsHeight;
         if (RequestedMode->dmFields & DM_DISPLAYFREQUENCY && RequestedMode->dmDisplayFrequency != 0)
             dmSearch.dmDisplayFrequency = RequestedMode->dmDisplayFrequency;
+        if (RequestedMode->dmFields & DM_POSITION)
+            dmSearch.dmPosition = RequestedMode->dmPosition;
 
         if ((RequestedMode->dmFields & (DM_PANNINGWIDTH | DM_PANNINGHEIGHT)) == (DM_PANNINGWIDTH | DM_PANNINGHEIGHT) &&
             RequestedMode->dmPanningWidth != 0 && RequestedMode->dmPanningHeight != 0 &&
@@ -932,6 +940,10 @@ LDEVOBJ_bProbeAndCaptureDevmode(
     RtlCopyMemory((PVOID)((ULONG_PTR)pdm + pdm->dmSize),
                   (PVOID)((ULONG_PTR)pdmSelected + pdmSelected->dmSize),
                   pdmSelected->dmDriverExtra);
+
+    /* The desktop position belongs to the device, not to the mode */
+    pdm->dmPosition = dmSearch.dmPosition;
+    pdm->dmFields |= DM_POSITION;
 
     /* Add back panning */
     if (ulVirtualWidth != 0 && ulVirtualHeight != 0 &&

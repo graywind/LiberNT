@@ -34,3 +34,4 @@ interface IMimeInfo : IUnknown
 }
 
 cpp_quote("#define SID_IMimeInfo IID_IMimeInfo")
+

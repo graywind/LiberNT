@@ -392,6 +392,17 @@ ULONG FindBuild(const std::wstring &entry, const NamedBuild (&table)[Count], ULO
     return fallback;
 }
 
+template <size_t Count>
+bool ContainsAny(const std::wstring &entry, const WCHAR *const (&names)[Count])
+{
+    for (const WCHAR *name : names)
+    {
+        if (entry.find(name) != std::wstring::npos)
+            return true;
+    }
+    return false;
+}
+
 void CopyDetails(CatalogUpdate &update, const CatalogUpdate &details)
 {
     update.Architecture = details.Architecture;
@@ -620,6 +631,12 @@ void UseDriverVersion(CatalogUpdate &update)
     }
 }
 
+/* The catalog's name for what an update installs, not the name the device has before it */
+std::wstring OfferedName(const CatalogUpdate &update)
+{
+    return update.Model.empty() ? update.Title : update.Model;
+}
+
 std::wstring HardwareIdCore(const std::wstring &id)
 {
     static const WCHAR *Tokens[] = { L"&DEV_", L"&PID_" };
@@ -654,6 +671,26 @@ std::vector<std::wstring> CatalogSearchTerms(const std::vector<std::wstring> &id
             terms.push_back(term);
     }
     return terms;
+}
+
+/* The device's IDs that narrow a search term whose results run past what one search reads, most specific first;
+ * catalog drivers do not list class-code IDs */
+std::vector<std::wstring> CatalogNarrowerTerms(const std::wstring &term, const std::vector<std::wstring> &ids)
+{
+    std::vector<std::wstring> narrower;
+    std::wstring prefix = Upper(term) + L"&";
+
+    for (const std::wstring &id : ids)
+    {
+        std::wstring upper = Upper(id);
+        bool seen = std::find_if(narrower.begin(), narrower.end(), [&upper](const std::wstring &other) {
+                        return Upper(other) == upper;
+                    }) != narrower.end();
+
+        if (!seen && upper.compare(0, prefix.size(), prefix) == 0 && upper.find(L"&CC_") == std::wstring::npos)
+            narrower.push_back(id);
+    }
+    return narrower;
 }
 
 bool SupportsHardwareIds(const CatalogUpdate &update, const std::vector<std::wstring> &ids)
@@ -1268,7 +1305,21 @@ DWORD Catalog::Advance(SearchPlan &plan)
     }
     plan.Page++;
     if (plan.Updates.size() >= WantedMatches || last || plan.Page >= MaximumPages || plan.Detailed >= MaximumDetails)
+    {
+        if (plan.Updates.empty() && !last)
+        {
+            for (const std::wstring &term : CatalogNarrowerTerms(plan.Terms[plan.Term], plan.Ids))
+            {
+                if (std::find_if(plan.Terms.begin(), plan.Terms.end(), [&term](const std::wstring &other) {
+                        return _wcsicmp(other.c_str(), term.c_str()) == 0;
+                    }) == plan.Terms.end())
+                {
+                    plan.Terms.push_back(term);
+                }
+            }
+        }
         return NextTerm(plan);
+    }
     return ERROR_SUCCESS;
 }
 
@@ -1719,10 +1770,9 @@ int ProductFit(const std::wstring &products, const SystemTarget &system)
         { L"2025", 26100 }, { L"23H2", 25398 }, { L"2022", 20348 }, { L"IRON", 20348 }, { L"2019", 17763 },
         { L"1809", 17763 }, { L"1803", 17134 }, { L"1709", 16299 }, { L"2016", 14393 },
     };
+    static const WCHAR *const LegacyServers[] = { L"2000", L"2003", L"2008", L"2012" };
     std::wstring upper = Upper(products);
     size_t pos = upper.find(L"WINDOWS");
-    bool any = false;
-    int fit = 0;
 
     while (pos != std::wstring::npos)
     {
@@ -1731,10 +1781,11 @@ int ProductFit(const std::wstring &products, const SystemTarget &system)
         bool client = false, server = false;
         ULONG build = 0;
 
-        any = true;
         pos = next;
         if (entry.find(L"SERVER") != std::wstring::npos)
         {
+            if (ContainsAny(entry, LegacyServers))
+                continue;
             server = true;
             build = FindBuild(entry, Servers, 14393);
         }
@@ -1749,20 +1800,14 @@ int ProductFit(const std::wstring &products, const SystemTarget &system)
             server = entry.compare(0, 20, L"WINDOWS 10 AND LATER") == 0;
             build = FindBuild(entry, Client10, 10240);
         }
-        else if (entry.compare(0, 21, L"WINDOWS 8.1 AND LATER") == 0)
-        {
-            client = server = true;
-            build = 9600;
-        }
         else
         {
-            fit = std::max(fit, 1);
             continue;
         }
         if (((system.Server && server) || (!system.Server && client)) && build <= system.Build)
-            fit = 2;
+            return 2;
     }
-    return any ? fit : 1;
+    return 0;
 }
 
 int CompareVersions(const std::wstring &left, const std::wstring &right)

@@ -260,6 +260,7 @@ public:
     ID3D11BlendState *default_blend_state = NULL;
     ID3D11DepthStencilState *default_depth_stencil_state = NULL;
     ID3D11RasterizerState *default_rasterizer_state = NULL;
+    ID3D11SamplerState *default_sampler_state = NULL;
     void HoldDefaultStates();
     IDXGIAdapter *adapter = NULL;
     D3DKMT_HANDLE km_adapter = 0;
@@ -384,7 +385,7 @@ public:
     bool MapOnDefaultBuffers() const
     {
         return wddm20 && !ddi11_1 && feature_level >= D3D_FEATURE_LEVEL_11_0
-                && functions.pfnResourceMap && functions.pfnResourceUnmap;
+                && functions.pfnStagingResourceMap && functions.pfnStagingResourceUnmap;
     }
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void **out) override;
@@ -2100,6 +2101,7 @@ public:
     UINT data_size = 0;
     bool created = false;
     bool ended = false;
+    bool active = false;
     UINT8 pending_polls = 0;
     bool is_predicate = false;
     bool is_counter = false;
@@ -2650,6 +2652,7 @@ void NativeDevice::MaybeDestroy()
     NativeDropDefault(default_blend_state);
     NativeDropDefault(default_depth_stencil_state);
     NativeDropDefault(default_rasterizer_state);
+    NativeDropDefault(default_sampler_state);
 }
 
 ULONG STDMETHODCALLTYPE NativeDevice::Release()
@@ -2872,6 +2875,8 @@ public:
     bool offered = false;
     bool created = false;
     bool mapped = false;
+    NativeBuffer *map_shadow = NULL;
+    bool map_shadow_write = false;
     DXGI_USAGE usage = 0;
     NativeTextureResource dxgi_resource;
     ID3D11Resource *tile_pool = NULL;
@@ -2885,6 +2890,7 @@ public:
     ~NativeBuffer()
     {
         NativeLock guard(device);
+        if (map_shadow) map_shadow->Release();
         if (created) device->functions.pfnDestroyResource(device->driver_device, handle);
         NativeReleaseSharedState(device, runtime_handle, registered, keyed_mutex);
         HeapFree(GetProcessHeap(), 0, handle.pDrvPrivate);
@@ -3435,7 +3441,8 @@ HRESULT STDMETHODCALLTYPE NativeDevice::CreateBuffer(const D3D11_BUFFER_DESC *de
     args.Usage = normalized.Usage;
     args.BindFlags = normalized.BindFlags & ~D3D11_BIND_UNORDERED_ACCESS;
     if (normalized.BindFlags & D3D11_BIND_UNORDERED_ACCESS) args.BindFlags |= 0x100;
-    args.MapFlags = normalized.CPUAccessFlags >> 16;
+    /* The DDI never maps a DEFAULT resource; its CPU access goes through a staging copy. */
+    args.MapFlags = normalized.Usage == D3D11_USAGE_DEFAULT ? 0 : normalized.CPUAccessFlags >> 16;
     args.MiscFlags = NativeDriverMiscFlags(normalized.MiscFlags);
     args.Format = DXGI_FORMAT_UNKNOWN;
     args.SampleDesc.Count = 1;
@@ -3461,6 +3468,39 @@ HRESULT STDMETHODCALLTYPE NativeDevice::CreateBuffer(const D3D11_BUFFER_DESC *de
     return S_OK;
 }
 
+static HRESULT MapDefaultBuffer(NativeDevice *device, NativeBuffer *buffer, D3D11_MAP type, UINT flags,
+        D3D11_MAPPED_SUBRESOURCE *mapped)
+{
+    if (!device->functions.pfnStagingResourceMap || !device->functions.pfnStagingResourceUnmap) return E_NOTIMPL;
+    NativeLock guard(device);
+    if (!buffer->map_shadow)
+    {
+        D3D11_BUFFER_DESC desc = {};
+        desc.ByteWidth = buffer->desc.ByteWidth;
+        desc.Usage = D3D11_USAGE_STAGING;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+        ID3D11Buffer *shadow = NULL;
+        HRESULT hr = device->CreateBuffer(&desc, NULL, &shadow);
+        if (FAILED(hr)) return hr;
+        buffer->map_shadow = static_cast<NativeBuffer *>(shadow);
+    }
+    device->BeginCall();
+    device->context->CopyResource(buffer->map_shadow, buffer);
+    if (FAILED(device->operation_error)) return device->operation_error;
+    device->BeginCall();
+    D3D10DDI_MAPPED_SUBRESOURCE result = {};
+    device->functions.pfnStagingResourceMap(device->driver_device, buffer->map_shadow->handle, 0,
+            type == D3D11_MAP_READ ? D3D10_DDI_MAP_READ : D3D10_DDI_MAP_READWRITE, flags, &result);
+    if (FAILED(device->operation_error)) return device->operation_error;
+    if (!result.pData) return E_FAIL;
+    mapped->pData = result.pData;
+    mapped->RowPitch = result.RowPitch;
+    mapped->DepthPitch = result.DepthPitch;
+    buffer->map_shadow_write = type != D3D11_MAP_READ;
+    buffer->mapped = true;
+    return S_OK;
+}
+
 static HRESULT MapBuffer(NativeDevice *device, NativeBuffer *buffer, UINT subresource,
         D3D11_MAP type, UINT flags, D3D11_MAPPED_SUBRESOURCE *mapped)
 {
@@ -3471,9 +3511,9 @@ static HRESULT MapBuffer(NativeDevice *device, NativeBuffer *buffer, UINT subres
     bool constant = !!(buffer->desc.BindFlags & D3D11_BIND_CONSTANT_BUFFER);
     if (type >= D3D11_MAP_WRITE_DISCARD && buffer->desc.Usage != D3D11_USAGE_DYNAMIC) return E_INVALIDARG;
     if (type == D3D11_MAP_WRITE_NO_OVERWRITE && constant) return E_INVALIDARG;
+    if (buffer->desc.Usage == D3D11_USAGE_DEFAULT) return MapDefaultBuffer(device, buffer, type, flags, mapped);
     PFND3D10DDI_RESOURCEMAP map;
     if (buffer->desc.Usage == D3D11_USAGE_STAGING) map = device->functions.pfnStagingResourceMap;
-    else if (buffer->desc.Usage == D3D11_USAGE_DEFAULT) map = device->functions.pfnResourceMap;
     else if (type == D3D11_MAP_WRITE_DISCARD) map = constant
             ? device->functions.pfnDynamicConstantBufferMapDiscard : device->functions.pfnDynamicIABufferMapDiscard;
     else if (type == D3D11_MAP_WRITE_NO_OVERWRITE) map = device->functions.pfnDynamicIABufferMapNoOverwrite;
@@ -4861,8 +4901,15 @@ void STDMETHODCALLTYPE NativeContext::Unmap(ID3D11Resource *resource, UINT subre
     if (NativeBuffer *buffer = GetNativeBuffer(resource, device))
     {
         if (subresource || !buffer->mapped) return;
+        if (buffer->desc.Usage == D3D11_USAGE_DEFAULT)
+        {
+            NativeLock guard(device);
+            device->functions.pfnStagingResourceUnmap(device->driver_device, buffer->map_shadow->handle, 0);
+            buffer->mapped = false;
+            if (buffer->map_shadow_write) device->context->CopyResource(buffer, buffer->map_shadow);
+            return;
+        }
         PFND3D10DDI_RESOURCEUNMAP unmap = buffer->desc.Usage == D3D11_USAGE_STAGING ? device->functions.pfnStagingResourceUnmap
-                : buffer->desc.Usage == D3D11_USAGE_DEFAULT ? device->functions.pfnResourceUnmap
                 : (buffer->desc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) ? device->functions.pfnDynamicConstantBufferUnmap
                 : device->functions.pfnDynamicIABufferUnmap;
         if (!unmap) { Unimplemented("Unmap"); return; }
@@ -6726,7 +6773,7 @@ void STDMETHODCALLTYPE NativeContext::SetPredication(ID3D11Predicate *value, BOO
     if (!deferred)
     {
         D3D10DDI_HQUERY handle = {};
-        if (query) handle = query->handle;
+        if (query && !query->active) handle = query->handle;
         device->functions.pfnSetPredication(device->driver_device, handle, expected);
     }
     ReplaceObject(predicate, value);
@@ -6755,6 +6802,13 @@ void STDMETHODCALLTYPE NativeContext::Begin(ID3D11Asynchronous *async)
     if (query->device != device || query->desc.Query == D3D11_QUERY_EVENT || query->desc.Query == D3D11_QUERY_TIMESTAMP) return;
     NativeLock guard(device);
     query->ended = false;
+    /* QueryBegin never reaches the driver for the predicate it predicates on: predication stops until End */
+    if (query->is_predicate && predicate && NativeQuery::FromPredicate(predicate) == query && device->functions.pfnSetPredication)
+    {
+        D3D10DDI_HQUERY none = {};
+        device->functions.pfnSetPredication(device->driver_device, none, predicate_value);
+    }
+    query->active = true;
     device->functions.pfnQueryBegin(device->driver_device, query->handle);
 }
 void STDMETHODCALLTYPE NativeContext::End(ID3D11Asynchronous *async)
@@ -6774,6 +6828,12 @@ void STDMETHODCALLTYPE NativeContext::End(ID3D11Asynchronous *async)
     device->functions.pfnQueryEnd(device->driver_device, query->handle);
     query->ended = true;
     query->pending_polls = 0;
+    if (query->active && query->is_predicate && predicate && NativeQuery::FromPredicate(predicate) == query &&
+        device->functions.pfnSetPredication)
+    {
+        device->functions.pfnSetPredication(device->driver_device, query->handle, predicate_value);
+    }
+    query->active = false;
 }
 HRESULT STDMETHODCALLTYPE NativeContext::GetData(ID3D11Asynchronous *async, void *data, UINT size, UINT flags)
 {
@@ -6940,7 +7000,16 @@ public:
     HRESULT PublishForeign(NativeTexture2D *);
     void DumpTrace();
     bool primary = false;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID primary_source = 0;
     bool composition = false;
+    bool exclusive = false;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID scanout_source = 0;
+    NativeTexture2D *scanout[3] = {};
+    D3DKMT_HANDLE scanout_allocation[3] = {};
+    UINT scanout_next = 0;
+    HRESULT EnterExclusive(IDXGIOutput *output);
+    void LeaveExclusive();
+    HRESULT FillScanout(NativeTexture2D *source, NativeTexture2D *target);
     HANDLE latency_semaphore = NULL;
     UINT max_latency = 1;
     bool transport_valid = false;
@@ -7010,6 +7079,7 @@ public:
     void Detach()
     {
         UnregisterAltEnter();
+        LeaveExclusive();
         if (!fullscreen_desc.Windowed)
         {
             RestoreMode();
@@ -7030,6 +7100,7 @@ public:
     HRESULT Publish(NativeTexture2D *);
     HRESULT FillTransport(UINT, const DXGI_PRESENT_PARAMETERS *);
     HRESULT CarryForward(const DXGI_PRESENT_PARAMETERS *);
+    HRESULT Scroll(const DXGI_PRESENT_PARAMETERS *);
     HRESULT QueuePublish(const DWM_DX_SURFACE_EXCHANGE &, HANDLE release);
     void SetLayer(DWM_DX_SURFACE_EXCHANGE &) const;
     void Place();
@@ -7186,6 +7257,11 @@ public:
         {
             hr = ChangeMode(output, *mode);
             if (SUCCEEDED(hr)) hr = output->GetDesc(&output_desc);
+            if (SUCCEEDED(hr) && exclusive)
+            {
+                LeaveExclusive();
+                EnterExclusive(output);
+            }
         }
         if (output) output->Release();
         if (FAILED(hr)) return hr;
@@ -7575,11 +7651,12 @@ HRESULT NativeSwapChain::RetirePublication()
 static RECT NativePresentDamage(const DXGI_SWAP_CHAIN_DESC1 &desc, const DXGI_PRESENT_PARAMETERS *parameters)
 {
     RECT damage = {0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height)};
-    if (parameters && parameters->DirtyRectsCount)
+    if (parameters && (parameters->DirtyRectsCount || parameters->pScrollRect))
     {
         SetRectEmpty(&damage);
         for (UINT i = 0; i < parameters->DirtyRectsCount; ++i)
             UnionRect(&damage, &damage, &parameters->pDirtyRects[i]);
+        if (parameters->pScrollRect) UnionRect(&damage, &damage, parameters->pScrollRect);
     }
     return damage;
 }
@@ -7649,6 +7726,38 @@ HRESULT NativeSwapChain::CarryForward(const DXGI_PRESENT_PARAMETERS *parameters)
     return device->operation_error;
 }
 
+HRESULT NativeSwapChain::Scroll(const DXGI_PRESENT_PARAMETERS *parameters)
+{
+    UINT count = desc.BufferCount;
+    if (!parameters || !parameters->pScrollRect || count < 2 || !back_presents) return S_OK;
+    RECT pieces[64] = {*parameters->pScrollRect};
+    UINT pieces_count = 1;
+    bool exact = true;
+    for (UINT i = 0; exact && i < parameters->DirtyRectsCount; ++i)
+        exact = NativeSubtractRect(pieces, pieces_count, parameters->pDirtyRects[i]);
+    if (!exact)
+    {
+        RECT dirty = {};
+        for (UINT i = 0; i < parameters->DirtyRectsCount; ++i)
+            UnionRect(&dirty, &dirty, &parameters->pDirtyRects[i]);
+        pieces[0] = *parameters->pScrollRect;
+        pieces_count = 1;
+        /* FIXME: too many dirty rectangles cut the scroll by their bounds, leaving the scrolled pixels between them */
+        NativeSubtractRect(pieces, pieces_count, dirty);
+    }
+    device->BeginCall();
+    for (UINT i = 0; i < pieces_count; ++i)
+    {
+        RECT source = pieces[i];
+        OffsetRect(&source, -parameters->pScrollOffset->x, -parameters->pScrollOffset->y);
+        D3D11_BOX box = {static_cast<UINT>(source.left), static_cast<UINT>(source.top), 0,
+                        static_cast<UINT>(source.right), static_cast<UINT>(source.bottom), 1};
+        device->context->CopySubresourceRegion(buffers[0], 0, pieces[i].left, pieces[i].top, 0,
+                                               buffers[count - 1], 0, &box);
+    }
+    return device->operation_error;
+}
+
 /* Copy the back buffer into a transport DWM has released. That transport
  * holds an older frame, so the damage of every present since is copied. */
 HRESULT NativeSwapChain::FillTransport(UINT flags, const DXGI_PRESENT_PARAMETERS *parameters)
@@ -7680,13 +7789,7 @@ HRESULT NativeSwapChain::FillTransport(UINT flags, const DXGI_PRESENT_PARAMETERS
     }
     RECT full = {0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height)};
     RECT &damage = frame_damage[frame % ARRAYSIZE(frame_damage)];
-    damage = full;
-    if (parameters && parameters->DirtyRectsCount)
-    {
-        SetRectEmpty(&damage);
-        for (UINT i = 0; i < parameters->DirtyRectsCount; ++i)
-            UnionRect(&damage, &damage, &parameters->pDirtyRects[i]);
-    }
+    damage = NativePresentDamage(desc, parameters);
     UINT held = transport_frame[index];
     RECT older = {};
     if (!held || frame - held > ARRAYSIZE(frame_damage)) older = full;
@@ -7966,6 +8069,32 @@ static HRESULT APIENTRY NativePresent(HANDLE runtime_device, DXGIDDICB_PRESENT *
     NativeDevice *device = swapchain->device;
     if (runtime_device != device->runtime_device || !callback->hSrcAllocation
             || callback->BroadcastContextCount > D3DDDI_MAX_BROADCAST_CONTEXT) return E_INVALIDARG;
+    if (swapchain->exclusive)
+    {
+        if (callback->hSrcAllocation != context->source_allocation || callback->hDstAllocation || context->submitted)
+            return context->result = E_INVALIDARG;
+        D3DKMT_PRESENT flip = {};
+        flip.hDevice = device->km_device;
+        flip.hContext = callback->hContext ? static_cast<D3DKMT_HANDLE>(reinterpret_cast<ULONG_PTR>(callback->hContext)) : 0;
+        flip.hWindow = swapchain->window;
+        flip.VidPnSourceId = swapchain->scanout_source;
+        flip.hSource = callback->hSrcAllocation;
+        flip.Flags.Flip = 1;
+        flip.Flags.RestrictVidPnSource = 1;
+        flip.Flags.FlipDoNotWait = !!(context->flags & DXGI_PRESENT_DO_NOT_WAIT);
+        flip.Flags.FlipRestart = !!(context->flags & DXGI_PRESENT_RESTART);
+        flip.FlipInterval = static_cast<D3DDDI_FLIPINTERVAL_TYPE>(context->interval);
+        flip.PresentCount = swapchain->present_count + 1;
+        flip.Flags.PresentCountValid = 1;
+        flip.BroadcastContextCount = callback->BroadcastContextCount;
+        for (UINT i = 0; i < callback->BroadcastContextCount; ++i)
+            flip.BroadcastContext[i] = static_cast<D3DKMT_HANDLE>(reinterpret_cast<ULONG_PTR>(callback->BroadcastContext[i]));
+        NTSTATUS status = D3DKMTPresent(&flip);
+        context->submitted = status == STATUS_SUCCESS;
+        context->result = status == STATUS_GRAPHICS_PRESENT_OCCLUDED ? DXGI_STATUS_OCCLUDED
+                : status == STATUS_DEVICE_BUSY ? DXGI_ERROR_WAS_STILL_DRAWING : StatusToHresult(status);
+        return context->result == DXGI_STATUS_OCCLUDED ? S_OK : context->result;
+    }
     if (!swapchain->primary)
     {
         /* This runtime publishes a shared client texture to DWM after the UMD
@@ -8067,7 +8196,8 @@ static HRESULT APIENTRY NativePresent(HANDLE runtime_device, DXGIDDICB_PRESENT *
     context->result = swapchain->primary && status == STATUS_GRAPHICS_PRESENT_OCCLUDED
             ? DXGI_STATUS_OCCLUDED : status == STATUS_DEVICE_BUSY
             ? DXGI_ERROR_WAS_STILL_DRAWING : StatusToHresult(status);
-    return context->result;
+    /* Occlusion is the runtime's result; the driver's present itself succeeded. */
+    return context->result == DXGI_STATUS_OCCLUDED ? S_OK : context->result;
 }
 
 static DXGI_FORMAT NativePublishFormat(DXGI_FORMAT format)
@@ -8122,6 +8252,7 @@ HRESULT NativeSwapChain::AllocateBuffers(const DXGI_SWAP_CHAIN_DESC1 &requested)
     if (requested.BufferUsage & DXGI_USAGE_UNORDERED_ACCESS) texture_desc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
     if (requested.Flags & DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE) texture_desc.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
     DXGI_DDI_PRIMARY_DESC primary_desc = {};
+    primary_desc.VidPnSourceId = primary_source;
     primary_desc.ModeDesc.Width = requested.Width;
     primary_desc.ModeDesc.Height = requested.Height;
     primary_desc.ModeDesc.Format = requested.Format;
@@ -8509,10 +8640,152 @@ HRESULT NativeSwapChain::ApplyFullscreen(BOOL fullscreen, IDXGIOutput *output)
             MoveWindow(window, area.left, area.top, area.right - area.left, area.bottom - area.top, TRUE);
             ShowWindow(window, SW_SHOW);
         }
+        EnterExclusive(output);
     }
-    else if (!fullscreen_desc.Windowed) RestoreWindow(&windowed_rect);
+    else
+    {
+        LeaveExclusive();
+        if (!fullscreen_desc.Windowed) RestoreWindow(&windowed_rect);
+    }
     fullscreen_desc.Windowed = !fullscreen;
     return S_OK;
+}
+
+HRESULT NativeSwapChain::EnterExclusive(IDXGIOutput *output)
+{
+    NativeLock guard(device);
+    if (exclusive) return S_OK;
+    if (primary || composition || !window || !device->dxgi_functions.pfnBlt || !device->get_single_allocation) return S_FALSE;
+    DXGI_OUTPUT_DESC output_desc;
+    DXGI_ADAPTER_DESC adapter_desc;
+    if (FAILED(output->GetDesc(&output_desc)) || FAILED(device->adapter->GetDesc(&adapter_desc))) return S_FALSE;
+    /* TODO: scan out rotated outputs; they stay composed */
+    if (output_desc.Rotation != DXGI_MODE_ROTATION_IDENTITY && output_desc.Rotation != DXGI_MODE_ROTATION_UNSPECIFIED)
+        return S_FALSE;
+    D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME open = {};
+    lstrcpynW(open.DeviceName, output_desc.DeviceName, ARRAYSIZE(open.DeviceName));
+    if (D3DKMTOpenAdapterFromGdiDisplayName(&open) < 0) return S_FALSE;
+    D3DKMT_CLOSEADAPTER close = {};
+    close.hAdapter = open.hAdapter;
+    D3DKMTCloseAdapter(&close);
+    if (open.AdapterLuid.LowPart != adapter_desc.AdapterLuid.LowPart
+            || open.AdapterLuid.HighPart != adapter_desc.AdapterLuid.HighPart) return S_FALSE;
+    const RECT &area = output_desc.DesktopCoordinates;
+    D3D11_TEXTURE2D_DESC texture_desc = {};
+    texture_desc.Width = area.right - area.left;
+    texture_desc.Height = area.bottom - area.top;
+    texture_desc.MipLevels = texture_desc.ArraySize = 1;
+    /* FIXME: 10-bit and FP16 swap chains are scanned out through 8-bit surfaces */
+    texture_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    texture_desc.SampleDesc.Count = 1;
+    texture_desc.Usage = D3D11_USAGE_DEFAULT;
+    texture_desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+    DXGI_DDI_PRIMARY_DESC primary_desc = {};
+    DEVMODEW mode = {};
+    mode.dmSize = sizeof(mode);
+    primary_desc.VidPnSourceId = open.VidPnSourceId;
+    primary_desc.ModeDesc.Width = texture_desc.Width;
+    primary_desc.ModeDesc.Height = texture_desc.Height;
+    primary_desc.ModeDesc.Format = texture_desc.Format;
+    if (EnumDisplaySettingsW(output_desc.DeviceName, ENUM_CURRENT_SETTINGS, &mode) && mode.dmDisplayFrequency > 1)
+    {
+        primary_desc.ModeDesc.RefreshRate.Numerator = mode.dmDisplayFrequency;
+        primary_desc.ModeDesc.RefreshRate.Denominator = 1;
+    }
+    primary_desc.ModeDesc.ScanlineOrdering = DXGI_DDI_MODE_SCANLINE_ORDER_PROGRESSIVE;
+    primary_desc.ModeDesc.Rotation = DXGI_DDI_MODE_ROTATION_IDENTITY;
+    NativeTexture2D *surfaces[ARRAYSIZE(scanout)] = {};
+    D3DKMT_HANDLE allocations[ARRAYSIZE(scanout)] = {};
+    HRESULT hr = S_OK;
+    for (UINT i = 0; i < ARRAYSIZE(scanout) && SUCCEEDED(hr); ++i)
+    {
+        ID3D11Texture2D *texture = NULL;
+        hr = device->CreateTexture(&texture_desc, NULL, &texture, true, &primary_desc);
+        if (FAILED(hr)) break;
+        surfaces[i] = static_cast<NativeTexture2D *>(texture);
+        surfaces[i]->Retain();
+        texture->Release();
+        hr = device->get_single_allocation(device->runtime_device, surfaces[i]->runtime_handle.handle, &allocations[i]);
+        if (SUCCEEDED(hr) && !allocations[i]) hr = E_FAIL;
+    }
+    if (SUCCEEDED(hr))
+    {
+        D3DKMT_VIDPNSOURCEOWNER_TYPE type = D3DKMT_VIDPNSOURCEOWNER_EXCLUSIVE;
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID source = open.VidPnSourceId;
+        D3DKMT_SETVIDPNSOURCEOWNER owner = {};
+        owner.hDevice = device->km_device;
+        owner.pType = &type;
+        owner.pVidPnSourceId = &source;
+        owner.VidPnSourceCount = 1;
+        if (D3DKMTSetVidPnSourceOwner(&owner) != STATUS_SUCCESS) hr = S_FALSE;
+    }
+    if (hr != S_OK)
+    {
+        for (UINT i = 0; i < ARRAYSIZE(scanout); ++i) if (surfaces[i]) surfaces[i]->Drop();
+        return S_FALSE;
+    }
+    for (UINT i = 0; i < ARRAYSIZE(scanout); ++i)
+    {
+        scanout[i] = surfaces[i];
+        scanout_allocation[i] = allocations[i];
+    }
+    scanout_source = open.VidPnSourceId;
+    scanout_next = 0;
+    exclusive = true;
+    return S_OK;
+}
+
+void NativeSwapChain::LeaveExclusive()
+{
+    NativeLock guard(device);
+    if (!exclusive) return;
+    D3DKMT_SETVIDPNSOURCEOWNER owner = {};
+    owner.hDevice = device->km_device;
+    D3DKMTSetVidPnSourceOwner(&owner);
+    exclusive = false;
+    for (UINT i = 0; i < ARRAYSIZE(scanout); ++i)
+    {
+        if (scanout[i]) scanout[i]->Drop();
+        scanout[i] = NULL;
+        scanout_allocation[i] = 0;
+    }
+}
+
+HRESULT NativeSwapChain::FillScanout(NativeTexture2D *source, NativeTexture2D *target)
+{
+    bool convert = NativeFormatFamily(target->desc.Format) != NativeFormatFamily(source->desc.Format);
+    bool stretch = target->desc.Width != source->desc.Width || target->desc.Height != source->desc.Height;
+    if (!convert && !stretch)
+    {
+        device->context->CopyResource(target, source);
+        return device->operation_error;
+    }
+    DXGI_DDI_ARG_BLT blt = {};
+    blt.hDevice = reinterpret_cast<DXGI_DDI_HDEVICE>(device->driver_device.pDrvPrivate);
+    blt.hDstResource = reinterpret_cast<DXGI_DDI_HRESOURCE>(target->handle.pDrvPrivate);
+    blt.DstRight = target->desc.Width;
+    blt.DstBottom = target->desc.Height;
+    blt.hSrcResource = reinterpret_cast<DXGI_DDI_HRESOURCE>(source->handle.pDrvPrivate);
+    blt.Flags.Convert = convert;
+    blt.Flags.Stretch = stretch;
+    blt.Rotate = DXGI_DDI_MODE_ROTATION_IDENTITY;
+    HRESULT hr = device->dxgi_functions.pfnBlt(&blt);
+    return FAILED(hr) ? hr : device->operation_error;
+}
+
+/* A compositor output scans out on the source of the display holding its window. */
+static D3DDDI_VIDEO_PRESENT_SOURCE_ID NativeWindowSource(HWND window)
+{
+    MONITORINFOEXW monitor = {};
+    monitor.cbSize = sizeof(monitor);
+    if (!GetMonitorInfoW(MonitorFromWindow(window, MONITOR_DEFAULTTOPRIMARY), reinterpret_cast<MONITORINFO *>(&monitor))) return 0;
+    D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME open = {};
+    lstrcpynW(open.DeviceName, monitor.szDevice, ARRAYSIZE(open.DeviceName));
+    if (D3DKMTOpenAdapterFromGdiDisplayName(&open) < 0) return 0;
+    D3DKMT_CLOSEADAPTER close = {};
+    close.hAdapter = open.hAdapter;
+    D3DKMTCloseAdapter(&close);
+    return open.VidPnSourceId;
 }
 
 HRESULT STDMETHODCALLTYPE NativeDevice::create_swapchain(IDXGIFactory *factory, HWND window,
@@ -8545,6 +8818,7 @@ HRESULT STDMETHODCALLTYPE NativeDevice::create_swapchain(IDXGIFactory *factory, 
         if (window) GetWindowRect(window, &swapchain->windowed_rect);
         swapchain->composition = !window;
         swapchain->primary = window && GetPropW(window, DWM_PROP_GPU_OUTPUT) != NULL;
+        if (swapchain->primary) swapchain->primary_source = NativeWindowSource(window);
         DXGI_SWAP_CHAIN_DESC1 desc = *requested;
         RECT client = {};
         hr = !window || GetClientRect(window, &client) ? S_OK : DXGI_ERROR_INVALID_CALL;
@@ -8691,7 +8965,18 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
             | DXGI_PRESENT_DO_NOT_SEQUENCE | DXGI_PRESENT_ALLOW_TEARING))) return DXGI_ERROR_INVALID_CALL;
     if (parameters && ((parameters->DirtyRectsCount && !parameters->pDirtyRects)
             || (!!parameters->pScrollRect != !!parameters->pScrollOffset))) return DXGI_ERROR_INVALID_CALL;
-    if (parameters && parameters->pScrollRect) return E_NOTIMPL;
+    if (parameters && parameters->pScrollRect)
+    {
+        RECT full = {0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height)};
+        RECT source = *parameters->pScrollRect, inside;
+        OffsetRect(&source, -parameters->pScrollOffset->x, -parameters->pScrollOffset->y);
+        if (desc.SwapEffect != DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL || IsRectEmpty(parameters->pScrollRect)
+                || !IntersectRect(&inside, parameters->pScrollRect, &full) || !EqualRect(&inside, parameters->pScrollRect)
+                || !IntersectRect(&inside, &source, &full) || !EqualRect(&inside, &source))
+            return DXGI_ERROR_INVALID_CALL;
+        /* TODO: scroll a primary or exclusive fullscreen swap chain; refused with E_NOTIMPL */
+        if (primary || exclusive) return E_NOTIMPL;
+    }
     if (!primary && parameters && parameters->DirtyRectsCount
             && (desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD || desc.SwapEffect == DXGI_SWAP_EFFECT_FLIP_DISCARD))
         return DXGI_ERROR_INVALID_CALL;
@@ -8715,8 +9000,7 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
         if (!primary) return S_OK;
         D3DKMT_CHECKVIDPNEXCLUSIVEOWNERSHIP check = {};
         check.hAdapter = device->km_adapter;
-        /* Native compositor scanout currently targets the primary source. */
-        check.VidPnSourceId = 0;
+        check.VidPnSourceId = primary_source;
         NTSTATUS status = D3DKMTCheckVidPnExclusiveOwnership(&check);
         if (status == STATUS_GRAPHICS_PRESENT_OCCLUDED) return DXGI_STATUS_OCCLUDED;
         if (status == STATUS_SUCCESS) return S_OK;
@@ -8734,7 +9018,7 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
                     || static_cast<UINT>(rect.right) > desc.Width || static_cast<UINT>(rect.bottom) > desc.Height)
                 return DXGI_ERROR_INVALID_CALL;
         }
-        if (!primary && !transports[0] && parameters->DirtyRectsCount && desc.SwapEffect != DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL)
+        if (!primary && !exclusive && !transports[0] && parameters->DirtyRectsCount && desc.SwapEffect != DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL)
         {
             const RECT &rect = parameters->pDirtyRects[0];
             /* The current compositor publication carries one complete client
@@ -8746,10 +9030,12 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
     }
     bool sequence = !(flags & DXGI_PRESENT_DO_NOT_SEQUENCE);
     if (!sequence && !present_count) return S_OK;
-    if (!primary && sequence)
+    if (!primary && !exclusive && sequence)
     {
         NativeWaitPendingRelease(buffers[0]);
         HRESULT hr = CarryForward(parameters);
+        if (FAILED(hr)) return hr;
+        hr = Scroll(parameters);
         if (FAILED(hr)) return hr;
         if (transports[0])
             hr = FillTransport(flags, parameters);
@@ -8760,10 +9046,23 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
             hr = DXGI_ERROR_WAS_STILL_DRAWING;
         if (FAILED(hr)) return hr;
     }
-    NativeTexture2D *source = transport ? transport : buffers[sequence ? 0 : desc.BufferCount - 1];
+    NativeTexture2D *source = transport && !exclusive ? transport : buffers[sequence ? 0 : desc.BufferCount - 1];
     NativeWaitPendingRelease(source);
     D3DKMT_HANDLE source_allocation = 0;
-    if (!primary)
+    if (exclusive)
+    {
+        device->BeginCall();
+        if (resolved)
+        {
+            device->context->ResolveSubresource(resolved, 0, source, 0, desc.Format);
+            source = resolved;
+        }
+        HRESULT hr = FillScanout(source, scanout[scanout_next]);
+        if (FAILED(hr)) return hr;
+        source = scanout[scanout_next];
+        source_allocation = scanout_allocation[scanout_next];
+    }
+    else if (!primary)
     {
         if (!device->get_single_allocation) return DXGI_ERROR_UNSUPPORTED;
         HRESULT hr = device->get_single_allocation(device->runtime_device, source->runtime_handle.handle, &source_allocation);
@@ -8775,7 +9074,8 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
     args.hDevice = reinterpret_cast<DXGI_DDI_HDEVICE>(device->driver_device.pDrvPrivate);
     args.hSurfaceToPresent = reinterpret_cast<DXGI_DDI_HRESOURCE>(source->handle.pDrvPrivate);
     args.pDXGIContext = &context;
-    args.Flags.Blt = 1;
+    if (exclusive) args.Flags.Flip = 1;
+    else args.Flags.Blt = 1;
     args.FlipInterval = static_cast<DXGI_DDI_FLIP_INTERVAL_TYPE>(interval);
     device->BeginCall();
     ULONGLONG trace_driver_start = NativeTraceNow();
@@ -8787,8 +9087,9 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
     /* Drivers may return S_OK after a nonfatal callback result. A suspended
      * output did not present a frame and must not advance buffer identities. */
     if (context.result != S_OK) return context.result;
-    if (primary ? !context.submitted : !context.composed) return E_FAIL;
-    if (!primary && sequence)
+    if (primary || exclusive ? !context.submitted : !context.composed) return E_FAIL;
+    if (exclusive) scanout_next = (scanout_next + 1) % ARRAYSIZE(scanout);
+    if (!primary && !exclusive && sequence)
     {
         transport_valid = transport != NULL;
         /* An unbound composition chain retains the latest frame. Commit
@@ -8816,7 +9117,7 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
         back_damage[back_presents++ % ARRAYSIZE(back_damage)] = NativePresentDamage(desc, parameters);
         /* The application renders into the new back buffer once Present
          * returns, so DWM must have released that frame first. */
-        if (window && !transports[0])
+        if (window && !transports[0] && !exclusive)
         {
             HANDLE event = ReleaseEvent(buffers[0], NULL);
             if (event && WaitForSingleObject(event, 0) != WAIT_OBJECT_0)

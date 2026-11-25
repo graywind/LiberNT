@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #if (_WIN32_WINNT >= 0x0501)
-typedef enum {
+typedef enum tagEFaultRepRetVal {
 	frrvErr = 3,
 	frrvErrNoDW = 4,
 	frrvErrTimeout = 5,
@@ -39,4 +39,22 @@ HRESULT WINAPI WerReportHang(HWND,PCWSTR);
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef UNICODE
+#define pfn_ADDEREXCLUDEDAPPLICATION pfn_ADDEREXCLUDEDAPPLICATIONW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define pfn_ADDEREXCLUDEDAPPLICATION pfn_ADDEREXCLUDEDAPPLICATIONW
+#else
+#define pfn_ADDEREXCLUDEDAPPLICATION pfn_ADDEREXCLUDEDAPPLICATIONA
+#endif
+#endif
+#endif
+
+typedef EFaultRepRetVal (WINAPI *pfn_ADDEREXCLUDEDAPPLICATIONA)(LPCSTR);
+
+typedef EFaultRepRetVal (WINAPI *pfn_ADDEREXCLUDEDAPPLICATIONW)(LPCWSTR);
+
+
 #endif

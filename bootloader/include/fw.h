@@ -9,6 +9,7 @@
 
 extern const USHORT FwApplicationSubsystem;
 extern const USHORT FwApplicationMachine;
+extern const BOOLEAN FwUefiFirmware;
 
 typedef enum _FW_VOLUME_SCAN_STATE
 {
@@ -94,6 +95,19 @@ FwGetVolumeDiskNumber(
 
 PCWSTR
 FwGetRemovableMediaPath(VOID);
+
+PCWSTR
+FwGetSystemManagerPath(
+    _In_ BOOLEAN Windows);
+
+PCWSTR
+FwGetSystemStorePath(
+    _In_ BOOLEAN Windows);
+
+BOOLEAN
+FwIsLiberNTManager(
+    _In_ PVOID Device,
+    _In_ PCWSTR Path);
 
 BOOLEAN
 FwStartFirmwareApplication(

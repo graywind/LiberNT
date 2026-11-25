@@ -6,6 +6,7 @@
  */
 
 #include "devices.hpp"
+#include "catalog.hpp"
 #include "resource.h"
 #include "text.hpp"
 
@@ -571,6 +572,12 @@ bool HasDriver(const DeviceInfo &device)
     return !device.Inf.empty() || !device.Service.empty();
 }
 
+/* An INF that installs no service: the device needs no driver, and only one its bus runs raw starts */
+bool NullDriver(const DeviceInfo &device)
+{
+    return !device.Inf.empty() && device.Service.empty();
+}
+
 DWORD InstalledRank(const DeviceInfo &device)
 {
     const std::vector<std::wstring> *lists[] = { &device.HardwareIds, &device.CompatibleIds };
@@ -616,6 +623,8 @@ std::wstring DeviceStatus(const DeviceInfo &device)
         return LoadText(IDS_STATUS_MISSING);
     if (device.Problem)
         return FormatText(IDS_STATUS_PROBLEM, NumberText(device.Problem));
+    if (!device.Started && NullDriver(device))
+        return LoadText(IDS_STATUS_NO_DRIVER_NEEDED);
     return LoadText(device.Started ? IDS_STATUS_WORKING : IDS_STATUS_STOPPED);
 }
 
@@ -653,7 +662,7 @@ std::vector<std::wstring> CatalogQueries(const DeviceInfo &device)
 {
     std::vector<std::wstring> queries;
     const std::vector<std::wstring> *lists[] = { &device.HardwareIds, &device.CompatibleIds };
-    size_t count = HasDriver(device) ? 1 : _countof(lists);
+    size_t count = HasDriver(device) && !GenericDriver(device) ? 1 : _countof(lists);
 
     if (StartsWith(device.InstanceId, L"ROOT\\") || StartsWith(device.InstanceId, L"SWD\\") ||
         StartsWith(device.InstanceId, L"HTREE\\"))
@@ -667,7 +676,15 @@ std::vector<std::wstring> CatalogQueries(const DeviceInfo &device)
             bool seen = std::find_if(queries.begin(), queries.end(), [&id](const std::wstring &other) {
                 return _wcsicmp(other.c_str(), id.c_str()) == 0;
             }) != queries.end();
-            if (!seen && IsSpecificId(id))
+            /* Over a generic driver, only compatible IDs naming the device itself, not its vendor's whole class */
+            bool sameDevice = list == 0 || !HasDriver(device) ||
+                              std::find_if(device.HardwareIds.begin(), device.HardwareIds.end(),
+                                           [&id](const std::wstring &hardware) {
+                                               std::wstring core = HardwareIdCore(hardware);
+                                               return !core.empty() &&
+                                                      _wcsicmp(core.c_str(), HardwareIdCore(id).c_str()) == 0;
+                                           }) != device.HardwareIds.end();
+            if (!seen && sameDevice && IsSpecificId(id))
                 queries.push_back(id);
         }
     }

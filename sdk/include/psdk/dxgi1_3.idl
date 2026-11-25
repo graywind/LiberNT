@@ -229,3 +229,11 @@ const UINT DXGI_CREATE_FACTORY_DEBUG = 0x1;
 [local] HRESULT __stdcall CreateDXGIFactory2(UINT flags, REFIID iid, void **factory);
 
 [local] HRESULT __stdcall DXGIGetDebugInterface1(UINT flags, REFIID iid, void **debug);
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

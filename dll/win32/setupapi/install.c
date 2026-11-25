@@ -471,6 +471,7 @@ static BOOL registry_callback( HINF hinf, PCWSTR field, void *arg )
     PSECURITY_DESCRIPTOR sd = NULL;
     SECURITY_ATTRIBUTES security_attributes = { 0, };
     HKEY root_key, hkey, target_key;
+    REGSAM view;
     DWORD required;
     BOOL device_value;
 
@@ -540,11 +541,13 @@ static BOOL registry_callback( HINF hinf, PCWSTR field, void *arg )
             else if (!(flags & FLG_ADDREG_DELREG_BIT)) continue;  /* ignore this entry */
         }
 
+        view = (flags & FLG_ADDREG_32BITKEY) ? KEY_WOW64_32KEY :
+               (flags & FLG_ADDREG_64BITKEY) ? KEY_WOW64_64KEY : 0;
         if (info->delete || (flags & FLG_ADDREG_OVERWRITEONLY))
         {
-            if (RegOpenKeyW( root_key, buffer, &hkey )) continue;  /* ignore if it doesn't exist */
+            if (RegOpenKeyExW( root_key, buffer, 0, MAXIMUM_ALLOWED | view, &hkey )) continue;  /* ignore if it doesn't exist */
         }
-        else if (RegCreateKeyExW( root_key, buffer, 0, NULL, 0, MAXIMUM_ALLOWED,
+        else if (RegCreateKeyExW( root_key, buffer, 0, NULL, 0, MAXIMUM_ALLOWED | view,
             (sd && !info->relative_only) ? &security_attributes : NULL, &hkey, NULL ))
         {
             ERR( "could not create key %p %s\n", root_key, debugstr_w(buffer) );
@@ -1925,6 +1928,7 @@ BOOL WINAPI SetupInstallFromInfSectionW( HWND owner, HINF hinf, PCWSTR section, 
         if (!iterate_section_fields( hinf, section, ProfileItems, profile_items_callback, NULL ))
             return FALSE;
     }
+    /* TODO: SPINST_PROPERTIES (AddProperty and DelProperty) is not processed */
     if (flags & SPINST_COPYINF)
     {
         if (!iterate_section_fields( hinf, section, CopyINF, copy_inf_callback, NULL ))

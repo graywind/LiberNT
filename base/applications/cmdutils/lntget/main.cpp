@@ -18,6 +18,7 @@
 #include "gui.hpp"
 #include "source.hpp"
 #include "util.hpp"
+#include "yaml.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -40,6 +41,8 @@ struct CommandOptions
     SelectionOptions selection;
     bool hasDownloadDirectory = false;
     std::wstring downloadDirectory;
+    bool hasVersion = false;
+    std::string version;
 };
 
 void PrintHelp()
@@ -48,11 +51,11 @@ void PrintHelp()
         "lntget %.*s - LiberNT package manager for the WinGet community repository\n\n"
         "Usage:\n"
         "  lntget search [[-q] <query>] [--id|--name|--moniker|--tag|--command <value>] [-e] [-n <count>]\n"
-        "  lntget show <query> [--id <id>] [-e]\n"
-        "  lntget download <query> [--id <id>] [--architecture <arch>]\n"
-        "  lntget install <query> [--id <id>] [--architecture <arch>] [--silent|--interactive]\n"
+        "  lntget show <query> [--id <id>] [-e] [-v <version>]\n"
+        "  lntget download <query> [--id <id>] [-v <version>] [--architecture <arch>]\n"
+        "  lntget install <query> [--id <id>] [-v <version>] [--architecture <arch>] [--silent|--interactive]\n"
         "  lntget list [[-q] <query>] [--id|--name <value>] [-e] [-n <count>]\n"
-        "  lntget upgrade [[-q] <query>] [--id <id>] [-e] [--all] [--silent|--interactive]\n"
+        "  lntget upgrade [[-q] <query>] [--id <id>] [-e] [-v <version>] [--all] [--silent|--interactive]\n"
         "  lntget uninstall <query> [--id <id>] [--name <name>] [--product-code <code>] [-e] [--silent|--interactive]\n"
         "  lntget source list|update|import <source2.msix>\n"
         "  lntget gui [[-q] <query>]\n"
@@ -65,19 +68,23 @@ void PrintHelp()
         "  --tag <tag>               Match only package tags\n"
         "  --command <command>       Match only provided commands\n"
         "  -e, --exact               Use an exact match\n"
+        "  -v, --version <version>   Use this package version instead of the latest\n"
         "  -n, --count <count>       Limit search results (1-1000)\n"
         "  -r, --all                 Upgrade every package that has an available upgrade\n"
         "  -s, --source winget       Select the community source\n"
-        "  --architecture <arch>     x86, x64, arm, or arm64\n"
+        "  -a, --architecture <arch> x86, x64, arm, or arm64\n"
         "  --installer-type <type>   Require an installer type\n"
         "  --scope <scope>           user or machine\n"
         "  --locale <locale>         Require an installer locale\n"
-        "  --download-directory <p>  Store the verified installer in p\n"
-        "  --silent                  Run with silent installer switches\n"
-        "  --interactive             Run interactively\n"
+        "  -d, --download-directory <p>\n"
+        "                            Store the verified installer in p\n"
+        "  -h, --silent              Run with silent installer switches\n"
+        "  -i, --interactive         Run interactively\n"
         "  --disable-interactivity   Never prompt for user input\n"
         "  --accept-package-agreements\n"
-        "                            Accept package license agreements\n",
+        "                            Accept package license agreements\n"
+        "  --accept-source-agreements\n"
+        "                            Accepted; the winget source has no agreements\n",
         static_cast<int>(sizeof(Version) - 1), Version);
 }
 
@@ -145,6 +152,13 @@ Status ParseOptions(const std::vector<std::string> &arguments, std::size_t first
         {
             options.exact = true;
         }
+        else if (argument == "-v" || argument == "--version")
+        {
+            const std::string *value = next();
+            if (!value || value->empty()) return Status::Fail(ERROR_INVALID_PARAMETER, argument + " requires a value");
+            options.hasVersion = true;
+            options.version = *value;
+        }
         else if (argument == "-n" || argument == "--count")
         {
             const std::string *value = next();
@@ -157,7 +171,7 @@ Status ParseOptions(const std::vector<std::string> &arguments, std::size_t first
         {
             options.all = true;
         }
-        else if (argument == "--architecture")
+        else if (argument == "-a" || argument == "--architecture")
         {
             const std::string *value = next();
             if (!value) return Status::Fail(ERROR_INVALID_PARAMETER, "--architecture requires a value");
@@ -190,20 +204,20 @@ Status ParseOptions(const std::vector<std::string> &arguments, std::size_t first
             options.selection.hasLocale = true;
             options.selection.locale = *value;
         }
-        else if (argument == "--download-directory")
+        else if (argument == "-d" || argument == "--download-directory")
         {
             const std::string *value = next();
             if (!value) return Status::Fail(ERROR_INVALID_PARAMETER, "--download-directory requires a value");
             options.hasDownloadDirectory = true;
             options.downloadDirectory = WideFromUtf8(*value);
         }
-        else if (argument == "--silent")
+        else if (argument == "-h" || argument == "--silent")
         {
             if (modeSpecified) return Status::Fail(ERROR_INVALID_PARAMETER, "--silent and --interactive cannot be combined");
             options.selection.mode = InstallMode::Silent;
             modeSpecified = true;
         }
-        else if (argument == "--interactive")
+        else if (argument == "-i" || argument == "--interactive")
         {
             if (modeSpecified) return Status::Fail(ERROR_INVALID_PARAMETER, "--silent and --interactive cannot be combined");
             options.selection.mode = InstallMode::Interactive;
@@ -225,7 +239,6 @@ Status ParseOptions(const std::vector<std::string> &arguments, std::size_t first
         }
         else if (argument == "--accept-source-agreements")
         {
-            return Status::Fail(ERROR_NOT_SUPPORTED, argument + " is not supported until lntget can retrieve and display the corresponding agreement text");
         }
         else if (!argument.empty() && argument[0] == '-')
         {
@@ -262,6 +275,8 @@ Status ResolveManifest(SourceManager &source, const CommandOptions &options, Pac
     Status status = source.Resolve(query, package);
     if (!status)
         return status;
+    if (options.hasVersion)
+        package.version = options.version;
     std::string yaml;
     status = source.FetchInstallerManifest(package, yaml);
     if (!status)
@@ -343,7 +358,9 @@ Status ShowCommand(SourceManager &source, const CommandOptions &options)
     if (!status)
         return status;
     InstallerEntry installer;
-    status = SelectInstaller(manifest, options.selection, installer);
+    SelectionOptions selection = options.selection;
+    selection.skipArchitectureApplicability = true;
+    status = SelectInstaller(manifest, selection, installer);
     if (!status)
         return status;
     PrintPackage(package, manifest, installer);
@@ -368,6 +385,7 @@ Status DownloadOrInstallCommand(SourceManager &source, const CommandOptions &opt
     InstallerEntry installer;
     SelectionOptions selection = options.selection;
     selection.downloadOnly = !install;
+    selection.skipArchitectureApplicability = !install;
     status = SelectInstaller(manifest, selection, installer);
     if (!status)
         return status;
@@ -586,6 +604,8 @@ Status UninstallCommand(SourceManager &source, const CommandOptions &options)
 
 Status UpgradeCommand(SourceManager &source, const CommandOptions &options)
 {
+    if (options.all && options.hasVersion)
+        return Status::Fail(ERROR_INVALID_PARAMETER, "--version cannot be combined with --all");
     if (options.query.empty() && !options.all)
         return ListCommand(source, options, true);
     Status status = ValidateInstalledField(options);
@@ -597,6 +617,8 @@ Status UpgradeCommand(SourceManager &source, const CommandOptions &options)
     if (options.all)
     {
         std::size_t upgraded = 0;
+        std::size_t failed = 0;
+        Status failure = Status::Ok();
         for (const InstalledGroup &group : groups)
         {
             if (group.available.empty())
@@ -607,10 +629,18 @@ Status UpgradeCommand(SourceManager &source, const CommandOptions &options)
             install.exact = true;
             status = DownloadOrInstallCommand(source, install, true);
             if (!status)
-                return status;
+            {
+                std::fprintf(stderr, "lntget: %s failed to upgrade: %s\n", group.id.c_str(), status.message.c_str());
+                if (failure)
+                    failure = status;
+                ++failed;
+                continue;
+            }
             ++upgraded;
         }
-        std::printf("LNTGET_UPGRADE_DONE count=%Iu\n", upgraded);
+        std::printf("LNTGET_UPGRADE_DONE count=%Iu failed=%Iu\n", upgraded, failed);
+        if (!failure)
+            return Status::Fail(failure.code, DecimalString(failed) + " package(s) failed to upgrade");
         return Status::Ok();
     }
 
@@ -618,9 +648,9 @@ Status UpgradeCommand(SourceManager &source, const CommandOptions &options)
     status = SelectInstalledGroup(groups, group);
     if (!status)
         return status;
-    if (group.available.empty())
+    if (group.available.empty() && !options.hasVersion)
         return Status::Fail(ERROR_NOT_FOUND, "no applicable upgrade found for " + group.name);
-    std::printf("Upgrading %s [%s] to %s\n", group.name.c_str(), group.id.c_str(), group.available.c_str());
+    std::printf("Upgrading %s [%s] to %s\n", group.name.c_str(), group.id.c_str(), (options.hasVersion ? options.version : group.available).c_str());
     CommandOptions install = options;
     install.query = group.id;
     install.field = SearchField::Id;
@@ -634,7 +664,10 @@ Status UpgradeCommand(SourceManager &source, const CommandOptions &options)
 
 Status SelfTestCommand()
 {
-    Status status = RunManifestSelfTests();
+    Status status = RunYamlSelfTests();
+    if (!status)
+        return status;
+    status = RunManifestSelfTests();
     if (!status)
         return status;
     status = RunHashSelfTests();
@@ -675,6 +708,11 @@ Status SelfTestCommand()
     status = ParseOptions(std::vector<std::string>(ModeConflict, ModeConflict + sizeof(ModeConflict) / sizeof(ModeConflict[0])), 2, options);
     if (status)
         return Status::Fail(ERROR_ASSERTION_FAILURE, "command mode conflict self-test failed");
+    options = CommandOptions();
+    static const char *const VersionOption[] = {"lntget", "install", "--id", "jqlang.jq", "-v", "1.8.1"};
+    status = ParseOptions(std::vector<std::string>(VersionOption, VersionOption + sizeof(VersionOption) / sizeof(VersionOption[0])), 2, options);
+    if (!status || !options.hasVersion || options.version != "1.8.1" || options.query != "jqlang.jq")
+        return Status::Fail(ERROR_ASSERTION_FAILURE, "command version option self-test failed");
     std::printf("LNTGET_SELFTEST_DONE architecture=%s\n", ArchitectureName(CurrentMachineArchitecture()).c_str());
     return Status::Ok();
 }

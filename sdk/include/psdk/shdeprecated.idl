@@ -430,7 +430,7 @@ typedef struct basebrowserdatalh
 } BASEBROWSERDATALH, *LPBASEBROWSERDATALH;
 cpp_quote("#pragma pack(pop)")
 
-typedef BASEBROWSERDATAXP BASEBROWSERDATA;
+typedef BASEBROWSERDATALH BASEBROWSERDATA;
 
 typedef const BASEBROWSERDATA *LPCBASEBROWSERDATA;
 
@@ -719,3 +719,67 @@ coclass TrackShellMenu
 {
     [default] interface ITrackShellMenu;
 }
+
+cpp_quote("#ifndef __shdeprecated_cpp_quote_1_DEFINED__")
+cpp_quote("#define __shdeprecated_cpp_quote_1_DEFINED__")
+cpp_quote("#ifndef BSF_FEEDNAVIGATION")
+cpp_quote("#define BSF_FEEDNAVIGATION 0x00080000")
+cpp_quote("#endif")
+cpp_quote("#ifndef BSF_FEEDSUBSCRIBED")
+cpp_quote("#define BSF_FEEDSUBSCRIBED 0x00100000")
+cpp_quote("#endif")
+cpp_quote("#ifndef BSF_MERGEDMENUS")
+cpp_quote("#define BSF_MERGEDMENUS 0x00040000")
+cpp_quote("#endif")
+cpp_quote("#ifndef TLOG_CURRENT")
+cpp_quote("#define TLOG_CURRENT 0")
+cpp_quote("#endif")
+
+cpp_quote("enum IEPDNFLAGS")
+cpp_quote("{")
+cpp_quote("    IEPDN_BINDINGUI = 1,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum IEPDNFLAGS IEPDNFLAGS;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IExpDispSupportXP IExpDispSupportXP;")
+cpp_quote("")
+cpp_quote("struct IExpDispSupportXPVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IExpDispSupportXP *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IExpDispSupportXP *);")
+cpp_quote("    ULONG (WINAPI *Release)(IExpDispSupportXP *);")
+cpp_quote("    HRESULT (WINAPI *FindCIE4ConnectionPoint)(IExpDispSupportXP *, const IID *const , CIE4ConnectionPoint **);")
+cpp_quote("    HRESULT (WINAPI *OnTranslateAccelerator)(IExpDispSupportXP *, MSG *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *OnInvoke)(IExpDispSupportXP *, DISPID, const IID *const , LCID, WORD, DISPPARAMS *, VARIANT *, EXCEPINFO *, UINT *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("HRESULT WINAPI ITravelLog_GetTravelEntry_Proxy(ITravelLog *This, IUnknown *punk, int iOffset, ITravelEntry **ppte);")
+cpp_quote("HRESULT WINAPI ITravelLog_GetTravelEntry_Stub(ITravelLog *This, IUnknown *punk, int iOffset, ITravelEntry **ppte);")
+cpp_quote("HRESULT WINAPI ITravelLog_RemoteGetTravelEntry_Proxy(ITravelLog *This, IUnknown *punk, int iOffset, ITravelEntry **ppte);")
+cpp_quote("void ITravelLog_RemoteGetTravelEntry_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void PIDLIST_ABSOLUTE_UserFree64(unsigned long *, LPITEMIDLIST *);")
+cpp_quote("unsigned char * PIDLIST_ABSOLUTE_UserMarshal64(unsigned long *, unsigned char *, LPITEMIDLIST *);")
+cpp_quote("unsigned long PIDLIST_ABSOLUTE_UserSize64(unsigned long *, unsigned long, LPITEMIDLIST *);")
+cpp_quote("unsigned char * PIDLIST_ABSOLUTE_UserUnmarshal64(unsigned long *, unsigned char *, LPITEMIDLIST *);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+cpp_quote("#endif")
+
+

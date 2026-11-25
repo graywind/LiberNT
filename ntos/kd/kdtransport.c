@@ -25,6 +25,7 @@
 /* PRIVATE DATA ***************************************************************/
 
 #define KDP_FILE_IO_POLL_US         10
+#define KDP_PROMPT_WAIT_MS          10000
 #define KDP_FILE_IO_SERIAL_SECONDS  1
 #define KDP_FILE_IO_NET_SECONDS     4
 #define KDP_FILE_IO_PROBE_MS        100
@@ -41,7 +42,11 @@ static
 BOOLEAN
 KdpFileIoNetAttached(VOID)
 {
-    return KdpDebugMode.Net && KdpNetQueryAttached(NULL, NULL);
+    if (!KdpDebugMode.Net)
+        return FALSE;
+
+    /* Without a session (LOCAL_BROADCAST) a host answers only the requests typed at kdb:> */
+    return KdpNetQueryAttached(NULL, NULL) || (KdpNetIsReady() && KdpFileRequestInProgress());
 }
 
 static
@@ -438,8 +443,16 @@ KdReceivePacket(
                 return KdPacketTimedOut;
             }
 
-            /* Whoever is watching the output is the one who gets to answer */
-            Read = KdIoReadLine(MessageData->Buffer, MessageData->MaximumLength);
+            /* Whoever is watching the output is the one who gets to answer; a prompt nobody starts answering gets an empty answer */
+            if (KdpWaitForTermKey(KDP_PROMPT_WAIT_MS))
+            {
+                Read = KdIoReadLine(MessageData->Buffer, MessageData->MaximumLength);
+            }
+            else
+            {
+                MessageData->Buffer[0] = ANSI_NULL;
+                Read = 0;
+            }
 
             DebugIo = (PDBGKD_DEBUG_IO)MessageHeader->Buffer;
             DebugIo->ApiNumber = DbgKdGetStringApi;

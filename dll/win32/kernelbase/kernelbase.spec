@@ -106,6 +106,7 @@
 @ stdcall CloseThreadpoolTimer(ptr) ntdll.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) ntdll.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) ntdll.TpReleaseWork
+@ stdcall CommandLineToArgvW(wstr ptr) shell32.CommandLineToArgvW
 @ stdcall CompareFileTime(ptr ptr) kernel32.CompareFileTime
 @ stdcall -version=0xA00+ CompareObjectHandles(ptr ptr) kernel32.CompareObjectHandles
 @ stdcall CompareStringA(long long str long str long)
@@ -504,6 +505,7 @@
 @ stdcall GetNumberOfConsoleInputEvents(long ptr)
 @ stdcall GetNumberOfConsoleMouseButtons(ptr)
 @ stdcall GetOEMCP() kernel32.GetOEMCP
+@ stdcall GetOsSafeBootMode(ptr) kernel32.GetOsSafeBootMode
 @ stdcall GetOverlappedResult(long ptr ptr long) kernel32.GetOverlappedResult
 @ stdcall -version=0x602+ GetOverlappedResultEx(long ptr ptr long long) kernel32.GetOverlappedResultEx
 @ stdcall GetPackageFamilyName(long ptr ptr)
@@ -535,6 +537,7 @@
 @ stdcall GetProcessShutdownParameters(ptr ptr) kernel32.GetProcessShutdownParameters
 @ stdcall GetProcessTimes(long ptr ptr ptr ptr) kernel32.GetProcessTimes
 @ stdcall GetProcessVersion(long) kernel32.GetProcessVersion
+@ stdcall GetProcessWorkingSetSize(long ptr ptr) kernel32.GetProcessWorkingSetSize
 @ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) kernel32.GetProcessWorkingSetSizeEx
 @ stdcall -version=0x600+ GetProductInfo(long long long long ptr)
 @ stub GetPtrCalData
@@ -640,7 +643,7 @@
 @ stdcall GetWriteWatch(long ptr long ptr ptr ptr) kernel32.GetWriteWatch
 @ stdcall -version=0x601+ GetWsChanges(long ptr long) kernel32.K32GetWsChanges
 @ stdcall -version=0x601+ GetWsChangesEx(long ptr ptr) kernel32.K32GetWsChangesEx
-@ stdcall -arch=i386,x86_64,arm64ec GetXStateFeaturesMask(ptr ptr)
+@ stdcall -arch=i386,x86_64,arm64,arm64ec GetXStateFeaturesMask(ptr ptr)
 @ stdcall GlobalAlloc(long long) kernel32.GlobalAlloc
 @ stdcall GlobalFree(long) kernel32.GlobalFree
 @ stdcall GlobalMemoryStatusEx(ptr) kernel32.GlobalMemoryStatusEx
@@ -741,6 +744,7 @@
 @ stdcall IsValidSecurityDescriptor(ptr)
 @ stdcall IsValidSid(ptr)
 @ stdcall IsWellKnownSid(ptr long)
+@ stdcall IsWow64GuestMachineSupported(long ptr) kernel32.IsWow64GuestMachineSupported
 @ stdcall IsWow64Process(ptr ptr) kernel32.IsWow64Process
 @ stdcall -version=0xA00+ IsWow64Process2(ptr ptr ptr) kernel32.IsWow64Process2
 @ stdcall -version=0x601+ K32EmptyWorkingSet(long) kernel32.K32EmptyWorkingSet
@@ -795,7 +799,7 @@
 @ stdcall LocalReAlloc(long long long) kernel32.LocalReAlloc
 @ stdcall LocalUnlock(long) kernel32.LocalUnlock
 @ stdcall LocaleNameToLCID(wstr long)
-@ stdcall -arch=i386,x86_64,arm64ec LocateXStateFeature(ptr long ptr)
+@ stdcall -arch=i386,x86_64,arm64,arm64ec LocateXStateFeature(ptr long ptr)
 @ stdcall LockFile(long long long long long) kernel32.LockFile
 @ stdcall LockFileEx(long long long long long ptr) kernel32.LockFileEx
 @ stdcall LockResource(long) kernel32.LockResource
@@ -1206,7 +1210,9 @@
 @ stdcall SetProcessPreferredUILanguages(long ptr ptr)
 @ stdcall SetProcessPriorityBoost(long long) kernel32.SetProcessPriorityBoost
 @ stdcall SetProcessShutdownParameters(long long) kernel32.SetProcessShutdownParameters
-@ stdcall SetProcessValidCallTargets(long ptr long long ptr) kernel32.SetProcessValidCallTargets
+@ stdcall SetProcessValidCallTargets(ptr ptr ptr long ptr) kernel32.SetProcessValidCallTargets
+@ stdcall -arch=x86_64 SetProcessValidCallTargetsForMappedView(ptr ptr ptr long ptr ptr int64)
+@ stdcall SetProcessWorkingSetSize(long long long) kernel32.SetProcessWorkingSetSize
 @ stdcall SetProcessWorkingSetSizeEx(long long long long) kernel32.SetProcessWorkingSetSizeEx
 @ stdcall SetSecurityAccessMask(long ptr) advapi32.SetSecurityAccessMask
 @ stdcall SetSecurityDescriptorControl(ptr long long)
@@ -1247,7 +1253,7 @@
 @ stdcall SetUserGeoName(wstr)
 @ stdcall SetWaitableTimer(long ptr long ptr ptr long) kernel32.SetWaitableTimer
 @ stdcall SetWaitableTimerEx(long ptr long ptr ptr ptr long) kernel32.SetWaitableTimerEx
-@ stdcall -arch=i386,x86_64,arm64ec SetXStateFeaturesMask(ptr int64)
+@ stdcall -arch=i386,x86_64,arm64,arm64ec SetXStateFeaturesMask(ptr int64)
 @ stdcall SetupComm(long long long) kernel32.SetupComm
 @ stdcall SignalObjectAndWait(long long long long) kernel32.SignalObjectAndWait
 @ stdcall SizeofResource(long long) kernel32.SizeofResource

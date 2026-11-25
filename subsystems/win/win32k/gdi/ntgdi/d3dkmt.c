@@ -7,11 +7,12 @@
 
 #include <win32k.h>
 #include "drivers/wddm/wddm_bridge.h"
-#include <reactos/rddm/rxgkinterface.h>
-#include <reactos/rddm/rxgkioctl.h>
-#include <reactos/rddm/rxgkntgdi.h>
+#include <libernt/rddm/rxgkinterface.h>
+#include <libernt/rddm/rxgkioctl.h>
+#include <libernt/rddm/rxgkntgdi.h>
 #include <debug.h>
 
+#define IOCTL_RXGK_OPENADAPTERFROMGDIDISPLAYNAME CTL_CODE(DXGKRNL_DEVICE_TYPE, 0x111, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_RXGK_OPENADAPTERFROMDEVICENAME CTL_CODE(DXGKRNL_DEVICE_TYPE, 0x112, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_RXGK_CLOSEADAPTER CTL_CODE(DXGKRNL_DEVICE_TYPE, 0x103, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_D3DKMT_CHECKOCCLUSION CTL_CODE(DXGKRNL_DEVICE_TYPE, 0x169, METHOD_BUFFERED, FILE_ANY_ACCESS)
@@ -164,6 +165,41 @@ D3dkmtCloseCapturedAdapter(
     (VOID)WddmBridgeSendIoctl(IOCTL_RXGK_CLOSEADAPTER, &CloseAdapter, sizeof(CloseAdapter), NULL, 0);
 }
 
+/* The adapter and source a display device scans out, named by its device object */
+static NTSTATUS
+D3dkmtOpenAdapterByDisplayDevice(
+    _In_ PCWSTR DeviceName,
+    _Out_ D3DKMT_HANDLE *AdapterHandle,
+    _Out_ LUID *AdapterLuid,
+    _Out_ D3DDDI_VIDEO_PRESENT_SOURCE_ID *VidPnSourceId)
+{
+    D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME OpenByDisplay;
+    ULONG_PTR Information = 0;
+    NTSTATUS Status;
+
+    *AdapterHandle = 0;
+    RtlZeroMemory(AdapterLuid, sizeof(*AdapterLuid));
+    *VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
+    RtlZeroMemory(&OpenByDisplay, sizeof(OpenByDisplay));
+    Status = RtlStringCchCopyW(OpenByDisplay.DeviceName, RTL_NUMBER_OF(OpenByDisplay.DeviceName), DeviceName);
+    if (!NT_SUCCESS(Status))
+        return Status;
+    Status = WddmBridgeSendIoctlWithInformation(IOCTL_RXGK_OPENADAPTERFROMGDIDISPLAYNAME, &OpenByDisplay,
+                                                sizeof(OpenByDisplay), &OpenByDisplay, sizeof(OpenByDisplay),
+                                                &Information);
+    if (!NT_SUCCESS(Status))
+        return Status;
+    if (Information != sizeof(OpenByDisplay) || OpenByDisplay.hAdapter == 0)
+    {
+        D3dkmtCloseCapturedAdapter(OpenByDisplay.hAdapter);
+        return Information != sizeof(OpenByDisplay) ? STATUS_INFO_LENGTH_MISMATCH : STATUS_INVALID_HANDLE;
+    }
+    *AdapterHandle = OpenByDisplay.hAdapter;
+    *AdapterLuid = OpenByDisplay.AdapterLuid;
+    *VidPnSourceId = OpenByDisplay.VidPnSourceId;
+    return STATUS_SUCCESS;
+}
+
 static NTSTATUS
 D3dkmtOpenAdapterByCapturedNtDeviceName(
     _In_ PCWSTR DeviceName,
@@ -196,6 +232,32 @@ D3dkmtOpenAdapterByCapturedNtDeviceName(
     }
     *AdapterHandle = OpenByName.hAdapter;
     *AdapterLuid = OpenByName.AdapterLuid;
+    return STATUS_SUCCESS;
+}
+
+/* The adapter and source a display device scans out; a device that is not a video present source of an adapter
+ * scans out the adapter's first source */
+NTSTATUS
+D3dkmtQueryDisplayDeviceSource(
+    _In_ PCWSTR DeviceName,
+    _Out_ LUID *AdapterLuid,
+    _Out_ ULONG *VidPnSourceId)
+{
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID Source;
+    D3DKMT_HANDLE Adapter;
+    NTSTATUS Status;
+
+    Status = D3dkmtOpenAdapterByDisplayDevice(DeviceName, &Adapter, AdapterLuid, &Source);
+    if (!NT_SUCCESS(Status))
+    {
+        Status = D3dkmtOpenAdapterByCapturedNtDeviceName(DeviceName, &Adapter, AdapterLuid);
+        if (!NT_SUCCESS(Status))
+            return Status;
+        Source = 0;
+    }
+    ASSERT(Adapter != 0);
+    D3dkmtCloseCapturedAdapter(Adapter);
+    *VidPnSourceId = Source;
     return STATUS_SUCCESS;
 }
 
@@ -635,13 +697,19 @@ NtGdiDdDDIOpenAdapterFromGdiDisplayName(_Inout_ D3DKMT_OPENADAPTERFROMGDIDISPLAY
     PDEVOBJ_vRelease(Pdev);
     if (!NT_SUCCESS(Status))
         return Status;
-    Status = D3dkmtOpenAdapterByCapturedNtDeviceName(
-                 NtDeviceName,
-                 &Captured.hAdapter,
-                 &Captured.AdapterLuid);
+    Status = D3dkmtOpenAdapterByDisplayDevice(NtDeviceName, &Captured.hAdapter, &Captured.AdapterLuid,
+                                              &Captured.VidPnSourceId);
     if (!NT_SUCCESS(Status))
-        return Status;
-    Captured.VidPnSourceId = 0;
+    {
+        /* A display device that is not a video present source of an adapter scans out the adapter's first source */
+        Status = D3dkmtOpenAdapterByCapturedNtDeviceName(
+                     NtDeviceName,
+                     &Captured.hAdapter,
+                     &Captured.AdapterLuid);
+        if (!NT_SUCCESS(Status))
+            return Status;
+        Captured.VidPnSourceId = 0;
+    }
     _SEH2_TRY
     {
         if (ExGetPreviousMode() != KernelMode)
@@ -664,6 +732,7 @@ NtGdiDdDDIOpenAdapterFromHdc(_Inout_ D3DKMT_OPENADAPTERFROMHDC* unnamedParam1)
 {
     D3DKMT_OPENADAPTERFROMHDC Captured;
     WCHAR DeviceName[CCHDEVICENAME / 2];
+    BOOLEAN Desktop = FALSE;
     PDC Dc;
     NTSTATUS Status = D3dkmtValidateWddmThunk(unnamedParam1);
 
@@ -687,7 +756,11 @@ NtGdiDdDDIOpenAdapterFromHdc(_Inout_ D3DKMT_OPENADAPTERFROMHDC* unnamedParam1)
     Dc = DC_LockDc(Captured.hDc);
     if (Dc == NULL)
         return STATUS_INVALID_PARAMETER;
-    if (Dc->dctype != DCTYPE_DIRECT || Dc->ppdev == NULL || (Dc->ppdev->flFlags & PDEV_DISPLAY) == 0 || Dc->ppdev->pGraphicsDevice == NULL || Dc->ppdev->pGraphicsDevice->szNtDeviceName[0] == L'\0')
+    if (Dc->dctype != DCTYPE_DIRECT || Dc->ppdev == NULL || (Dc->ppdev->flFlags & PDEV_DISPLAY) == 0)
+        Status = STATUS_INVALID_HANDLE;
+    else if (Dc->ppdev->pGraphicsDevice == NULL)
+        Desktop = TRUE;
+    else if (Dc->ppdev->pGraphicsDevice->szNtDeviceName[0] == L'\0')
         Status = STATUS_INVALID_HANDLE;
     else
     {
@@ -697,14 +770,22 @@ NtGdiDdDDIOpenAdapterFromHdc(_Inout_ D3DKMT_OPENADAPTERFROMHDC* unnamedParam1)
     DC_UnlockDc(Dc);
     if (!NT_SUCCESS(Status))
         return Status;
+    /* TODO: INFO_NEEDED: the display Windows 11 picks for a window DC on another display of the extended desktop; this uses the primary */
+    if (Desktop && !NT_SUCCESS(EngpGetPrimaryDisplayNtName(DeviceName, RTL_NUMBER_OF(DeviceName))))
+        return STATUS_INVALID_HANDLE;
 
-    Status = D3dkmtOpenAdapterByCapturedNtDeviceName(
-                 DeviceName,
-                 &Captured.hAdapter,
-                 &Captured.AdapterLuid);
+    Status = D3dkmtOpenAdapterByDisplayDevice(DeviceName, &Captured.hAdapter, &Captured.AdapterLuid,
+                                              &Captured.VidPnSourceId);
     if (!NT_SUCCESS(Status))
-        return Status;
-    Captured.VidPnSourceId = 0;
+    {
+        Status = D3dkmtOpenAdapterByCapturedNtDeviceName(
+                     DeviceName,
+                     &Captured.hAdapter,
+                     &Captured.AdapterLuid);
+        if (!NT_SUCCESS(Status))
+            return Status;
+        Captured.VidPnSourceId = 0;
+    }
     _SEH2_TRY
     {
         if (ExGetPreviousMode() != KernelMode)
@@ -1067,13 +1148,15 @@ NtGdiDdDDIPresent(_In_ D3DKMT_PRESENT* unnamedParam1)
     }
 
     /* Mesa reports a normal windowed blit for every WGL swap. The attached
-     * compositor registers exactly one screen-sized output HWND; promote only
-     * that trusted, complete surface to a flip. dxgkrnl then retires the V3D
-     * fence before programming the allocation for scanout. */
+     * compositor registers one monitor-sized output HWND per monitor; promote
+     * only such a trusted, complete surface to a flip on that monitor's
+     * source. dxgkrnl then retires the V3D fence before programming the
+     * allocation for scanout. */
     {
+        ULONG OutputSource = 0;
         BOOL GpuOutput = IntCompositionIsGpuOutputPresent(
                              Captured.hWindow, &Captured.SrcRect,
-                             &Captured.DstRect);
+                             &Captured.DstRect, &OutputSource);
 
         if (Captured.Flags.Blt && !Captured.Flags.Flip &&
             Captured.hSource != 0 && Captured.hDestination == 0 &&
@@ -1083,7 +1166,8 @@ NtGdiDdDDIPresent(_In_ D3DKMT_PRESENT* unnamedParam1)
             Captured.Flags.Blt = 0;
             Captured.Flags.Flip = 1;
             Captured.Flags.RestrictVidPnSource = 1;
-            Captured.VidPnSourceId = 0;
+            Captured.VidPnSourceId = OutputSource;
+            Captured.DstRect = Captured.SrcRect;
         }
     }
 
@@ -2312,7 +2396,7 @@ D3dkmtMpoSubmit(
     if (!Request->HaveBase || Request->Overlays.OverlayCount == 0 || Window == NULL ||
         Request->VidPnSourceId != 0 ||
         Request->BroadcastContextCount > D3DDDI_MAX_BROADCAST_CONTEXT ||
-        !IntCompositionIsGpuOutputPresent(Window, &Request->BaseSrcRect, &Request->BaseDstRect))
+        !IntCompositionIsGpuOutputPresent(Window, &Request->BaseSrcRect, &Request->BaseDstRect, NULL))
     {
         return STATUS_INVALID_PARAMETER;
     }

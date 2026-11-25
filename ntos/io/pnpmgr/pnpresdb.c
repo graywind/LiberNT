@@ -6,7 +6,7 @@
  */
 
 #include <ntoskrnl.h>
-#include <reactos/drivers/cmreslist.h>
+#include <libernt/drivers/cmreslist.h>
 #define NDEBUG
 #include <debug.h>
 
@@ -356,7 +356,7 @@ IopResDbCheck(_In_ PCM_PARTIAL_RESOURCE_DESCRIPTOR Candidate, _In_opt_ PDEVICE_N
     PLIST_ENTRY le;
     KIRQL irql;
     BOOLEAN found = FALSE;
-    UINT64 Start, Length;
+    UINT64 Start = 0, Length = 0;
     BOOLEAN Report = FALSE;
     CM_PARTIAL_RESOURCE_DESCRIPTOR Other;
     PDEVICE_OBJECT OtherPdo = NULL;

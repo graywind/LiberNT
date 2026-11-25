@@ -52,9 +52,39 @@ typedef enum _tagDVD_ERROR
         DVD_ERROR_LowParentalLevel                        =5,
         DVD_ERROR_MacrovisionFail                         =6,
         DVD_ERROR_IncompatibleSystemAndDecoderRegions     =7,
-        DVD_ERROR_IncompatibleDiscAndDecoderRegions       =8
-
+        DVD_ERROR_IncompatibleDiscAndDecoderRegions       =8,
+        DVD_ERROR_CopyProtectOutputFail = 9,
+        DVD_ERROR_CopyProtectOutputNotSupported = 0xA,
 } DVD_ERROR;
 
 #endif
+typedef enum _tagDVD_PB_STOPPED {
+    DVD_PB_STOPPED_Other = 0,
+    DVD_PB_STOPPED_NoBranch = 1,
+    DVD_PB_STOPPED_NoFirstPlayDomain = 2,
+    DVD_PB_STOPPED_StopCommand = 3,
+    DVD_PB_STOPPED_Reset = 4,
+    DVD_PB_STOPPED_DiscEjected = 5,
+    DVD_PB_STOPPED_IllegalNavCommand = 6,
+    DVD_PB_STOPPED_PlayPeriodAutoStop = 7,
+    DVD_PB_STOPPED_PlayChapterAutoStop = 8,
+    DVD_PB_STOPPED_ParentalFailure = 9,
+    DVD_PB_STOPPED_RegionFailure = 10,
+    DVD_PB_STOPPED_MacrovisionFailure = 11,
+    DVD_PB_STOPPED_DiscReadError = 12,
+    DVD_PB_STOPPED_CopyProtectFailure = 13,
+    DVD_PB_STOPPED_CopyProtectOutputFailure = 14,
+    DVD_PB_STOPPED_CopyProtectOutputNotSupported = 15
+} DVD_PB_STOPPED;
+
+#define EC_DVD_BeginNavigationCommands 0x123
+#define EC_DVD_GPRM_Change 0x121
+#define EC_DVD_NavigationCommand 0x124
+#define EC_DVD_PROGRAM_CELL_CHANGE 0x11C
+#define EC_DVD_PROGRAM_CHAIN_CHANGE 0x11E
+#define EC_DVD_SPRM_Change 0x122
+#define EC_DVD_TITLE_SET_CHANGE 0x11D
+#define EC_DVD_VOBU_Offset 0x11F
+#define EC_DVD_VOBU_Timestamp 0x120
+
 #endif

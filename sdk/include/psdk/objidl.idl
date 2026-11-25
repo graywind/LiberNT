@@ -824,7 +824,6 @@ interface IBlockingLock : IUnknown
     HRESULT Unlock();
 }
 
-
 [
     object,
     uuid(bc0bf6ae-8878-11d1-83e9-00c04fc2c6d4)
@@ -836,8 +835,6 @@ interface ITimeAndNoticeControl : IUnknown
         [in] DWORD res2);
 
 }
-
-
 
 [
     object,
@@ -969,6 +966,7 @@ interface IEnumSTATDATA : IUnknown
 [
   object,
   uuid(0000010f-0000-0000-C000-000000000046),
+  async_uuid(00000150-0000-0000-C000-000000000046),
   pointer_default(unique)
 ]
 interface IAdviseSink : IUnknown
@@ -1121,6 +1119,7 @@ interface IAdviseSink : IUnknown
 [
   object,
   uuid(00000125-0000-0000-C000-000000000046),
+  async_uuid(00000151-0000-0000-C000-000000000046),
   pointer_default(unique)
 ]
 interface IAdviseSink2 : IAdviseSink
@@ -1377,7 +1376,6 @@ interface IThumbnailExtractor : IUnknown
         [out] ULONG *pulOutputHeight,
         [out] HBITMAP *phOutputBitmap);
 
-
     HRESULT OnFileUpdated(
         [in] IStorage *pStg);
 }
@@ -1402,3 +1400,164 @@ interface IApartmentShutdown : IUnknown
 {
     void OnUninitialize([in] UINT64 identifier);
 }
+
+cpp_quote("#ifndef __objidl_cpp_quote_1_DEFINED__")
+cpp_quote("#define __objidl_cpp_quote_1_DEFINED__")
+cpp_quote("enum tagApplicationType")
+cpp_quote("{")
+cpp_quote("    ServerApplication = 0,")
+cpp_quote("    LibraryApplication = 1,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum tagApplicationType ApplicationType;")
+cpp_quote("")
+cpp_quote("enum tagShutdownType")
+cpp_quote("{")
+cpp_quote("    IdleShutdown = 0,")
+cpp_quote("    ForcedShutdown = 1,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum tagShutdownType ShutdownType;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IProcessLock IProcessLock;")
+cpp_quote("")
+cpp_quote("struct IProcessLockVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IProcessLock *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IProcessLock *);")
+cpp_quote("    ULONG (WINAPI *Release)(IProcessLock *);")
+cpp_quote("    ULONG (WINAPI *AddRefOnProcess)(IProcessLock *);")
+cpp_quote("    ULONG (WINAPI *ReleaseRefOnProcess)(IProcessLock *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct ISurrogateService ISurrogateService;")
+cpp_quote("")
+cpp_quote("struct ISurrogateServiceVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(ISurrogateService *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(ISurrogateService *);")
+cpp_quote("    ULONG (WINAPI *Release)(ISurrogateService *);")
+cpp_quote("    HRESULT (WINAPI *Init)(ISurrogateService *, const GUID *const , IProcessLock *, BOOL *);")
+cpp_quote("    HRESULT (WINAPI *ApplicationLaunch)(ISurrogateService *, const GUID *const , ApplicationType);")
+cpp_quote("    HRESULT (WINAPI *ApplicationFree)(ISurrogateService *, const GUID *const );")
+cpp_quote("    HRESULT (WINAPI *CatalogRefresh)(ISurrogateService *, ULONG);")
+cpp_quote("    HRESULT (WINAPI *ProcessShutdown)(ISurrogateService *, ShutdownType);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("void ASYNC_STGMEDIUM_UserFree64(unsigned long *, ASYNC_STGMEDIUM *);")
+cpp_quote("unsigned char * ASYNC_STGMEDIUM_UserMarshal64(unsigned long *, unsigned char *, ASYNC_STGMEDIUM *);")
+cpp_quote("unsigned long ASYNC_STGMEDIUM_UserSize64(unsigned long *, unsigned long, ASYNC_STGMEDIUM *);")
+cpp_quote("unsigned char * ASYNC_STGMEDIUM_UserUnmarshal64(unsigned long *, unsigned char *, ASYNC_STGMEDIUM *);")
+cpp_quote("void WINAPI AsyncIAdviseSink2_Begin_OnLinkSrcChange_Proxy(AsyncIAdviseSink2 *This, IMoniker *pmk);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink2_Begin_OnLinkSrcChange_Stub(AsyncIAdviseSink2 *This, IMoniker *pmk);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink2_Begin_RemoteOnLinkSrcChange_Proxy(AsyncIAdviseSink2 *This, IMoniker *pmk);")
+cpp_quote("void AsyncIAdviseSink2_Begin_RemoteOnLinkSrcChange_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void WINAPI AsyncIAdviseSink2_Finish_OnLinkSrcChange_Proxy(AsyncIAdviseSink2 *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink2_Finish_OnLinkSrcChange_Stub(AsyncIAdviseSink2 *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink2_Finish_RemoteOnLinkSrcChange_Proxy(AsyncIAdviseSink2 *This);")
+cpp_quote("void AsyncIAdviseSink2_Finish_RemoteOnLinkSrcChange_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Begin_OnClose_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_OnClose_Stub(AsyncIAdviseSink *This);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Begin_OnDataChange_Proxy(AsyncIAdviseSink *This, FORMATETC *pFormatetc, STGMEDIUM *pStgmed);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_OnDataChange_Stub(AsyncIAdviseSink *This, FORMATETC *pFormatetc, ASYNC_STGMEDIUM *pStgmed);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Begin_OnRename_Proxy(AsyncIAdviseSink *This, IMoniker *pmk);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_OnRename_Stub(AsyncIAdviseSink *This, IMoniker *pmk);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Begin_OnSave_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_OnSave_Stub(AsyncIAdviseSink *This);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Begin_OnViewChange_Proxy(AsyncIAdviseSink *This, DWORD dwAspect, LONG lindex);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_OnViewChange_Stub(AsyncIAdviseSink *This, DWORD dwAspect, LONG lindex);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_RemoteOnClose_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("void AsyncIAdviseSink_Begin_RemoteOnClose_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_RemoteOnDataChange_Proxy(AsyncIAdviseSink *This, FORMATETC *pFormatetc, ASYNC_STGMEDIUM *pStgmed);")
+cpp_quote("void AsyncIAdviseSink_Begin_RemoteOnDataChange_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_RemoteOnRename_Proxy(AsyncIAdviseSink *This, IMoniker *pmk);")
+cpp_quote("void AsyncIAdviseSink_Begin_RemoteOnRename_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_RemoteOnSave_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("void AsyncIAdviseSink_Begin_RemoteOnSave_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Begin_RemoteOnViewChange_Proxy(AsyncIAdviseSink *This, DWORD dwAspect, LONG lindex);")
+cpp_quote("void AsyncIAdviseSink_Begin_RemoteOnViewChange_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Finish_OnClose_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_OnClose_Stub(AsyncIAdviseSink *This);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Finish_OnDataChange_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_OnDataChange_Stub(AsyncIAdviseSink *This);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Finish_OnRename_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_OnRename_Stub(AsyncIAdviseSink *This);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Finish_OnSave_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_OnSave_Stub(AsyncIAdviseSink *This);")
+cpp_quote("void WINAPI AsyncIAdviseSink_Finish_OnViewChange_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_OnViewChange_Stub(AsyncIAdviseSink *This);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_RemoteOnClose_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("void AsyncIAdviseSink_Finish_RemoteOnClose_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_RemoteOnDataChange_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("void AsyncIAdviseSink_Finish_RemoteOnDataChange_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_RemoteOnRename_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("void AsyncIAdviseSink_Finish_RemoteOnRename_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_RemoteOnSave_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("void AsyncIAdviseSink_Finish_RemoteOnSave_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("HRESULT WINAPI AsyncIAdviseSink_Finish_RemoteOnViewChange_Proxy(AsyncIAdviseSink *This);")
+cpp_quote("void AsyncIAdviseSink_Finish_RemoteOnViewChange_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void FLAG_STGMEDIUM_UserFree64(unsigned long *, FLAG_STGMEDIUM *);")
+cpp_quote("unsigned char * FLAG_STGMEDIUM_UserMarshal64(unsigned long *, unsigned char *, FLAG_STGMEDIUM *);")
+cpp_quote("unsigned long FLAG_STGMEDIUM_UserSize64(unsigned long *, unsigned long, FLAG_STGMEDIUM *);")
+cpp_quote("unsigned char * FLAG_STGMEDIUM_UserUnmarshal64(unsigned long *, unsigned char *, FLAG_STGMEDIUM *);")
+cpp_quote("HRESULT WINAPI IStorage_CopyTo_Proxy(IStorage *This, DWORD ciidExclude, const IID *rgiidExclude, SNB snbExclude, IStorage *pstgDest);")
+cpp_quote("HRESULT WINAPI IStorage_CopyTo_Stub(IStorage *This, DWORD ciidExclude, const IID *rgiidExclude, SNB snbExclude, IStorage *pstgDest);")
+cpp_quote("HRESULT WINAPI IStorage_RemoteCopyTo_Proxy(IStorage *This, DWORD ciidExclude, const IID *rgiidExclude, SNB snbExclude, IStorage *pstgDest);")
+cpp_quote("void IStorage_RemoteCopyTo_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void SNB_UserFree64(unsigned long *, SNB *);")
+cpp_quote("unsigned char * SNB_UserMarshal64(unsigned long *, unsigned char *, SNB *);")
+cpp_quote("unsigned long SNB_UserSize64(unsigned long *, unsigned long, SNB *);")
+cpp_quote("unsigned char * SNB_UserUnmarshal64(unsigned long *, unsigned char *, SNB *);")
+cpp_quote("void STGMEDIUM_UserFree64(unsigned long *, STGMEDIUM *);")
+cpp_quote("unsigned char * STGMEDIUM_UserMarshal64(unsigned long *, unsigned char *, STGMEDIUM *);")
+cpp_quote("unsigned long STGMEDIUM_UserSize64(unsigned long *, unsigned long, STGMEDIUM *);")
+cpp_quote("unsigned char * STGMEDIUM_UserUnmarshal64(unsigned long *, unsigned char *, STGMEDIUM *);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+cpp_quote("#endif")

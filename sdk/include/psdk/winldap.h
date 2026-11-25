@@ -226,6 +226,7 @@ typedef struct ldap
     ULONG ld_cldaptimeout;
     ULONG ld_refhoplimit;
     ULONG ld_options;
+    ULONG ld_anonymousmaxvalrange;
 } LDAP, *PLDAP;
 
 #define LDAP_MOD_ADD        0x00
@@ -663,5 +664,234 @@ int CDECL LdapUTF8ToUnicode(LPCSTR,int,LPWSTR,int);
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef LBER_TRANSLATE_STRINGS
+#define LBER_TRANSLATE_STRINGS 0x04
+#endif
+#ifndef LBER_USE_INDEFINITE_LEN
+#define LBER_USE_INDEFINITE_LEN 0x02
+#endif
+#ifndef LDAP_ABANDON_CMD
+#define LDAP_ABANDON_CMD 0x50L
+#endif
+#ifndef LDAP_ADD_CMD
+#define LDAP_ADD_CMD 0x68L
+#endif
+#ifndef LDAP_API_VERSION
+#define LDAP_API_VERSION 2004
+#endif
+#ifndef LDAP_BIND_CMD
+#define LDAP_BIND_CMD 0x60L
+#endif
+#ifndef LDAP_COMPARE_CMD
+#define LDAP_COMPARE_CMD 0x6eL
+#endif
+#ifndef LDAP_DELETE_CMD
+#define LDAP_DELETE_CMD 0x4aL
+#endif
+#ifndef LDAP_DEREF_ALWAYS
+#define LDAP_DEREF_ALWAYS 3
+#endif
+#ifndef LDAP_DEREF_FINDING
+#define LDAP_DEREF_FINDING 2
+#endif
+#ifndef LDAP_DEREF_NEVER
+#define LDAP_DEREF_NEVER 0
+#endif
+#ifndef LDAP_DEREF_SEARCHING
+#define LDAP_DEREF_SEARCHING 1
+#endif
+#ifndef LDAP_EXTENDED_CMD
+#define LDAP_EXTENDED_CMD 0x77L
+#endif
+#ifndef LDAP_FILTER_AND
+#define LDAP_FILTER_AND 0xa0
+#endif
+#ifndef LDAP_FILTER_APPROX
+#define LDAP_FILTER_APPROX 0xa8
+#endif
+#ifndef LDAP_FILTER_EQUALITY
+#define LDAP_FILTER_EQUALITY 0xa3
+#endif
+#ifndef LDAP_FILTER_EXTENSIBLE
+#define LDAP_FILTER_EXTENSIBLE 0xa9
+#endif
+#ifndef LDAP_FILTER_GE
+#define LDAP_FILTER_GE 0xa5
+#endif
+#ifndef LDAP_FILTER_LE
+#define LDAP_FILTER_LE 0xa6
+#endif
+#ifndef LDAP_FILTER_NOT
+#define LDAP_FILTER_NOT 0xa2
+#endif
+#ifndef LDAP_FILTER_OR
+#define LDAP_FILTER_OR 0xa1
+#endif
+#ifndef LDAP_FILTER_PRESENT
+#define LDAP_FILTER_PRESENT 0x87
+#endif
+#ifndef LDAP_FILTER_SUBSTRINGS
+#define LDAP_FILTER_SUBSTRINGS 0xa4
+#endif
+#ifndef LDAP_GC_PORT
+#define LDAP_GC_PORT 3268
+#endif
+#ifndef LDAP_INVALID_CMD
+#define LDAP_INVALID_CMD 0xff
+#endif
+#ifndef LDAP_INVALID_RES
+#define LDAP_INVALID_RES 0xff
+#endif
+#ifndef LDAP_MODIFY_CMD
+#define LDAP_MODIFY_CMD 0x66L
+#endif
+#ifndef LDAP_MODRDN_CMD
+#define LDAP_MODRDN_CMD 0x6cL
+#endif
+#ifndef LDAP_NO_LIMIT
+#define LDAP_NO_LIMIT 0
+#endif
+#ifndef LDAP_OPT_ANONYMOUS_MAX_VAL_RANGE
+#define LDAP_OPT_ANONYMOUS_MAX_VAL_RANGE 0x47
+#endif
+#ifndef LDAP_OPT_CHASE_REFERRALS
+#define LDAP_OPT_CHASE_REFERRALS 0x00000002
+#endif
+#ifndef LDAP_OPT_CLDAP_TIMEOUT
+#define LDAP_OPT_CLDAP_TIMEOUT 0x45
+#endif
+#ifndef LDAP_OPT_CLDAP_TRIES
+#define LDAP_OPT_CLDAP_TRIES 0x46
+#endif
+#ifndef LDAP_OPT_DNS
+#define LDAP_OPT_DNS 0x00000001
+#endif
+#ifndef LDAP_OPT_RETURN_REFS
+#define LDAP_OPT_RETURN_REFS 0x00000004
+#endif
+#ifndef LDAP_OPT_SCH_FLAGS
+#define LDAP_OPT_SCH_FLAGS 0x43
+#endif
+#ifndef LDAP_OPT_SOCKET_BIND_ADDRESSES
+#define LDAP_OPT_SOCKET_BIND_ADDRESSES 0x44
+#endif
+#ifndef LDAP_PORT
+#define LDAP_PORT 389
+#endif
+#ifndef LDAP_SEARCH_CMD
+#define LDAP_SEARCH_CMD 0x63L
+#endif
+#ifndef LDAP_SESSION_CMD
+#define LDAP_SESSION_CMD 0x71L
+#endif
+#ifndef LDAP_SSL_GC_PORT
+#define LDAP_SSL_GC_PORT 3269
+#endif
+#ifndef LDAP_SSL_PORT
+#define LDAP_SSL_PORT 636
+#endif
+#ifndef LDAP_SUBSTRING_ANY
+#define LDAP_SUBSTRING_ANY 0x81L
+#endif
+#ifndef LDAP_SUBSTRING_FINAL
+#define LDAP_SUBSTRING_FINAL 0x82L
+#endif
+#ifndef LDAP_SUBSTRING_INITIAL
+#define LDAP_SUBSTRING_INITIAL 0x80L
+#endif
+#ifndef LDAP_UNBIND_CMD
+#define LDAP_UNBIND_CMD 0x42L
+#endif
+#ifndef LDAP_VENDOR_VERSION
+#define LDAP_VENDOR_VERSION 510
+#endif
+#ifndef LDAP_VERSION_MAX
+#define LDAP_VERSION_MAX 3
+#endif
+#ifndef LDAP_VERSION_MIN
+#define LDAP_VERSION_MIN 2
+#endif
+#ifndef LDAP_VLVINFO_VERSION
+#define LDAP_VLVINFO_VERSION 1
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+ULONG __cdecl ldap_set_dbg_flags(ULONG NewFlags);
+#ifdef __cplusplus
+}
+#endif
+
+#define LDAP_API_FEATURE_VIRTUAL_LIST_VIEW 1001
+#define LDAP_AUTH_SSPI 0x486
+#define LDAP_CONTROL_REFERRALS "1.2.840.113556.1.4.616"
+#define LDAP_CONTROL_REFERRALS_W L"1.2.840.113556.1.4.616"
+#define LDAP_CONTROL_VLVREQUEST "2.16.840.1.113730.3.4.9"
+#define LDAP_CONTROL_VLVREQUEST_W L"2.16.840.1.113730.3.4.9"
+#ifdef UNICODE
+#define ldap_rename ldap_rename_extW
+#else
+#define ldap_rename ldap_rename_extA
+#endif
+#ifdef UNICODE
+#define ldap_rename_s ldap_rename_ext_sW
+#else
+#define ldap_rename_s ldap_rename_ext_sA
+#endif
+#define LDAP_SERVER_SORT_OID "1.2.840.113556.1.4.473"
+#define LDAP_SERVER_SORT_OID_W L"1.2.840.113556.1.4.473"
+#define LDAP_START_TLS_OID "1.3.6.1.4.1.1466.20037"
+#define LDAP_START_TLS_OID_W L"1.3.6.1.4.1.1466.20037"
+#define LDAP_TTL_EXTENDED_OP_OID "1.3.6.1.4.1.1466.101.119.1"
+#define LDAP_TTL_EXTENDED_OP_OID_W L"1.3.6.1.4.1.1466.101.119.1"
+#if (!(defined(UNICODE)))
+#define LDAP_UNICODE 0
+#else
+#define LDAP_UNICODE 1
+#endif
+#define LDAP_VENDOR_NAME "Microsoft Corporation."
+#define LDAP_VENDOR_NAME_W L"Microsoft Corporation."
+#define mod_bvalues mod_vals . modv_bvals
+#define mod_values mod_vals . modv_strvals
+#define NULLBER ((BerElement *) 0)
+#define WINLDAPAPI DECLSPEC_IMPORT
+
+typedef ULONG (_cdecl *DBGPRINT)(PCCH, ...);
+
+typedef ULONG DEREFERENCECONNECTION(PLDAP, PLDAP);
+
+struct LdapReferralCallback
+{
+    ULONG SizeOfCallbacks;
+    ULONG (*QueryForConnection)(PLDAP, PLDAP, PWCHAR, PCHAR, ULONG, PVOID, PVOID, PLDAP *);
+    BOOLEAN (*NotifyRoutine)(PLDAP, PLDAP, PWCHAR, PCHAR, PLDAP, ULONG, PVOID, PVOID, ULONG);
+    ULONG (*DereferenceRoutine)(PLDAP, PLDAP);
+};
+
+typedef struct LdapReferralCallback LDAP_REFERRAL_CALLBACK;
+
+typedef BOOLEAN NOTIFYOFNEWCONNECTION(PLDAP, PLDAP, PWCHAR, PCHAR, PLDAP, ULONG, PVOID, PVOID, ULONG);
+
+typedef struct LdapReferralCallback *PLDAP_REFERRAL_CALLBACK;
+
+typedef ULONG QUERYFORCONNECTION(PLDAP, PLDAP, PWCHAR, PCHAR, ULONG, PVOID, PVOID, PLDAP *);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+LDAPMessage * __cdecl ldap_next_reference(LDAP *ld, LDAPMessage *entry);
+
+/* TODO: LiberNT does not implement the functions below yet */
+void LDAPAPI ldap_set_dbg_routine(DBGPRINT DebugPrintRoutine);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define LDAP_IS_CLDAP(ld) ((ld) -> ld_sb . sb_naddr > 0)
+#define NAME_ERROR(n) ((n & 0xf0) == 0x20)
 
 #endif  /* __WINE_WINLDAP_H */

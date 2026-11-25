@@ -6744,3 +6744,381 @@ typedef struct _ProcessorPerformance {
   ULONG power;
   ULONG percentage;
 } ProcessorPerformance, *PProcessorPerformance;
+
+#ifndef COMMIT_POLICY_OUT_Status_ID
+#define COMMIT_POLICY_OUT_Status_ID 1
+#endif
+typedef struct _COMMIT_POLICY_OUT {
+  ULONG Status;
+} COMMIT_POLICY_OUT, *PCOMMIT_POLICY_OUT;
+
+typedef struct _CounterCorruptionStatus {
+  ULONG ProfileSource;
+  ULONGLONG LastKnownGoodTimestamp;
+} CounterCorruptionStatus, *PCounterCorruptionStatus;
+
+typedef struct _GET_ALL_POLICY_OUT {
+  ULONG Status;
+  ULONG Count;
+  ULONG Length;
+  UCHAR Values[1];
+} GET_ALL_POLICY_OUT, *PGET_ALL_POLICY_OUT;
+
+typedef struct _GET_SINGLE_POLICY_IN {
+  ULONG Type;
+} GET_SINGLE_POLICY_IN, *PGET_SINGLE_POLICY_IN;
+
+typedef struct _GET_SINGLE_POLICY_OUT {
+  ULONG Status;
+  ULONG Value;
+} GET_SINGLE_POLICY_OUT, *PGET_SINGLE_POLICY_OUT;
+
+typedef struct _MSNdis_NetworkDirectState {
+  BOOLEAN Enabled;
+} MSNdis_NetworkDirectState, *PMSNdis_NetworkDirectState;
+
+typedef struct _MSNdis_NetworkDirectVersion {
+  USHORT MajorVersionNumber;
+  USHORT MinorVersionNumber;
+} MSNdis_NetworkDirectVersion, *PMSNdis_NetworkDirectVersion;
+
+typedef struct _MSNdis_NetworkDirectAdapterInfo {
+  MSNdis_NetworkDirectVersion Version;
+  ULONG VendorId;
+  ULONG DeviceId;
+  ULONGLONG MaxRegistrationSize;
+  ULONGLONG MaxWindowSize;
+  ULONG FRMRPageCount;
+  ULONG MaxInitiatorRequestSge;
+  ULONG MaxReceiveRequestSge;
+  ULONG MaxReadRequestSge;
+  ULONG MaxTransferLength;
+  ULONG MaxInlineDataSize;
+  ULONG MaxInboundReadLimit;
+  ULONG MaxOutboundReadLimit;
+  ULONG MaxReceiveQueueDepth;
+  ULONG MaxInitiatorQueueDepth;
+  ULONG MaxSrqDepth;
+  ULONG MaxCqDepth;
+  ULONG LargeRequestThreshold;
+  ULONG MaxCallerData;
+  ULONG MaxCalleeData;
+  BOOLEAN InOrderDMA;
+  BOOLEAN SupportsCQResize;
+  BOOLEAN SupportsLoopbackConnections;
+} MSNdis_NetworkDirectAdapterInfo, *PMSNdis_NetworkDirectAdapterInfo;
+
+typedef struct _MSNdis_NetworkDirectAdapterCapabilities {
+  ULONG MaxQpCount;
+  ULONG MaxCqCount;
+  ULONG MaxMrCount;
+  ULONG MaxPdCount;
+  ULONG MaxInboundReadLimit;
+  ULONG MaxOutboundReadLimit;
+  ULONG MaxMwCount;
+  ULONG MaxSrqCount;
+  ULONGLONG MissingCounterMask;
+  MSNdis_NetworkDirectAdapterInfo NdAdapterInfo;
+} MSNdis_NetworkDirectAdapterCapabilities, *PMSNdis_NetworkDirectAdapterCapabilities;
+
+typedef struct _MSNdis_NetworkDirectCapabilities {
+  MSNdis_NetworkDirectAdapterCapabilities NdCapabilities;
+} MSNdis_NetworkDirectCapabilities, *PMSNdis_NetworkDirectCapabilities;
+
+typedef struct _MSNdis_StatusExternalConnectivityChange {
+  ULONG NdisMediaConnectStatus;
+} MSNdis_StatusExternalConnectivityChange, *PMSNdis_StatusExternalConnectivityChange;
+
+typedef struct _RESET_POLICY_OUT {
+  ULONG Status;
+} RESET_POLICY_OUT, *PRESET_POLICY_OUT;
+
+typedef struct _SET_SINGLE_POLICY_IN {
+  ULONG Type;
+  ULONG Value;
+} SET_SINGLE_POLICY_IN, *PSET_SINGLE_POLICY_IN;
+
+typedef struct _SET_SINGLE_POLICY_OUT {
+  ULONG Status;
+} SET_SINGLE_POLICY_OUT, *PSET_SINGLE_POLICY_OUT;
+
+typedef struct _WHEA_PAGE_OFFLINING_INTERFACE_IN {
+  ULONG InputLength;
+  UCHAR InputBuffer[1];
+} WHEA_PAGE_OFFLINING_INTERFACE_IN, *PWHEA_PAGE_OFFLINING_INTERFACE_IN;
+
+typedef struct _WHEA_PAGE_OFFLINING_INTERFACE_OUT {
+  ULONG Status;
+} WHEA_PAGE_OFFLINING_INTERFACE_OUT, *PWHEA_PAGE_OFFLINING_INTERFACE_OUT;
+
+typedef struct _WHEA_PLUGIN_CTL_INTERFACE_IN {
+  ULONG InputLength;
+  UCHAR InputBuffer[1];
+} WHEA_PLUGIN_CTL_INTERFACE_IN, *PWHEA_PLUGIN_CTL_INTERFACE_IN;
+
+typedef struct _WHEA_PLUGIN_CTL_INTERFACE_OUT {
+  ULONG Status;
+  ULONG OutputLength;
+  UCHAR OutputBuffer[1];
+} WHEA_PLUGIN_CTL_INTERFACE_OUT, *PWHEA_PLUGIN_CTL_INTERFACE_OUT;
+
+#define _wmidata_h_
+#define COMMIT_POLICY_OUT_SIZE 4
+#define COMMIT_POLICY_OUT_Status_SIZE 4
+#define CounterCorruptionStatus_LastKnownGoodTimestamp_SIZE 8
+#define CounterCorruptionStatus_ProfileSource_ID 1
+#define CounterCorruptionStatus_ProfileSource_SIZE sizeof (ULONG)
+#define CounterCorruptionStatus_SIZE 0x10
+#define CounterCorruptionStatusGuid { 0x5a5183f3, 0x9216, 0x4b06, { 0x97, 0x07, 0x81, 0x48, 0x20, 0x6c, 0x1e, 0x3c } }
+#define GET_ALL_POLICY_OUT_Count_SIZE 4
+#define GET_ALL_POLICY_OUT_Length_SIZE 4
+#define GET_ALL_POLICY_OUT_Status_SIZE 4
+#define GET_SINGLE_POLICY_IN_SIZE 4
+#define GET_SINGLE_POLICY_IN_Type_SIZE 4
+#define GET_SINGLE_POLICY_OUT_SIZE 8
+#define GET_SINGLE_POLICY_OUT_Status_SIZE 4
+#define GET_SINGLE_POLICY_OUT_Value_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxCqCount_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxInboundReadLimit_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxMrCount_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxMwCount_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxOutboundReadLimit_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxPdCount_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxQpCount_ID 1
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxQpCount_SIZE sizeof (ULONG)
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxSrqCount_SIZE 4
+#define MSNdis_NetworkDirectAdapterCapabilities_MissingCounterMask_SIZE 8
+#define MSNdis_NetworkDirectAdapterCapabilities_NdAdapterInfo_SIZE 0x60
+#define MSNdis_NetworkDirectAdapterCapabilities_SIZE 0x88
+#define MSNdis_NetworkDirectAdapterCapabilitiesGuid { 0x64c71824, 0x1bb8, 0x47d2, { 0xb3, 0x47, 0xa8, 0xfb, 0xd9, 0x5b, 0x9c, 0x07 } }
+#define MSNdis_NetworkDirectAdapterInfo_DeviceId_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_FRMRPageCount_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_InOrderDMA_SIZE 1
+#define MSNdis_NetworkDirectAdapterInfo_LargeRequestThreshold_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxCalleeData_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxCallerData_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxCqDepth_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxInboundReadLimit_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxInitiatorQueueDepth_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxInitiatorRequestSge_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxInlineDataSize_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxOutboundReadLimit_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxReadRequestSge_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxReceiveQueueDepth_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxReceiveRequestSge_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxRegistrationSize_SIZE 8
+#define MSNdis_NetworkDirectAdapterInfo_MaxSrqDepth_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxTransferLength_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_MaxWindowSize_SIZE 8
+#define MSNdis_NetworkDirectAdapterInfo_SIZE 0x5F
+#define MSNdis_NetworkDirectAdapterInfo_SupportsCQResize_SIZE 1
+#define MSNdis_NetworkDirectAdapterInfo_SupportsLoopbackConnections_SIZE 1
+#define MSNdis_NetworkDirectAdapterInfo_VendorId_SIZE 4
+#define MSNdis_NetworkDirectAdapterInfo_Version_ID 1
+#define MSNdis_NetworkDirectAdapterInfo_Version_SIZE sizeof (MSNdis_NetworkDirectVersion)
+#define MSNdis_NetworkDirectAdapterInfoGuid { 0x691a00ec, 0x4e8e, 0x4993, { 0x87, 0x9e, 0x96, 0x00, 0x11, 0xa4, 0x6c, 0xef } }
+#define MSNdis_NetworkDirectCapabilities_NdCapabilities_ID 1
+#define MSNdis_NetworkDirectCapabilities_NdCapabilities_SIZE sizeof (MSNdis_NetworkDirectAdapterCapabilities)
+#define MSNdis_NetworkDirectCapabilities_SIZE 0x88
+#define MSNdis_NetworkDirectCapabilitiesGuid { 0x7969ba4d, 0xdd80, 0x4bc7, { 0xb3, 0xe6, 0x68, 0x04, 0x39, 0x97, 0xe5, 0x19 } }
+#define MSNdis_NetworkDirectState_Enabled_ID 1
+#define MSNdis_NetworkDirectState_Enabled_SIZE sizeof (BOOLEAN)
+#define MSNdis_NetworkDirectState_SIZE 1
+#define MSNdis_NetworkDirectStateGuid { 0x530c69c9, 0x2f51, 0x49de, { 0xa1, 0xaf, 0x08, 0x8d, 0x54, 0xff, 0xa4, 0x74 } }
+#define MSNdis_NetworkDirectVersion_MajorVersionNumber_ID 1
+#define MSNdis_NetworkDirectVersion_MajorVersionNumber_SIZE sizeof (USHORT)
+#define MSNdis_NetworkDirectVersion_MinorVersionNumber_SIZE 2
+#define MSNdis_NetworkDirectVersion_SIZE 4
+#define MSNdis_NetworkDirectVersionGuid { 0xc89b8490, 0x350a, 0x4a34, { 0x90, 0xb6, 0x98, 0xb3, 0x7f, 0x4e, 0xd5, 0xb2 } }
+#define MSNdis_StatusExternalConnectivityChange_NdisMediaConnectStatus_ID 1
+#define MSNdis_StatusExternalConnectivityChange_NdisMediaConnectStatus_SIZE sizeof (ULONG)
+#define MSNdis_StatusExternalConnectivityChange_SIZE 4
+#define MSNdis_StatusExternalConnectivityChangeGuid { 0xfd306974, 0xc420, 0x4433, { 0xb0, 0xfe, 0x4c, 0xf6, 0xa6, 0x13, 0xf5, 0x9f } }
+#define RESET_POLICY_OUT_SIZE 4
+#define RESET_POLICY_OUT_Status_SIZE 4
+#define SET_SINGLE_POLICY_IN_SIZE 8
+#define SET_SINGLE_POLICY_IN_Type_SIZE 4
+#define SET_SINGLE_POLICY_IN_Value_SIZE 4
+#define SET_SINGLE_POLICY_OUT_SIZE 4
+#define SET_SINGLE_POLICY_OUT_Status_SIZE 4
+#define WHEA_PAGE_OFFLINING_INTERFACE_IN_InputLength_SIZE 4
+#define WHEA_PAGE_OFFLINING_INTERFACE_OUT_SIZE 4
+#define WHEA_PAGE_OFFLINING_INTERFACE_OUT_Status_SIZE 4
+#define WHEA_PLUGIN_CTL_INTERFACE_IN_InputLength_SIZE 4
+#define WHEA_PLUGIN_CTL_INTERFACE_OUT_OutputLength_SIZE 4
+#define WHEA_PLUGIN_CTL_INTERFACE_OUT_Status_SIZE 4
+#define WheaGetAllPolicyRtn 1
+#define WheaPageOfflineInterfaceRtn 1
+#define WHEAPageOfflineMethodsGuid { 0x8a13d6df, 0xa461, 0x4882, { 0xb4, 0x59, 0x5e, 0x68, 0xb7, 0x14, 0x6c, 0x3d } }
+#define WheaPluginCtlInterfaceRtn 1
+#define WHEAPluginCtlMethodsGuid { 0xed16c828, 0xbdec, 0x41a4, { 0x8f, 0xef, 0x3b, 0xfc, 0x15, 0xad, 0xec, 0xbd } }
+#define WHEAPolicyManagementMethodsGuid { 0x794569ee, 0x137c, 0x4a06, { 0x8a, 0xdd, 0xd2, 0x25, 0xb5, 0x3d, 0xfc, 0x4b } }
+
+#ifndef CounterCorruptionStatus_LastKnownGoodTimestamp_ID
+#define CounterCorruptionStatus_LastKnownGoodTimestamp_ID 2
+#endif
+#ifndef GET_ALL_POLICY_OUT_Count_ID
+#define GET_ALL_POLICY_OUT_Count_ID 2
+#endif
+#ifndef GET_ALL_POLICY_OUT_Length_ID
+#define GET_ALL_POLICY_OUT_Length_ID 3
+#endif
+#ifndef GET_ALL_POLICY_OUT_Status_ID
+#define GET_ALL_POLICY_OUT_Status_ID 1
+#endif
+#ifndef GET_ALL_POLICY_OUT_Values_ID
+#define GET_ALL_POLICY_OUT_Values_ID 4
+#endif
+#ifndef GET_SINGLE_POLICY_IN_Type_ID
+#define GET_SINGLE_POLICY_IN_Type_ID 2
+#endif
+#ifndef GET_SINGLE_POLICY_OUT_Status_ID
+#define GET_SINGLE_POLICY_OUT_Status_ID 1
+#endif
+#ifndef GET_SINGLE_POLICY_OUT_Value_ID
+#define GET_SINGLE_POLICY_OUT_Value_ID 3
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MaxCqCount_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxCqCount_ID 2
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MaxInboundReadLimit_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxInboundReadLimit_ID 5
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MaxMrCount_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxMrCount_ID 3
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MaxMwCount_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxMwCount_ID 7
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MaxOutboundReadLimit_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxOutboundReadLimit_ID 6
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MaxPdCount_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxPdCount_ID 4
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MaxSrqCount_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MaxSrqCount_ID 8
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_MissingCounterMask_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_MissingCounterMask_ID 9
+#endif
+#ifndef MSNdis_NetworkDirectAdapterCapabilities_NdAdapterInfo_ID
+#define MSNdis_NetworkDirectAdapterCapabilities_NdAdapterInfo_ID 10
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_DeviceId_ID
+#define MSNdis_NetworkDirectAdapterInfo_DeviceId_ID 3
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_FRMRPageCount_ID
+#define MSNdis_NetworkDirectAdapterInfo_FRMRPageCount_ID 6
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_InOrderDMA_ID
+#define MSNdis_NetworkDirectAdapterInfo_InOrderDMA_ID 21
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_LargeRequestThreshold_ID
+#define MSNdis_NetworkDirectAdapterInfo_LargeRequestThreshold_ID 18
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxCalleeData_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxCalleeData_ID 20
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxCallerData_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxCallerData_ID 19
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxCqDepth_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxCqDepth_ID 17
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxInboundReadLimit_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxInboundReadLimit_ID 12
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxInitiatorQueueDepth_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxInitiatorQueueDepth_ID 15
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxInitiatorRequestSge_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxInitiatorRequestSge_ID 7
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxInlineDataSize_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxInlineDataSize_ID 11
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxOutboundReadLimit_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxOutboundReadLimit_ID 13
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxReadRequestSge_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxReadRequestSge_ID 9
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxReceiveQueueDepth_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxReceiveQueueDepth_ID 14
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxReceiveRequestSge_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxReceiveRequestSge_ID 8
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxRegistrationSize_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxRegistrationSize_ID 4
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxSrqDepth_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxSrqDepth_ID 16
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxTransferLength_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxTransferLength_ID 10
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_MaxWindowSize_ID
+#define MSNdis_NetworkDirectAdapterInfo_MaxWindowSize_ID 5
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_SupportsCQResize_ID
+#define MSNdis_NetworkDirectAdapterInfo_SupportsCQResize_ID 22
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_SupportsLoopbackConnections_ID
+#define MSNdis_NetworkDirectAdapterInfo_SupportsLoopbackConnections_ID 23
+#endif
+#ifndef MSNdis_NetworkDirectAdapterInfo_VendorId_ID
+#define MSNdis_NetworkDirectAdapterInfo_VendorId_ID 2
+#endif
+#ifndef MSNdis_NetworkDirectVersion_MinorVersionNumber_ID
+#define MSNdis_NetworkDirectVersion_MinorVersionNumber_ID 2
+#endif
+#ifndef RESET_POLICY_OUT_Status_ID
+#define RESET_POLICY_OUT_Status_ID 1
+#endif
+#ifndef SET_SINGLE_POLICY_IN_Type_ID
+#define SET_SINGLE_POLICY_IN_Type_ID 2
+#endif
+#ifndef SET_SINGLE_POLICY_IN_Value_ID
+#define SET_SINGLE_POLICY_IN_Value_ID 3
+#endif
+#ifndef SET_SINGLE_POLICY_OUT_Status_ID
+#define SET_SINGLE_POLICY_OUT_Status_ID 1
+#endif
+#ifndef WHEA_PAGE_OFFLINING_INTERFACE_IN_InputBuffer_ID
+#define WHEA_PAGE_OFFLINING_INTERFACE_IN_InputBuffer_ID 2
+#endif
+#ifndef WHEA_PAGE_OFFLINING_INTERFACE_IN_InputLength_ID
+#define WHEA_PAGE_OFFLINING_INTERFACE_IN_InputLength_ID 1
+#endif
+#ifndef WHEA_PAGE_OFFLINING_INTERFACE_OUT_Status_ID
+#define WHEA_PAGE_OFFLINING_INTERFACE_OUT_Status_ID 3
+#endif
+#ifndef WHEA_PLUGIN_CTL_INTERFACE_IN_InputBuffer_ID
+#define WHEA_PLUGIN_CTL_INTERFACE_IN_InputBuffer_ID 2
+#endif
+#ifndef WHEA_PLUGIN_CTL_INTERFACE_IN_InputLength_ID
+#define WHEA_PLUGIN_CTL_INTERFACE_IN_InputLength_ID 1
+#endif
+#ifndef WHEA_PLUGIN_CTL_INTERFACE_OUT_OutputBuffer_ID
+#define WHEA_PLUGIN_CTL_INTERFACE_OUT_OutputBuffer_ID 5
+#endif
+#ifndef WHEA_PLUGIN_CTL_INTERFACE_OUT_OutputLength_ID
+#define WHEA_PLUGIN_CTL_INTERFACE_OUT_OutputLength_ID 4
+#endif
+#ifndef WHEA_PLUGIN_CTL_INTERFACE_OUT_Status_ID
+#define WHEA_PLUGIN_CTL_INTERFACE_OUT_Status_ID 3
+#endif
+#ifndef WheaCommitPolicyRtn
+#define WheaCommitPolicyRtn 4
+#endif
+#ifndef WheaGetPolicyRtn
+#define WheaGetPolicyRtn 2
+#endif
+#ifndef WheaResetPolicyRtn
+#define WheaResetPolicyRtn 5
+#endif
+#ifndef WheaSetPolicyRtn
+#define WheaSetPolicyRtn 3
+#endif

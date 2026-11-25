@@ -400,4 +400,76 @@ typedef struct _MINIRDR_DISPATCH
     ULONG ScavengerTimeout;
 } MINIRDR_DISPATCH, *PMINIRDR_DISPATCH;
 
+#ifndef LOWIO_LOCKSFLAG_EXCLUSIVELOCK
+#define LOWIO_LOCKSFLAG_EXCLUSIVELOCK 0x02
+#endif
+#ifndef LOWIO_LOCKSFLAG_FAIL_IMMEDIATELY
+#define LOWIO_LOCKSFLAG_FAIL_IMMEDIATELY 0x01
+#endif
+#ifndef MINIRDR_BUFSTATE_COMMAND_FORCEPURGE
+#define MINIRDR_BUFSTATE_COMMAND_FORCEPURGE 0x00000001
+#endif
+#ifndef RX_REGISTERMINI_FLAG_DONT_USE_VISTA_REDIRECTOR
+#define RX_REGISTERMINI_FLAG_DONT_USE_VISTA_REDIRECTOR 0x00000010
+#endif
+
+typedef enum _MINIRDR_BUFSTATE_COMMANDS {
+    MRDRBUFSTCMD__COMMAND_FORCEPURGE0 = 0,
+    MRDRBUFSTCMD__1 = 1,
+    MRDRBUFSTCMD__2 = 2,
+    MRDRBUFSTCMD__3 = 3,
+    MRDRBUFSTCMD__4 = 4,
+    MRDRBUFSTCMD__5 = 5,
+    MRDRBUFSTCMD__6 = 6,
+    MRDRBUFSTCMD__7 = 7,
+    MRDRBUFSTCMD__8 = 8,
+    MRDRBUFSTCMD__9 = 9,
+    MRDRBUFSTCMD__10 = 10,
+    MRDRBUFSTCMD__11 = 11,
+    MRDRBUFSTCMD__12 = 12,
+    MRDRBUFSTCMD__13 = 13,
+    MRDRBUFSTCMD__14 = 14,
+    MRDRBUFSTCMD__15 = 15,
+    MRDRBUFSTCMD__16 = 16,
+    MRDRBUFSTCMD__17 = 17,
+    MRDRBUFSTCMD__18 = 18,
+    MRDRBUFSTCMD__19 = 19,
+    MRDRBUFSTCMD__20 = 20,
+    MRDRBUFSTCMD__21 = 21,
+    MRDRBUFSTCMD__22 = 22,
+    MRDRBUFSTCMD__23 = 23,
+    MRDRBUFSTCMD__24 = 24,
+    MRDRBUFSTCMD__25 = 25,
+    MRDRBUFSTCMD__26 = 26,
+    MRDRBUFSTCMD__27 = 27,
+    MRDRBUFSTCMD__28 = 28,
+    MRDRBUFSTCMD__29 = 29,
+    MRDRBUFSTCMD__30 = 30,
+    MRDRBUFSTCMD__31 = 31,
+    MRDRBUFSTCMD_MAXXX = 32
+} MINIRDR_BUFSTATE_COMMANDS;
+
+#define MINIRDR_BUFSTATE_COMMAND_MASK 1
+
+typedef void (NTAPI *PMRX_NEWSTATE_CALLDOWN)(PVOID);
+
+typedef BOOLEAN (NTAPI *PRX_LOCK_ENUMERATOR)(PMRX_SRV_OPEN, PVOID *, PLARGE_INTEGER, PLARGE_INTEGER, PBOOLEAN);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+void __RxFillAndInstallFastIoDispatch(PRDBSS_DEVICE_OBJECT RxDeviceObject, PFAST_IO_DISPATCH FastIoDispatch, ULONG FastIoDispatchSize);
+void NTAPI RxFinalizeLockList(struct _RX_CONTEXT *RxContext);
+void NTAPI RxMakeLateDeviceAvailable(PRDBSS_DEVICE_OBJECT RxDeviceObject);
+NTSTATUS NTAPI RxSetDomainForMailslotBroadcast(PUNICODE_STRING DomainName);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define RxFillAndInstallFastIoDispatch(__devobj, __fastiodisp) { __RxFillAndInstallFastIoDispatch(& __devobj -> RxDeviceObject, & __fastiodisp, sizeof (__fastiodisp)); }
+#define RxGetIoStatusInfo(RXCONTEXT) ((RXCONTEXT) -> CurrentIrp -> IoStatus . Information)
+
 #endif

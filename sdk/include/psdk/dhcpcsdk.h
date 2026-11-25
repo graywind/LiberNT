@@ -142,4 +142,28 @@ DWORD WINAPI DhcpRequestParams(DWORD, void *, WCHAR *, DHCPCAPI_CLASSID *, DHCPC
 DWORD WINAPI DhcpUndoRequestParams(DWORD, LPVOID, LPWSTR, LPWSTR);
 #endif
 
+#ifndef DHCPCAPI_DEREGISTER_HANDLE_EVENT
+#define DHCPCAPI_DEREGISTER_HANDLE_EVENT 0x01
+#endif
+#ifndef OPTION_CAPTIVE_PORTAL
+#define OPTION_CAPTIVE_PORTAL 114
+#endif
+#ifndef OPTION_DNR
+#define OPTION_DNR 162
+#endif
+#ifndef OPTION_IPV6_ONLY_PREFERRED
+#define OPTION_IPV6_ONLY_PREFERRED 108
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+DWORD WINAPI DhcpGetOriginalSubnetMask(LPCWSTR sAdapterName, DWORD *dwSubnetMask);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

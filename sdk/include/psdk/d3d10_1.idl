@@ -48,7 +48,6 @@ cpp_quote("#define D3D10_1_FLOAT32_TO_INTEGER_TOLERANCE_IN_ULP (0.6f)")
 import "d3d10.idl";
 cpp_quote("#include <d3d10_1shader.h>")
 
-
 typedef enum D3D10_FEATURE_LEVEL1
 {
     D3D10_FEATURE_LEVEL_10_0  = 0xa000,
@@ -155,3 +154,18 @@ cpp_quote("    HMODULE,UINT,D3D10_FEATURE_LEVEL1,UINT,ID3D10Device1**);")
 [local] HRESULT __stdcall D3D10CreateDeviceAndSwapChain1(IDXGIAdapter *adapter, enum D3D10_DRIVER_TYPE driver_type,
         HMODULE swrast, UINT flags, D3D10_FEATURE_LEVEL1 feature_level, UINT sdk_version,
         DXGI_SWAP_CHAIN_DESC *swapchain_desc, IDXGISwapChain **swapchain, ID3D10Device1 **device);
+
+cpp_quote("enum D3D10_STANDARD_MULTISAMPLE_QUALITY_LEVELS")
+cpp_quote("{")
+cpp_quote("    D3D10_STANDARD_MULTISAMPLE_PATTERN = (-1),")
+cpp_quote("    D3D10_CENTER_MULTISAMPLE_PATTERN = (-2),")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum D3D10_STANDARD_MULTISAMPLE_QUALITY_LEVELS D3D10_STANDARD_MULTISAMPLE_QUALITY_LEVELS;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef HRESULT (WINAPI *PFN_D3D10_CREATE_DEVICE1)(IDXGIAdapter *, D3D10_DRIVER_TYPE, HMODULE, UINT, D3D10_FEATURE_LEVEL1, UINT, ID3D10Device1 **);")
+cpp_quote("")
+cpp_quote("typedef HRESULT (WINAPI *PFN_D3D10_CREATE_DEVICE_AND_SWAP_CHAIN1)(IDXGIAdapter *, D3D10_DRIVER_TYPE, HMODULE, UINT, D3D10_FEATURE_LEVEL1, UINT, DXGI_SWAP_CHAIN_DESC *, IDXGISwapChain **, ID3D10Device1 **);")

@@ -28,7 +28,6 @@
 #include <windows.h>
 #endif
 
-#pragma pack(push, 4)
 
 #ifndef WINSNMPAPI
 #define WINSNMPAPI WINAPI
@@ -53,7 +52,7 @@ extern "C" {
 #define SNMP_PDU_GETNEXT	(ASN_CONTEXT | ASN_CONSTRUCTOR | 1)
 #define SNMP_PDU_RESPONSE	(ASN_CONTEXT | ASN_CONSTRUCTOR | 2)
 #define SNMP_PDU_SET	(ASN_CONTEXT | ASN_CONSTRUCTOR | 3)
-#define SNMP_PDU_GETBULK	(ASN_CONTEXT | ASN_CONSTRUCTOR | 4)
+#define SNMP_PDU_GETBULK	(ASN_CONTEXT | ASN_CONSTRUCTOR | 5)
 #define SNMP_PDU_V1TRAP	(ASN_CONTEXT | ASN_CONSTRUCTOR | 4)
 #define SNMP_PDU_INFORM	(ASN_CONTEXT | ASN_CONSTRUCTOR | 6)
 #define SNMP_PDU_TRAP	(ASN_CONTEXT | ASN_CONSTRUCTOR | 7)
@@ -322,5 +321,32 @@ SNMPAPI_STATUS WINSNMPAPI SnmpPasswordToKey(smiLPOCTETS,smiINT32,smiLPOCTETS);
 #ifdef __cplusplus
 }
 #endif
-#pragma pack(pop)
+#ifndef SNMPLISTEN_ALL_ADDR
+#define SNMPLISTEN_ALL_ADDR 1
+#endif
+#ifndef SNMPLISTEN_USEENTITY_ADDR
+#define SNMPLISTEN_USEENTITY_ADDR 0
+#endif
+
+#define _INC_WINSNMP
+#define SNMP_SYNTAX_UNSIGNED32 0x42
+#define SNMPAPI_CALL WINAPI
+
+typedef SNMPAPI_STATUS (*PFNSNMPCLEANUPEX)(void);
+
+typedef SNMPAPI_STATUS (*PFNSNMPSTARTUPEX)(smiLPUINT32, smiLPUINT32, smiLPUINT32, smiLPUINT32, smiLPUINT32);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+SNMPAPI_STATUS SnmpCleanupEx(void);
+SNMPAPI_STATUS SnmpListenEx(HSNMP_ENTITY hEntity, SNMPAPI_STATUS lStatus, smiUINT32 nUseEntityAddr);
+SNMPAPI_STATUS SnmpStartupEx(smiLPUINT32 nMajorVersion, smiLPUINT32 nMinorVersion, smiLPUINT32 nLevel, smiLPUINT32 nTranslateMode, smiLPUINT32 nRetransmitMode);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

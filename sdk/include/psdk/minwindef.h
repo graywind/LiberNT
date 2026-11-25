@@ -232,4 +232,17 @@ typedef struct _FILETIME
 } FILETIME, *PFILETIME, *LPFILETIME;
 #define _FILETIME_
 
+#define WINAPI_INLINE WINAPI
+
+
+
+
+
+
+
+
+
+
+
+
 #endif // _MINWINDEF_

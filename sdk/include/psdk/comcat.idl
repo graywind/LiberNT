@@ -41,7 +41,6 @@ cpp_quote("#define IEnumCLSID IEnumGUID")
 cpp_quote("#define IID_IEnumCLSID IID_IEnumGUID")
 cpp_quote("#define LPENUMCLSID LPENUMGUID")
 
-
 /*****************************************************************************
  * IEnumGUID
  */
@@ -67,7 +66,6 @@ interface IEnumGUID : IUnknown
     HRESULT Clone(
         [out] IEnumGUID **ppenum);
 }
-
 
 /*****************************************************************************
  * IEnumCATEGORYINFO
@@ -101,7 +99,6 @@ interface IEnumCATEGORYINFO : IUnknown
     HRESULT Clone(
         [out] IEnumCATEGORYINFO** ppenum);
 }
-
 
 /*****************************************************************************
  * ICatInformation
@@ -165,7 +162,6 @@ interface ICatInformation : IUnknown
         [out] IEnumCATID** ppenumCatid);
 }
 
-
 /*****************************************************************************
  * ICatRegister
  */
@@ -207,7 +203,6 @@ interface ICatRegister : IUnknown
         [in, size_is(cCategories)] CATID rgcatid[]);
 }
 
-
 /*****************************************************************************
  * Category IDs
  */
@@ -230,3 +225,21 @@ cpp_quote("DEFINE_GUID( CATID_InternetAware, 0x0de86a58, 0x2baa, 0x11cf, 0xa2, 0
 cpp_quote("DEFINE_GUID( CATID_DesignTimeUIActivatableControl, 0xf2bb56d1, 0xdb07, 0x11d1, 0xaa, 0x6b, 0x00, 0x60, 0x97, 0xdb, 0x95, 0x39);")
 /* The Component Category Manager */
 cpp_quote("DEFINE_GUID(CLSID_StdComponentCategoriesMgr, 0x0002e005, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46);")
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("HRESULT WINAPI IEnumGUID_Next_Proxy(IEnumGUID *This, ULONG celt, GUID *rgelt, ULONG *pceltFetched);")
+cpp_quote("HRESULT WINAPI IEnumGUID_Next_Stub(IEnumGUID *This, ULONG celt, GUID *rgelt, ULONG *pceltFetched);")
+cpp_quote("HRESULT WINAPI IEnumGUID_RemoteNext_Proxy(IEnumGUID *This, ULONG celt, GUID *rgelt, ULONG *pceltFetched);")
+cpp_quote("void IEnumGUID_RemoteNext_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")

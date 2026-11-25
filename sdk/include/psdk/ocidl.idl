@@ -38,8 +38,9 @@ interface IOleControlTypes
         UAS_NORMAL       = 0x0,
         UAS_BLOCKED      = 0x1,
         UAS_NOPARENTABLE = 0x2,
-        UAS_MASK         = 0x3
-    } UASFLAGS;
+        UAS_MASK         = 0x3,
+        UAS_NOPARENTENABLE = 2,
+} UASFLAGS;
 
     typedef enum tagREADYSTATE
     {
@@ -62,7 +63,6 @@ interface IOleControlTypes
       wireVARIANT_BLOB pVarBlob;
     } UserVARIANT;
 }
-
 
 /*****************************************************************************
  * IFont interface
@@ -103,7 +103,6 @@ interface IFont : IUnknown
     HRESULT SetHdc( [in] HDC hdc );
 }
 
-
 /*****************************************************************************
  * IFontDisp interface
  */
@@ -116,7 +115,6 @@ interface IFontDisp : IDispatch
 {
     typedef IFontDisp *LPFONTDISP;
 }
-
 
 /*****************************************************************************
  * IFontEventsDisp interface
@@ -131,7 +129,6 @@ interface IFontEventsDisp : IDispatch
     typedef IFontEventsDisp *LPFONTEVENTS;
 }
 
-
 /*****************************************************************************
  * IPicture interface
  */
@@ -144,7 +141,7 @@ interface IPicture : IUnknown
 {
     typedef IPicture *LPPICTURE;
 
-    typedef enum tagPicture
+    typedef enum tagPictureAttributes
     {
         PICTURE_SCALABLE = 0x1,
         PICTURE_TRANSPARENT = 0x2
@@ -197,7 +194,6 @@ interface IPicture : IUnknown
     [propget] HRESULT Attributes( [out] DWORD *pDwAttr );
 }
 
-
 /*****************************************************************************
  * IPictureDisp interface
  */
@@ -210,7 +206,6 @@ interface IPictureDisp : IDispatch
 {
     typedef IPictureDisp *LPPICTUREDISP;
 }
-
 
 /*****************************************************************************
  * IOleControl interface
@@ -244,7 +239,6 @@ interface IOleControl : IUnknown
     HRESULT OnAmbientPropertyChange( [in] DISPID dispID );
     HRESULT FreezeEvents( [in] BOOL bFreeze );
 }
-
 
 /*****************************************************************************
  * IOleControlSite interface
@@ -291,7 +285,6 @@ interface IOleControlSite : IUnknown
     HRESULT ShowPropertyFrame();
 }
 
-
 /*****************************************************************************
  * IOleInPlaceSiteEx interface
  */
@@ -313,7 +306,6 @@ interface IOleInPlaceSiteEx : IOleInPlaceSite
     HRESULT OnInPlaceDeactivateEx( [in] BOOL fNoRedraw );
     HRESULT RequestUIActivate();
 }
-
 
 /*****************************************************************************
  * IOleInPlaceSiteWindowless interface
@@ -375,7 +367,6 @@ interface IOleInPlaceSiteWindowless : IOleInPlaceSiteEx
         [out] LRESULT *plResult);
 }
 
-
 /*****************************************************************************
  * IOleInPlaceObjectWindowless interface
  */
@@ -397,7 +388,6 @@ interface IOleInPlaceObjectWindowless : IOleInPlaceObject
 
     HRESULT GetDropTarget( [out] IDropTarget **ppDropTarget );
 }
-
 
 /*****************************************************************************
  * IClassFactory2 interface
@@ -438,7 +428,6 @@ interface IClassFactory2 : IClassFactory
         [in] BSTR bstrKey,
         [out, iid_is(riid)] IUnknown **ppvObj);
 }
-
 
 /*****************************************************************************
  * IViewObject interface
@@ -524,7 +513,6 @@ interface IViewObjectEx : IViewObject2
         [out] LPSIZEL pSizel);
 }
 
-
 /*****************************************************************************
  * IProvideClassInfo interface
  */
@@ -543,7 +531,6 @@ cpp_quote("#endif")
 
     HRESULT GetClassInfo( [out] ITypeInfo ** ppTI );
 }
-
 
 /*****************************************************************************
  * IProvideClassInfo2 interface
@@ -566,7 +553,6 @@ interface IProvideClassInfo2 : IProvideClassInfo
         [in]  DWORD dwGuidKind,
         [out] GUID *pGUID );
 }
-
 
 [
     object,
@@ -597,7 +583,6 @@ interface IProvideMultipleClassInfo : IProvideClassInfo2
         [out] IID *piidSource);
 }
 
-
 /*****************************************************************************
  * IConnectionPoint interface
  */
@@ -620,7 +605,6 @@ interface IConnectionPoint : IUnknown
     HRESULT EnumConnections( [out] IEnumConnections **ppEnum );
 }
 
-
 /*****************************************************************************
  * IConnectionPointContainer interface
  */
@@ -637,7 +621,6 @@ interface IConnectionPointContainer : IUnknown
     HRESULT EnumConnectionPoints( [out] IEnumConnectionPoints **ppEnum );
     HRESULT FindConnectionPoint( [in] REFIID riid, [out] IConnectionPoint **ppCP );
 }
-
 
 /*****************************************************************************
  * IEnumConnections interface
@@ -676,7 +659,6 @@ interface IEnumConnections : IUnknown
     HRESULT Clone( [out] IEnumConnections **ppEnum );
 }
 
-
 /*****************************************************************************
  * IEnumConnectionPoints interface
  */
@@ -707,7 +689,6 @@ interface IEnumConnectionPoints : IUnknown
 
     HRESULT Clone( [out] IEnumConnectionPoints **ppEnum );
 }
-
 
 /*****************************************************************************
  * IPropertyPage interface
@@ -760,7 +741,6 @@ interface IPropertyPage : IUnknown
     HRESULT TranslateAccelerator( [in] MSG *pMsg );
 }
 
-
 /*****************************************************************************
  * IPropertyPage2 interface
  */
@@ -775,7 +755,6 @@ interface IPropertyPage2 : IPropertyPage
 
     HRESULT EditProperty( [in] DISPID dispID );
 }
-
 
 /*****************************************************************************
  * IPropertyPageSite interface
@@ -802,7 +781,6 @@ interface IPropertyPageSite : IUnknown
     HRESULT TranslateAccelerator( [in] MSG *pMsg );
 }
 
-
 /*****************************************************************************
  * IPropertyNotifySink interface
  */
@@ -818,7 +796,6 @@ interface IPropertyNotifySink : IUnknown
     HRESULT OnChanged( [in] DISPID dispID );
     HRESULT OnRequestEdit( [in] DISPID dispID );
 }
-
 
 /*****************************************************************************
  * ISimpleFrameSite interface
@@ -849,7 +826,6 @@ interface ISimpleFrameSite : IUnknown
         [in] DWORD dwCookie);
 }
 
-
 /*****************************************************************************
  * IPersistStreamInit interface
  */
@@ -868,7 +844,6 @@ interface IPersistStreamInit : IPersist
     HRESULT GetSizeMax( [out] ULARGE_INTEGER *pcbSize );
     HRESULT InitNew();
 }
-
 
 /*****************************************************************************
  * IPersistMemory interface
@@ -910,7 +885,6 @@ interface IPersistMemory : IPersist
     HRESULT InitNew();
 }
 
-
 /*****************************************************************************
  * IPersistPropertyBag interface
  */
@@ -934,7 +908,6 @@ interface IPersistPropertyBag : IPersist
         [in] BOOL fClearDirty,
         [in] BOOL fSaveAllProperties);
 }
-
 
 /*****************************************************************************
  * IPropertyBag2 interface
@@ -997,7 +970,6 @@ interface IPropertyBag2 : IUnknown
         [in] IErrorLog *pErrLog);
 }
 
-
 /*****************************************************************************
  * IPersistPropertyBag2 interface
  */
@@ -1024,7 +996,6 @@ interface IPersistPropertyBag2 : IPersist
     HRESULT IsDirty();
 }
 
-
 /*****************************************************************************
  * ISpecifyPropertyPages interface
  */
@@ -1045,7 +1016,6 @@ interface ISpecifyPropertyPages : IUnknown
 
     HRESULT GetPages( [out] CAUUID *pPages );
 }
-
 
 /*****************************************************************************
  * IPerPropertyBrowsing interface
@@ -1090,7 +1060,6 @@ interface IPerPropertyBrowsing : IUnknown
         [out] VARIANT *pVarOut);
 }
 
-
 /*****************************************************************************
  * IAdviseSinkEx interface
  */
@@ -1109,7 +1078,6 @@ interface IAdviseSinkEx : IAdviseSink
     [call_as(OnViewStatusChange)]
     HRESULT RemoteOnViewStatusChange( [in] DWORD dwViewStatus );
 }
-
 
 /*****************************************************************************
  * IPointerInactive interface
@@ -1140,7 +1108,6 @@ interface IPointerInactive : IUnknown
         [in] BOOL fSetAlways);
 }
 
-
 /*****************************************************************************
  * IObjectWithSite interface
  */
@@ -1161,7 +1128,6 @@ interface IObjectWithSite : IUnknown
         [out, iid_is(riid)] PVOID *ppvSite);
 }
 
-
 /*****************************************************************************
  * IOleUndoUnit interface
  */
@@ -1181,7 +1147,6 @@ interface IOleUndoUnit : IUnknown
     HRESULT OnNextAdd();
 }
 
-
 /*****************************************************************************
  * IOleParentUndoUnit interface
  */
@@ -1200,7 +1165,6 @@ interface IOleParentUndoUnit : IOleUndoUnit
     HRESULT FindUnit( [in] IOleUndoUnit *pUU );
     HRESULT GetParentState( [out] DWORD *pdwState );
 }
-
 
 /*****************************************************************************
  * IEnumOleUndoUnits interface
@@ -1233,7 +1197,6 @@ interface IEnumOleUndoUnits : IUnknown
     HRESULT Clone( [out] IEnumOleUndoUnits **ppEnum );
 }
 
-
 /*****************************************************************************
  * IOleUndoManager interface
  */
@@ -1260,7 +1223,6 @@ cpp_quote("#define SID_SOleUndoManager IID_IOleUndoManager")
     HRESULT GetLastRedoDescription( [out] BSTR *pBstr );
     HRESULT Enable( [in] BOOL fEnable );
 }
-
 
 /*****************************************************************************
  * IQuickActivate interface
@@ -1332,3 +1294,120 @@ interface IQuickActivate : IUnknown
 
     HRESULT GetContentExtent( [out] LPSIZEL pSizel );
 }
+
+cpp_quote("#ifndef __ocidl_cpp_quote_1_DEFINED__")
+cpp_quote("#define __ocidl_cpp_quote_1_DEFINED__")
+cpp_quote("enum tagExtentMode")
+cpp_quote("{")
+cpp_quote("    DVEXTENT_CONTENT = 0,")
+cpp_quote("    DVEXTENT_INTEGRAL = 1,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("enum tagPOINTERINACTIVE")
+cpp_quote("{")
+cpp_quote("    POINTERINACTIVE_ACTIVATEONENTRY = 1,")
+cpp_quote("    POINTERINACTIVE_DEACTIVATEONLEAVE = 2,")
+cpp_quote("    POINTERINACTIVE_ACTIVATEONDRAG = 4,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum tagACTIVATEFLAGS ACTIVATEFLAGS;")
+cpp_quote("")
+cpp_quote("typedef enum tagExtentMode DVEXTENTMODE;")
+cpp_quote("")
+cpp_quote("typedef UINT_PTR HHANDLE;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IPicture2 IPicture2;")
+cpp_quote("")
+cpp_quote("struct IPicture2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IPicture2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IPicture2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(IPicture2 *);")
+cpp_quote("    HRESULT (WINAPI *get_Handle)(IPicture2 *, HHANDLE *);")
+cpp_quote("    HRESULT (WINAPI *get_hPal)(IPicture2 *, HHANDLE *);")
+cpp_quote("    HRESULT (WINAPI *get_Type)(IPicture2 *, SHORT *);")
+cpp_quote("    HRESULT (WINAPI *get_Width)(IPicture2 *, OLE_XSIZE_HIMETRIC *);")
+cpp_quote("    HRESULT (WINAPI *get_Height)(IPicture2 *, OLE_YSIZE_HIMETRIC *);")
+cpp_quote("    HRESULT (WINAPI *Render)(IPicture2 *, HDC, LONG, LONG, LONG, LONG, OLE_XPOS_HIMETRIC, OLE_YPOS_HIMETRIC, OLE_XSIZE_HIMETRIC, OLE_YSIZE_HIMETRIC, LPCRECT);")
+cpp_quote("    HRESULT (WINAPI *set_hPal)(IPicture2 *, HHANDLE);")
+cpp_quote("    HRESULT (WINAPI *get_CurDC)(IPicture2 *, HDC *);")
+cpp_quote("    HRESULT (WINAPI *SelectPicture)(IPicture2 *, HDC, HDC *, HHANDLE *);")
+cpp_quote("    HRESULT (WINAPI *get_KeepOriginalFormat)(IPicture2 *, BOOL *);")
+cpp_quote("    HRESULT (WINAPI *put_KeepOriginalFormat)(IPicture2 *, BOOL);")
+cpp_quote("    HRESULT (WINAPI *PictureChanged)(IPicture2 *);")
+cpp_quote("    HRESULT (WINAPI *SaveAsFile)(IPicture2 *, LPSTREAM, BOOL, LONG *);")
+cpp_quote("    HRESULT (WINAPI *get_Attributes)(IPicture2 *, DWORD *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef IPicture2 *LPPICTURE2;")
+cpp_quote("")
+cpp_quote("typedef enum tagPOINTERINACTIVE POINTERINACTIVE;")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("void HACCEL_UserFree64(unsigned long *, HACCEL *);")
+cpp_quote("unsigned char * HACCEL_UserMarshal64(unsigned long *, unsigned char *, HACCEL *);")
+cpp_quote("unsigned long HACCEL_UserSize64(unsigned long *, unsigned long, HACCEL *);")
+cpp_quote("unsigned char * HACCEL_UserUnmarshal64(unsigned long *, unsigned char *, HACCEL *);")
+cpp_quote("void HFONT_UserFree64(unsigned long *, HFONT *);")
+cpp_quote("unsigned char * HFONT_UserMarshal64(unsigned long *, unsigned char *, HFONT *);")
+cpp_quote("unsigned long HFONT_UserSize64(unsigned long *, unsigned long, HFONT *);")
+cpp_quote("unsigned char * HFONT_UserUnmarshal64(unsigned long *, unsigned char *, HFONT *);")
+cpp_quote("void HRGN_UserFree(unsigned long *, HRGN *);")
+cpp_quote("void HRGN_UserFree64(unsigned long *, HRGN *);")
+cpp_quote("unsigned char * HRGN_UserMarshal(unsigned long *, unsigned char *, HRGN *);")
+cpp_quote("unsigned char * HRGN_UserMarshal64(unsigned long *, unsigned char *, HRGN *);")
+cpp_quote("unsigned long HRGN_UserSize(unsigned long *, unsigned long, HRGN *);")
+cpp_quote("unsigned long HRGN_UserSize64(unsigned long *, unsigned long, HRGN *);")
+cpp_quote("unsigned char * HRGN_UserUnmarshal(unsigned long *, unsigned char *, HRGN *);")
+cpp_quote("unsigned char * HRGN_UserUnmarshal64(unsigned long *, unsigned char *, HRGN *);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+cpp_quote("#endif")
+
+

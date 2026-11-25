@@ -67,4 +67,86 @@ extern "C++" template<typename T> void **IID_PPV_ARGS_Helper(T **obj)
 }
 #endif
 
+typedef enum CWMO_FLAGS {
+    CWMO_DEFAULT = 0,
+    CWMO_DISPATCH_CALLS = 1,
+    CWMO_DISPATCH_WINDOW_MESSAGES = 2
+} CWMO_FLAGS;
+
+typedef enum tagCOINITBASE {
+    COINITBASE_MULTITHREADED = 0
+} COINITBASE;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+HRESULT WINAPI CoCreateInstanceFromApp(const IID *const Clsid, IUnknown * punkOuter, DWORD dwClsCtx, PVOID reserved, DWORD dwCount, MULTI_QI * pResults);
+HRESULT WINAPI CoDisconnectContext(DWORD dwTimeout);
+HRESULT WINAPI CoGetCancelObject(DWORD dwThreadId, const IID *const iid, void ** ppUnk);
+HRESULT WINAPI CoGetDefaultContext(APTTYPE aptType, const IID *const riid, void ** ppv);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct CO_DEVICE_CATALOG_COOKIE__ {
+  int unused;
+} *CO_DEVICE_CATALOG_COOKIE;
+
+#define _CO_DEVICE_CATALOG_
+#if (defined _M_X64 || defined _M_ARM || defined _M_ARM64)
+#define _CRT_INTERNAL_COMBASE_SYMBOL_PREFIX ""
+#endif
+
+
+typedef HRESULT (WINAPI *LPFNCANUNLOADNOW)(void);
+
+typedef HRESULT (WINAPI *LPFNGETCLASSOBJECT)(const IID *const , const IID *const , LPVOID *);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+HRESULT WINAPI CLSIDFromProgIDEx(LPCOLESTR lpszProgID, LPCLSID lpclsid);
+HRESULT WINAPI CoGetCallerTID(LPDWORD lpdwTID);
+
+/* TODO: LiberNT does not implement the functions below yet */
+HRESULT STDAPICALLTYPE CoAllowUnmarshalerCLSID(const IID *const clsid);
+HRESULT STDAPICALLTYPE CoInvalidateRemoteMachineBindings(LPOLESTR pszMachineName);
+HRESULT STDAPICALLTYPE CoRegisterDeviceCatalog(PCWSTR deviceInstanceId, CO_DEVICE_CATALOG_COOKIE *cookie);
+HRESULT STDAPICALLTYPE CoRevokeDeviceCatalog(CO_DEVICE_CATALOG_COOKIE cookie);
+HRESULT STDAPICALLTYPE CoSetCancelObject(IUnknown *pUnk);
+HRESULT STDAPICALLTYPE CoTestCancel(void);
+HRESULT STDAPICALLTYPE CoWaitForMultipleObjects(DWORD dwFlags, DWORD dwTimeout, ULONG cHandles, const HANDLE *pHandles, LPDWORD lpdwindex);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define DECLARE_INTERFACE_IID(iface, iid) DECLARE_INTERFACE(iface)
+
 #endif /* _COMBASEAPI_H_ */
+
+#ifndef COM_RIGHTS_ACTIVATE_LOCAL
+#define COM_RIGHTS_ACTIVATE_LOCAL 8
+#endif
+#ifndef COM_RIGHTS_ACTIVATE_REMOTE
+#define COM_RIGHTS_ACTIVATE_REMOTE 16
+#endif
+#ifndef COM_RIGHTS_EXECUTE
+#define COM_RIGHTS_EXECUTE 1
+#endif
+#ifndef COM_RIGHTS_EXECUTE_LOCAL
+#define COM_RIGHTS_EXECUTE_LOCAL 2
+#endif
+#ifndef COM_RIGHTS_EXECUTE_REMOTE
+#define COM_RIGHTS_EXECUTE_REMOTE 4
+#endif
+#ifndef COM_RIGHTS_RESERVED1
+#define COM_RIGHTS_RESERVED1 32
+#endif
+#ifndef COM_RIGHTS_RESERVED2
+#define COM_RIGHTS_RESERVED2 64
+#endif
+#ifndef CWMO_MAX_HANDLES
+#define CWMO_MAX_HANDLES 56
+#endif

@@ -241,7 +241,8 @@ MiInitializeKernelVaLayout(
 
 NTSTATUS
 MiValidateImageSigningPolicy(
-    _In_ PFILE_OBJECT FileObject);
+    _In_ PFILE_OBJECT FileObject,
+    _Inout_ PLONG SigningState);
 
 NTSTATUS
 NTAPI
@@ -295,7 +296,7 @@ MmDbgCopyProcessMemory(
 NTSTATUS
 NTAPI
 MmCallDllInitialize(
-    _In_ PLDR_DATA_TABLE_ENTRY LdrEntry,
+    _In_ PKLDR_DATA_TABLE_ENTRY LdrEntry,
     _In_ PLIST_ENTRY ModuleListHead);
 
 CODE_SEG("INIT")
@@ -568,6 +569,19 @@ NTSTATUS
 NTAPI
 MmInitializeHandBuiltProcess2(
     _In_ PEPROCESS Process);
+
+NTSTATUS
+MmCreateProcessCfgBitmap(
+    _In_ PEPROCESS Process,
+    _In_ PVOID Section,
+    _In_ ULONGLONG MitigationOptions);
+
+#ifdef _M_AMD64
+BOOLEAN MmBindSharedCfgPage(PKTRAP_FRAME TrapFrame);
+NTSTATUS
+MmGetSystemDllCfgInformation(PEPROCESS Process, PVOID ImageBase, PULONG64 Page,
+                             PULONG64 Bitmap, PULONG64 Size, PBOOLEAN ExportSuppression);
+#endif
 
 NTSTATUS
 NTAPI

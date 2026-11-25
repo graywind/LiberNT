@@ -171,6 +171,8 @@ bool DecodeSearchPage(const std::wstring &text, const std::wstring &query, ULONG
                       std::vector<CatalogUpdate> &updates, bool &last);
 void UseDriverVersion(CatalogUpdate &update);
 std::wstring HardwareIdCore(const std::wstring &id);
+std::wstring OfferedName(const CatalogUpdate &update);
+std::vector<std::wstring> CatalogNarrowerTerms(const std::wstring &term, const std::vector<std::wstring> &ids);
 std::vector<std::wstring> CatalogSearchTerms(const std::vector<std::wstring> &ids);
 bool SupportsHardwareIds(const CatalogUpdate &update, const std::vector<std::wstring> &ids);
 std::vector<std::pair<ULONGLONG, ULONGLONG>> DownloadRanges(ULONGLONG size);

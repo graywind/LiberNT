@@ -396,7 +396,6 @@ coclass CTaskScheduler
     [default] interface ITaskScheduler;
 }
 
-
 [
     threading(both),
     uuid(148BD520-A2AB-11CE-B11F-00AA00530503)
@@ -405,3 +404,21 @@ coclass CTask
 {
     [default] interface ITask;
 }
+
+cpp_quote("#ifndef TASK_MAX_RUN_TIMES")
+cpp_quote("#define TASK_MAX_RUN_TIMES 1440")
+cpp_quote("#endif")
+
+cpp_quote("#define IEnumTasks IEnumWorkItems")
+cpp_quote("#define ISchedulingAgent ITaskScheduler")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+
+cpp_quote("#define IID_ISchedulingAgent IID_ITaskScheduler")
+
+cpp_quote("#define CLSID_CSchedulingAgent CLSID_CTaskScheduler")
+

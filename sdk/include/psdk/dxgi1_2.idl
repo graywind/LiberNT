@@ -421,3 +421,12 @@ interface IDXGIOutput1 : IDXGIOutput
         [out] IDXGIOutputDuplication **output_duplication
     );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

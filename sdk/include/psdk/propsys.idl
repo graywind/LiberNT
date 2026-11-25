@@ -19,7 +19,6 @@
  *
  */
 
-
 import "objidl.idl";
 import "oleidl.idl";
 import "ocidl.idl";
@@ -133,7 +132,12 @@ typedef [v1_enum] enum GETPROPERTYSTOREFLAGS
     GPS_DELAYCREATION = 0x20,
     GPS_BESTEFFORT = 0x40,
     GPS_NO_OPLOCK = 0x80,
-    GPS_MASK_VALID = 0xff
+    GPS_MASK_VALID = 0xff,
+    GPS_PREFERQUERYPROPERTIES = 0x100,
+    GPS_EXTRINSICPROPERTIES = 0x200,
+    GPS_EXTRINSICPROPERTIESONLY = 0x400,
+    GPS_VOLATILEPROPERTIES = 0x800,
+    GPS_VOLATILEPROPERTIESONLY = 0x1000,
 } GETPROPERTYSTOREFLAGS;
 
 cpp_quote("DEFINE_ENUM_FLAG_OPERATORS(GETPROPERTYSTOREFLAGS)")
@@ -341,8 +345,10 @@ interface IPropertyDescription : IUnknown
         PDTF_CANBEPURGED = 0x200,
         PDTF_SEARCHRAWVALUE = 0x400,
         PDTF_ISSYSTEMPROPERTY = 0x80000000,
-        PDTF_MASK_ALL = 0x800007ff
-    } PROPDESC_TYPE_FLAGS;
+        PDTF_MASK_ALL = 0x800007ff,
+        PDTF_DONTCOERCEEMPTYSTRINGS = 0x800,
+        PDTF_ALWAYSINSUPPLEMENTALSTORE = 0x1000,
+} PROPDESC_TYPE_FLAGS;
     cpp_quote("DEFINE_ENUM_FLAG_OPERATORS(PROPDESC_TYPE_FLAGS)")
 
     typedef [v1_enum] enum PROPDESC_VIEW_FLAGS
@@ -572,7 +578,8 @@ interface IPropertyDescriptionSearchInfo : IPropertyDescription
         PDSIF_ISCOLUMN = 0x2,
         PDSIF_ISCOLUMNSPARSE = 0x4,
         PDSIF_ALWAYSINCLUDE = 0x8,
-    } PROPDESC_SEARCHINFO_FLAGS;
+        PDSIF_USEFORTYPEAHEAD = 0x10,
+} PROPDESC_SEARCHINFO_FLAGS;
     cpp_quote("DEFINE_ENUM_FLAG_OPERATORS(PROPDESC_SEARCHINFO_FLAGS)")
 
     typedef [v1_enum] enum PROPDESC_COLUMNINDEX_TYPE
@@ -730,7 +737,8 @@ interface IDelayedPropertyStoreFactory : IPropertyStoreFactory
 [v1_enum] enum _PERSIST_SPROPSTORE_FLAGS
 {
     FPSPS_DEFAULT = 0,
-    FPSPS_READONLY = 1
+    FPSPS_READONLY = 1,
+    FPSPS_TREAT_NEW_VALUES_AS_DIRTY = 2,
 };
 typedef int PERSIST_SPROPSTORE_FLAGS;
 
@@ -845,3 +853,96 @@ library PropSysObjects
         interface IPropertySystem;
     }
 }
+
+cpp_quote("#ifndef __propsys_cpp_quote_1_DEFINED__")
+cpp_quote("#define __propsys_cpp_quote_1_DEFINED__")
+cpp_quote("#define PDFF_PREFERFRIENDLY static_cast < PROPDESC_FORMAT_FLAGS > (0x10000000)")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct InMemoryPropertyStoreMarshalByValue InMemoryPropertyStoreMarshalByValue;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("HRESULT WINAPI PSPropertyBag_WriteDWORD(IPropertyBag *propBag, LPCWSTR propName, DWORD value);")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("HRESULT PropVariantToWinRTPropertyValue(const PROPVARIANT *const propvar, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSCoerceToCanonicalValue(const PROPERTYKEY *const key, PROPVARIANT *ppropvar);")
+cpp_quote("HRESULT PSCreateAdapterFromPropertyStore(IPropertyStore *pps, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSCreateDelayedMultiplexPropertyStore(GETPROPERTYSTOREFLAGS flags, IDelayedPropertyStoreFactory *pdpsf, const DWORD *rgStoreIds, DWORD cStores, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSCreateMultiplexPropertyStore(IUnknown **prgpunkStores, DWORD cStores, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSCreatePropertyChangeArray(const PROPERTYKEY *rgpropkey, const PKA_FLAGS *rgflags, const PROPVARIANT *rgpropvar, UINT cChanges, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSCreatePropertyStoreFromPropertySetStorage(IPropertySetStorage *ppss, DWORD grfMode, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSCreateSimplePropertyChange(PKA_FLAGS flags, const PROPERTYKEY *const key, const PROPVARIANT *const propvar, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSFormatPropertyValue(IPropertyStore *pps, IPropertyDescription *ppd, PROPDESC_FORMAT_FLAGS pdff, LPWSTR *ppszDisplay);")
+cpp_quote("HRESULT PSGetImageReferenceForValue(const PROPERTYKEY *const propkey, const PROPVARIANT *const propvar, PWSTR *ppszImageRes);")
+cpp_quote("HRESULT PSGetItemPropertyHandler(IUnknown *punkItem, BOOL fReadWrite, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSGetItemPropertyHandlerWithCreateObject(IUnknown *punkItem, BOOL fReadWrite, IUnknown *punkCreateObject, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSGetNamedPropertyFromPropertyStorage(PCUSERIALIZEDPROPSTORAGE psps, DWORD cb, LPCWSTR pszName, PROPVARIANT *ppropvar);")
+cpp_quote("HRESULT PSGetPropertyFromPropertyStorage(PCUSERIALIZEDPROPSTORAGE psps, DWORD cb, const PROPERTYKEY *const rpkey, PROPVARIANT *ppropvar);")
+cpp_quote("HRESULT PSGetPropertyValue(IPropertyStore *pps, IPropertyDescription *ppd, PROPVARIANT *ppropvar);")
+cpp_quote("HRESULT PSPropertyBag_Delete(IPropertyBag *propBag, LPCWSTR propName);")
+cpp_quote("HRESULT PSPropertyBag_ReadBOOL(IPropertyBag *propBag, LPCWSTR propName, BOOL *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadBSTR(IPropertyBag *propBag, LPCWSTR propName, BSTR *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadDWORD(IPropertyBag *propBag, LPCWSTR propName, DWORD *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadGUID(IPropertyBag *propBag, LPCWSTR propName, GUID *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadInt(IPropertyBag *propBag, LPCWSTR propName, INT *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadLONG(IPropertyBag *propBag, LPCWSTR propName, LONG *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadPOINTL(IPropertyBag *propBag, LPCWSTR propName, POINTL *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadPOINTS(IPropertyBag *propBag, LPCWSTR propName, POINTS *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadPropertyKey(IPropertyBag *propBag, LPCWSTR propName, PROPERTYKEY *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadRECTL(IPropertyBag *propBag, LPCWSTR propName, RECTL *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadSHORT(IPropertyBag *propBag, LPCWSTR propName, SHORT *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadStr(IPropertyBag *propBag, LPCWSTR propName, LPWSTR value, int characterCount);")
+cpp_quote("HRESULT PSPropertyBag_ReadStrAlloc(IPropertyBag *propBag, LPCWSTR propName, PWSTR *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadStream(IPropertyBag *propBag, LPCWSTR propName, IStream **value);")
+cpp_quote("HRESULT PSPropertyBag_ReadType(IPropertyBag *propBag, LPCWSTR propName, VARIANT *var, VARTYPE type);")
+cpp_quote("HRESULT PSPropertyBag_ReadULONGLONG(IPropertyBag *propBag, LPCWSTR propName, ULONGLONG *value);")
+cpp_quote("HRESULT PSPropertyBag_ReadUnknown(IPropertyBag *propBag, LPCWSTR propName, const IID *const riid, void **ppv);")
+cpp_quote("HRESULT PSPropertyBag_WriteBOOL(IPropertyBag *propBag, LPCWSTR propName, BOOL value);")
+cpp_quote("HRESULT PSPropertyBag_WriteBSTR(IPropertyBag *propBag, LPCWSTR propName, BSTR value);")
+cpp_quote("HRESULT PSPropertyBag_WriteGUID(IPropertyBag *propBag, LPCWSTR propName, const GUID *value);")
+cpp_quote("HRESULT PSPropertyBag_WriteInt(IPropertyBag *propBag, LPCWSTR propName, INT value);")
+cpp_quote("HRESULT PSPropertyBag_WriteLONG(IPropertyBag *propBag, LPCWSTR propName, LONG value);")
+cpp_quote("HRESULT PSPropertyBag_WritePOINTL(IPropertyBag *propBag, LPCWSTR propName, const POINTL *value);")
+cpp_quote("HRESULT PSPropertyBag_WritePOINTS(IPropertyBag *propBag, LPCWSTR propName, const POINTS *value);")
+cpp_quote("HRESULT PSPropertyBag_WritePropertyKey(IPropertyBag *propBag, LPCWSTR propName, const PROPERTYKEY *const value);")
+cpp_quote("HRESULT PSPropertyBag_WriteRECTL(IPropertyBag *propBag, LPCWSTR propName, const RECTL *value);")
+cpp_quote("HRESULT PSPropertyBag_WriteSHORT(IPropertyBag *propBag, LPCWSTR propName, SHORT value);")
+cpp_quote("HRESULT PSPropertyBag_WriteStr(IPropertyBag *propBag, LPCWSTR propName, LPCWSTR value);")
+cpp_quote("HRESULT PSPropertyBag_WriteStream(IPropertyBag *propBag, LPCWSTR propName, IStream *value);")
+cpp_quote("HRESULT PSPropertyBag_WriteULONGLONG(IPropertyBag *propBag, LPCWSTR propName, ULONGLONG value);")
+cpp_quote("HRESULT PSPropertyBag_WriteUnknown(IPropertyBag *propBag, LPCWSTR propName, IUnknown *punk);")
+cpp_quote("HRESULT PSSetPropertyValue(IPropertyStore *pps, IPropertyDescription *ppd, const PROPVARIANT *const propvar);")
+cpp_quote("HRESULT WinRTPropertyValueToPropVariant(IUnknown *punkPropertyValue, PROPVARIANT *ppropvar);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+cpp_quote("#endif")

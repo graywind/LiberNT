@@ -29,4 +29,25 @@ WINBASEAPI VOID WINAPI RaiseFailFastException(EXCEPTION_RECORD *record, CONTEXT 
 }
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+DWORD WINAPI GetThreadErrorMode(void);
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+BOOL WINAPI SetThreadErrorMode(DWORD dwNewMode, LPDWORD lpOldMode);
+
+/* TODO: LiberNT does not implement the functions below yet */
+WINBASEAPI void WINAPI TerminateProcessOnMemoryExhaustion(SIZE_T FailedAllocationSize);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ERRHANDLING_H_ */

@@ -13,6 +13,7 @@
 
 #ifndef INCL_WINSOCK_API_PROTOTYPES
 #define INCL_WINSOCK_API_PROTOTYPES 1
+
 #endif
 
 #ifndef INCL_WINSOCK_API_TYPEDEFS
@@ -2738,5 +2739,194 @@ typedef struct timeval FAR *LPTIMEVAL;
 #include <wsipv6ok.h>
 #endif
 #endif */
+
+
+#ifndef LUP_API_ANSI
+#define LUP_API_ANSI 0x01000000
+#endif
+#ifndef LUP_DISABLE_IDN_ENCODING
+#define LUP_DISABLE_IDN_ENCODING 0x00800000
+#endif
+#ifndef LUP_DNS_ONLY
+#define LUP_DNS_ONLY 0x00020000
+#endif
+#ifndef LUP_EXCLUSIVE_CUSTOM_SERVERS
+#define LUP_EXCLUSIVE_CUSTOM_SERVERS 0x08000000
+#endif
+#ifndef LUP_EXTENDED_QUERYSET
+#define LUP_EXTENDED_QUERYSET 0x02000000
+#endif
+#ifndef LUP_FORCE_CLEAR_TEXT
+#define LUP_FORCE_CLEAR_TEXT 0x40000000
+#endif
+#ifndef LUP_REQUIRE_SECURE
+#define LUP_REQUIRE_SECURE 0x10000000
+#endif
+#ifndef LUP_RESERVED_UNUSED
+#define LUP_RESERVED_UNUSED 0x00080000
+#endif
+#ifndef LUP_RESOLUTION_HANDLE
+#define LUP_RESOLUTION_HANDLE 0x80000000
+#endif
+#ifndef LUP_RETURN_RESPONSE_FLAGS
+#define LUP_RETURN_RESPONSE_FLAGS 0x00040000
+#endif
+#ifndef LUP_RETURN_TTL
+#define LUP_RETURN_TTL 0x20000000
+#endif
+#ifndef LUP_SECURE_WITH_FALLBACK
+#define LUP_SECURE_WITH_FALLBACK 0x04000000
+#endif
+#ifndef MSG_PUSH_IMMEDIATE
+#define MSG_PUSH_IMMEDIATE 0x20
+#endif
+#ifndef NS_LOCALNAME
+#define NS_LOCALNAME 19
+#endif
+#ifndef SOCK_NOTIFY_EVENT_ERR
+#define SOCK_NOTIFY_EVENT_ERR 0x40
+#endif
+#ifndef SOCK_NOTIFY_EVENT_REMOVE
+#define SOCK_NOTIFY_EVENT_REMOVE 0x80
+#endif
+#ifndef SOCK_NOTIFY_OP_DISABLE
+#define SOCK_NOTIFY_OP_DISABLE 0x02
+#endif
+#ifndef SOCK_NOTIFY_OP_ENABLE
+#define SOCK_NOTIFY_OP_ENABLE 0x01
+#endif
+#ifndef SOCK_NOTIFY_OP_NONE
+#define SOCK_NOTIFY_OP_NONE 0x00
+#endif
+#ifndef SOCK_NOTIFY_OP_REMOVE
+#define SOCK_NOTIFY_OP_REMOVE 0x04
+#endif
+#ifndef SOCK_NOTIFY_REGISTER_EVENT_HANGUP
+#define SOCK_NOTIFY_REGISTER_EVENT_HANGUP 0x04
+#endif
+#ifndef SOCK_NOTIFY_REGISTER_EVENT_IN
+#define SOCK_NOTIFY_REGISTER_EVENT_IN 0x01
+#endif
+#ifndef SOCK_NOTIFY_REGISTER_EVENT_OUT
+#define SOCK_NOTIFY_REGISTER_EVENT_OUT 0x02
+#endif
+#ifndef SOCK_NOTIFY_TRIGGER_EDGE
+#define SOCK_NOTIFY_TRIGGER_EDGE 0x08
+#endif
+#ifndef SOCK_NOTIFY_TRIGGER_LEVEL
+#define SOCK_NOTIFY_TRIGGER_LEVEL 0x04
+#endif
+#ifndef SOCK_NOTIFY_TRIGGER_ONESHOT
+#define SOCK_NOTIFY_TRIGGER_ONESHOT 0x01
+#endif
+#ifndef SOCK_NOTIFY_TRIGGER_PERSISTENT
+#define SOCK_NOTIFY_TRIGGER_PERSISTENT 0x02
+#endif
+#ifndef WSA_FLAG_NO_HANDLE_INHERIT
+#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
+#endif
+#ifndef WSA_FLAG_REGISTERED_IO
+#define WSA_FLAG_REGISTERED_IO 0x100
+#endif
+
+#if (!(((defined(_WINSOCK_DEPRECATED_NO_WARNINGS) || defined(BUILD_WINDOWS)) && !defined(_WINSOCK_DEPRECATE_WARNINGS)) || defined(MIDL_PASS)))
+#define _WINSOCK_DEPRECATED __declspec(deprecated("Define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings"))
+#endif
+#define SOCK_NOTIFY_EVENT_HANGUP 4
+#define SOCK_NOTIFY_EVENT_IN 1
+#define SOCK_NOTIFY_EVENT_OUT 2
+#define SOCK_NOTIFY_EVENTS_ALL 0xC7
+#define SOCK_NOTIFY_REGISTER_EVENT_NONE 0x00
+#define SOCK_NOTIFY_REGISTER_EVENTS_ALL 7
+#define SOCK_NOTIFY_TRIGGER_ALL 0xF
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+WINSOCK_API_LINKAGE int WSAAPI GetHostNameW(PWSTR name, int namelen);
+/* FIXME: Windows needs no _MINWINBASE_ check here; LiberNT users built with _INC_WINDOWS lack OVERLAPPED_ENTRY */
+#if (!defined(__midl)) && defined(_MINWINBASE_)
+FORCEINLINE
+UINT32
+SocketNotificationRetrieveEvents(
+    _In_ OVERLAPPED_ENTRY *notification)
+{
+    return (UINT32)notification->dwNumberOfBytesTransferred;
+}
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#if (!defined(NO_EXTRA_HTON_FUNCTIONS) && !defined(__midl) && (defined(INCL_EXTRA_HTON_FUNCTIONS) || NTDDI_VERSION>=NTDDI_WIN8))
+#include <string.h>
+
+#define _WS2_32_WINSOCK_SWAP_LONG(l) ((((l) >> 24) & 0x000000FFL) | (((l) >> 8) & 0x0000FF00L) | (((l) << 8) & 0x00FF0000L) | (((l) << 24) & 0xFF000000L))
+#define _WS2_32_WINSOCK_SWAP_LONGLONG(l) ((((l) >> 56) & 0x00000000000000FFLL) | (((l) >> 40) & 0x000000000000FF00LL) | (((l) >> 24) & 0x0000000000FF0000LL) | (((l) >> 8) & 0x00000000FF000000LL) | (((l) << 8) & 0x000000FF00000000LL) | (((l) << 24) & 0x0000FF0000000000LL) | (((l) << 40) & 0x00FF000000000000LL) | (((l) << 56) & 0xFF00000000000000LL))
+
+#if defined(__cplusplus) || defined(_MSC_VER)
+#define _WS2_HTON_INLINE __inline
+#else
+#define _WS2_HTON_INLINE static __inline
+#endif
+
+#ifndef htonll
+_WS2_HTON_INLINE unsigned long long htonll(unsigned long long Value)
+{
+    return _WS2_32_WINSOCK_SWAP_LONGLONG(Value);
+}
+#endif
+
+#ifndef ntohll
+_WS2_HTON_INLINE unsigned long long ntohll(unsigned long long Value)
+{
+    return _WS2_32_WINSOCK_SWAP_LONGLONG(Value);
+}
+#endif
+
+#ifndef htonf
+_WS2_HTON_INLINE unsigned int htonf(float Value)
+{
+    unsigned int Bits;
+    memcpy(&Bits, &Value, sizeof(Bits));
+    return _WS2_32_WINSOCK_SWAP_LONG(Bits);
+}
+#endif
+
+#ifndef ntohf
+_WS2_HTON_INLINE float ntohf(unsigned int Value)
+{
+    float Result;
+    Value = _WS2_32_WINSOCK_SWAP_LONG(Value);
+    memcpy(&Result, &Value, sizeof(Result));
+    return Result;
+}
+#endif
+
+#ifndef htond
+_WS2_HTON_INLINE unsigned long long htond(double Value)
+{
+    unsigned long long Bits;
+    memcpy(&Bits, &Value, sizeof(Bits));
+    return _WS2_32_WINSOCK_SWAP_LONGLONG(Bits);
+}
+#endif
+
+#ifndef ntohd
+_WS2_HTON_INLINE double ntohd(unsigned long long Value)
+{
+    double Result;
+    Value = _WS2_32_WINSOCK_SWAP_LONGLONG(Value);
+    memcpy(&Result, &Value, sizeof(Result));
+    return Result;
+}
+#endif
+
+#undef _WS2_HTON_INLINE
+#endif
+#define SOMAXCONN_HINT(b) (- (b))
 
 #endif /* !(defined _WINSOCK2API_ || defined _WINSOCKAPI_) */

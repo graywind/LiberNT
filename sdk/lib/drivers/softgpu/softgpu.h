@@ -39,17 +39,6 @@
 
 #pragma once
 
-/* ---- Minimum OS version (must precede the kernel headers) --------------- *
- * Mirror dxgkrnl_private.h.  The ReactOS build targets XP (0x502) globally;
- * the WDDM2 structures in dispmprt.h are gated on NTDDI_WIN7, so raise the
- * version both here and on the command line (see CMakeLists.txt). */
-#undef  _WIN32_WINNT
-#define _WIN32_WINNT  0x0603    /* Windows 8.1 */
-#undef  WINVER
-#define WINVER        0x0603
-#undef  NTDDI_VERSION
-#define NTDDI_VERSION 0x06030000 /* NTDDI_WINBLUE */
-
 /* ---- WDDM DDI interface version: WDDM 2.0 (Win10) ----------------------- *
  * CMakeLists.txt passes -DDXGKDDI_INTERFACE_VERSION=0x5023; default it here
  * defensively so the WDDM2 DRIVER_INITIALIZATION_DATA / DXGKARG_* fields are
@@ -82,7 +71,7 @@
  * argument struct, the WDDM2 DDI typedefs and the DxgkInitialize prototype.
  * It is the same header dxgkrnl is built against, guaranteeing matching ABI. */
 #include <dispmprt.h>
-#include <reactos/rddm/rxgkpresent.h>
+#include <libernt/rddm/rxgkpresent.h>
 
 /* ---- Debug helpers ------------------------------------------------------- */
 #define NDEBUG

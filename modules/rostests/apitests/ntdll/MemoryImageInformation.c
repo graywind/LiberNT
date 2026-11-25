@@ -50,9 +50,9 @@ CheckImageEx(
 
     Status = QueryImage(Address, &Image, sizeof(Image), &Returned);
     ok(Status == STATUS_SUCCESS, "%s: status 0x%lx\n", What, Status);
-    ok(Returned == sizeof(Image), "%s: returned %Iu\n", What, Returned);
+    ok(Returned == sizeof(Image), "%s: returned %Iu\n", What, (size_t)Returned);
     ok(Image.ImageBase == Base, "%s: base %p, expected %p\n", What, Image.ImageBase, Base);
-    ok(Image.SizeOfImage == ImageSize(Base), "%s: size 0x%Ix, expected 0x%Ix\n", What, Image.SizeOfImage, ImageSize(Base));
+    ok(Image.SizeOfImage == ImageSize(Base), "%s: size 0x%Ix, expected 0x%Ix\n", What, (size_t)Image.SizeOfImage, (size_t)ImageSize(Base));
     ok(Image.ImagePartialMap == 0, "%s: partial map\n", What);
     ok(Image.ImageNotExecutable == NotExecutable, "%s: not executable %lu, expected %lu\n", What,
        (ULONG)Image.ImageNotExecutable, NotExecutable);
@@ -147,9 +147,9 @@ CheckNotImage(
 
     Status = QueryImage(Address, &Image, sizeof(Image), &Returned);
     ok(Status == STATUS_SUCCESS, "%s: status 0x%lx\n", What, Status);
-    ok(Returned == sizeof(Image), "%s: returned %Iu\n", What, Returned);
+    ok(Returned == sizeof(Image), "%s: returned %Iu\n", What, (size_t)Returned);
     ok(Image.ImageBase == NULL && Image.SizeOfImage == 0 && Image.ImageFlags == 0,
-       "%s: base %p size 0x%Ix flags 0x%lx\n", What, Image.ImageBase, Image.SizeOfImage, Image.ImageFlags);
+       "%s: base %p size 0x%Ix flags 0x%lx\n", What, Image.ImageBase, (size_t)Image.SizeOfImage, Image.ImageFlags);
 }
 
 START_TEST(MemoryImageInformation)
@@ -162,6 +162,8 @@ START_TEST(MemoryImageInformation)
     LARGE_INTEGER MaximumSize;
     PVOID Heap, Reserve = NULL, View = NULL;
     HMODULE Data;
+    WCHAR SystemPath[MAX_PATH], Directory[MAX_PATH], ImagePath[MAX_PATH];
+    UINT Length;
     NTSTATUS Status;
 
     CheckImage(Ntdll, Ntdll, "ntdll");
@@ -169,13 +171,13 @@ START_TEST(MemoryImageInformation)
     CheckImage(Exe, Exe, "exe");
 
     Status = QueryImage(Ntdll, &Image, 0, &Returned);
-    ok(Status == STATUS_INFO_LENGTH_MISMATCH && Returned == 0xdead, "length 0: status 0x%lx returned %Iu\n", Status, Returned);
+    ok(Status == STATUS_INFO_LENGTH_MISMATCH && Returned == 0xdead, "length 0: status 0x%lx returned %Iu\n", Status, (size_t)Returned);
     Status = QueryImage(Ntdll, &Image, 2 * sizeof(PVOID), &Returned);
-    ok(Status == STATUS_INFO_LENGTH_MISMATCH && Returned == 0xdead, "short length: status 0x%lx returned %Iu\n", Status, Returned);
+    ok(Status == STATUS_INFO_LENGTH_MISMATCH && Returned == 0xdead, "short length: status 0x%lx returned %Iu\n", Status, (size_t)Returned);
     Status = QueryImage(Ntdll, &Image, sizeof(Image) - 1, &Returned);
-    ok(Status == STATUS_INFO_LENGTH_MISMATCH && Returned == 0xdead, "length - 1: status 0x%lx returned %Iu\n", Status, Returned);
+    ok(Status == STATUS_INFO_LENGTH_MISMATCH && Returned == 0xdead, "length - 1: status 0x%lx returned %Iu\n", Status, (size_t)Returned);
     Status = QueryImage(Ntdll, &Image, sizeof(Image) + 8, &Returned);
-    ok(Status == STATUS_SUCCESS && Returned == sizeof(Image), "longer length: status 0x%lx returned %Iu\n", Status, Returned);
+    ok(Status == STATUS_SUCCESS && Returned == sizeof(Image), "longer length: status 0x%lx returned %Iu\n", Status, (size_t)Returned);
 
     Status = NtQueryVirtualMemory(NtCurrentProcess(), Ntdll, MemoryImageInformation, Buffer, sizeof(Buffer), NULL);
     ok(Status == STATUS_SUCCESS, "NULL return length: status 0x%lx\n", Status);
@@ -194,7 +196,7 @@ START_TEST(MemoryImageInformation)
     Size = 0;
     NtFreeVirtualMemory(NtCurrentProcess(), &Reserve, &Size, MEM_RELEASE);
     Status = QueryImage(Reserve, &Image, sizeof(Image), &Returned);
-    ok(Status == STATUS_INVALID_ADDRESS && Returned == 0xdead, "free: status 0x%lx returned %Iu\n", Status, Returned);
+    ok(Status == STATUS_INVALID_ADDRESS && Returned == 0xdead, "free: status 0x%lx returned %Iu\n", Status, (size_t)Returned);
 
     Status = QueryImage((PVOID)~(ULONG_PTR)0xfff, &Image, sizeof(Image), &Returned);
     ok(Status == STATUS_INVALID_PARAMETER, "kernel address: status 0x%lx\n", Status);
@@ -215,7 +217,29 @@ START_TEST(MemoryImageInformation)
         NtClose(Section);
     }
 
-    Data = LoadLibraryExW(L"shell32.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
+    TestImageView(SEC_IMAGE, "image view");
+    TestImageView(SEC_IMAGE_NO_EXECUTE, "no-execute image view");
+
+    Length = GetSystemDirectoryW(SystemPath, ARRAYSIZE(SystemPath));
+    if (!Length || Length + ARRAYSIZE(L"\\shell32.dll") > ARRAYSIZE(SystemPath))
+    {
+        ok(0, "Cannot get the system directory\n");
+        return;
+    }
+    wcscat(SystemPath, L"\\shell32.dll");
+    Length = GetTempPathW(ARRAYSIZE(Directory), Directory);
+    if (!Length || Length >= ARRAYSIZE(Directory) || !GetTempFileNameW(Directory, L"img", 0, ImagePath))
+    {
+        ok(0, "Cannot create a temporary path, error %lu\n", GetLastError());
+        return;
+    }
+    if (!CopyFileW(SystemPath, ImagePath, FALSE))
+    {
+        ok(0, "Cannot copy the test image, error %lu\n", GetLastError());
+        DeleteFileW(ImagePath);
+        return;
+    }
+    Data = LoadLibraryExW(ImagePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
     ok(Data != NULL, "LoadLibraryExW failed with %lu\n", GetLastError());
     if (Data != NULL)
     {
@@ -223,7 +247,7 @@ START_TEST(MemoryImageInformation)
         FreeLibrary(Data);
     }
 
-    Data = LoadLibraryExW(L"shell32.dll", NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
+    Data = LoadLibraryExW(ImagePath, NULL, LOAD_LIBRARY_AS_IMAGE_RESOURCE | LOAD_LIBRARY_AS_DATAFILE);
     ok(Data != NULL, "LoadLibraryExW image resource failed with %lu\n", GetLastError());
     if (Data != NULL)
     {
@@ -234,6 +258,5 @@ START_TEST(MemoryImageInformation)
         FreeLibrary(Data);
     }
 
-    TestImageView(SEC_IMAGE, "image view");
-    TestImageView(SEC_IMAGE_NO_EXECUTE, "no-execute image view");
+    ok(DeleteFileW(ImagePath), "Cannot delete the test image, error %lu\n", GetLastError());
 }

@@ -61,6 +61,16 @@ typedef enum _AUDIO_STREAM_CATEGORY
     AudioCategory_Speech,
     AudioCategory_Movie,
     AudioCategory_Media,
+    AudioCategory_FarFieldSpeech = 0xC,
+    AudioCategory_UniformSpeech = 0xD,
+    AudioCategory_VoiceTyping = 0xE,
 } AUDIO_STREAM_CATEGORY;
+
+#if (!(defined(__midl)))
+#define MIDL_ANYSIZE_ARRAY ANYSIZE_ARRAY
+#define MIDL_STRING
+
+#define MIDL_SIZE_IS(x)
+#endif
 
 #endif

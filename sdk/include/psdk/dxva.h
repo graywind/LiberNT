@@ -982,6 +982,8 @@ typedef enum _DXVA_VideoChromaSubsampling
     DXVA_VideoChromaSubsampling_MPEG1 = DXVA_VideoChromaSubsampling_Vertically_AlignedChromaPlanes,
     DXVA_VideoChromaSubsampling_MPEG2 = DXVA_VideoChromaSubsampling_Vertically_AlignedChromaPlanes
             | DXVA_VideoChromaSubsampling_Horizontally_Cosited,
+    DXVA_VideoChromaSubsamplingShift = 8,
+    DXVA_VideoChromaSubsamplingMask = 0xF00,
 } DXVA_VideoChromaSubsampling;
 
 typedef enum _DXVA_NominalRange
@@ -992,6 +994,8 @@ typedef enum _DXVA_NominalRange
     DXVA_NominalRange_48_208 = 3,
     DXVA_NominalRange_Normal = DXVA_NominalRange_0_255,
     DXVA_NominalRange_Wide = DXVA_NominalRange_16_235,
+    DXVA_NominalRangeShift = 0xC,
+    DXVA_NominalRangeMask = 0x7000,
 } DXVA_NominalRange;
 
 typedef enum _DXVA_VideoTransferMatrix
@@ -1000,6 +1004,8 @@ typedef enum _DXVA_VideoTransferMatrix
     DXVA_VideoTransferMatrix_BT709 = 1,
     DXVA_VideoTransferMatrix_BT601 = 2,
     DXVA_VideoTransferMatrix_SMPTE240M = 3,
+    DXVA_VideoTransferMatrixShift = 0xF,
+    DXVA_VideoTransferMatrixMask = 0x38000,
 } DXVA_VideoTransferMatrix;
 
 typedef enum _DXVA_VideoLighting
@@ -1009,6 +1015,8 @@ typedef enum _DXVA_VideoLighting
     DXVA_VideoLighting_office = 2,
     DXVA_VideoLighting_dim = 3,
     DXVA_VideoLighting_dark = 4,
+    DXVA_VideoLightingShift = 0x12,
+    DXVA_VideoLightingMask = 0x3C0000,
 } DXVA_VideoLighting;
 
 typedef enum _DXVA_VideoPrimaries
@@ -1022,6 +1030,9 @@ typedef enum _DXVA_VideoPrimaries
     DXVA_VideoPrimaries_SMPTE420M = 6,
     DXVA_VideoPrimaries_EBU3213 = 7,
     DXVA_VideoPrimaries_SMPTE_C = 8,
+    DXVA_VideoPrimariesShift = 0x16,
+    DXVA_VideoPrimariesMask = 0x7C00000,
+    DXVA_VideoPrimaries_SMPTE240M = 6,
 } DXVA_VideoPrimaries;
 
 typedef enum _DXVA_VideoTransferFunction
@@ -1035,21 +1046,1589 @@ typedef enum _DXVA_VideoTransferFunction
     DXVA_VideoTransFunc_22_240M = 6,
     DXVA_VideoTransFunc_22_8bit_sRGB = 7,
     DXVA_VideoTransFunc_28 = 8,
+    DXVA_VideoTransFuncShift = 0x1B,
+    DXVA_VideoTransFuncMask = (-134217728),
 } DXVA_VideoTransferFunction;
 
 typedef struct _DXVA_ExtendedFormat
 {
     UINT SampleFormat : 8;
     UINT VideoChromaSubsampling : 4;
+#if defined(__GNUC__) && !defined(__clang__)
+    /* GCC rejects enum bit-fields narrower than the enum's Mask members; UINT keeps the same layout */
+    UINT NominalRange : 3;
+    UINT VideoTransferMatrix : 3;
+    UINT VideoLighting : 4;
+    UINT VideoPrimaries : 5;
+    UINT VideoTransferFunction : 5;
+#else
     DXVA_NominalRange NominalRange : 3;
     DXVA_VideoTransferMatrix VideoTransferMatrix : 3;
     DXVA_VideoLighting VideoLighting : 4;
     DXVA_VideoPrimaries VideoPrimaries : 5;
     DXVA_VideoTransferFunction VideoTransferFunction : 5;
+#endif
 } DXVA_ExtendedFormat;
 
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef COPP_DefaultProtectionLevel
+#define COPP_DefaultProtectionLevel 0
+#endif
+#ifndef COPP_ImageAspectRatio_EN300294_Mask
+#define COPP_ImageAspectRatio_EN300294_Mask 0x00000007
+#endif
+#ifndef COPP_NoProtectionLevelAvailable
+#define COPP_NoProtectionLevelAvailable (-1)
+#endif
+#ifndef DXVA_ALPHA_BLEND_COMBINATION_BUFFER
+#define DXVA_ALPHA_BLEND_COMBINATION_BUFFER 13
+#endif
+#ifndef DXVA_APV_MAX_COMPONENTS
+#define DXVA_APV_MAX_COMPONENTS 4
+#endif
+#ifndef DXVA_APV_QM_DIMENSION
+#define DXVA_APV_QM_DIMENSION 8
+#endif
+#ifndef DXVA_AYUV_BUFFER
+#define DXVA_AYUV_BUFFER 8
+#endif
+#ifndef DXVA_BIDIRECTIONAL_AVERAGING_H263_TRUNC
+#define DXVA_BIDIRECTIONAL_AVERAGING_H263_TRUNC 1
+#endif
+#ifndef DXVA_BIDIRECTIONAL_AVERAGING_MPEG2_ROUND
+#define DXVA_BIDIRECTIONAL_AVERAGING_MPEG2_ROUND 0
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_METHOD_BACKWARD
+#define DXVA_BITSTREAM_CONCEALMENT_METHOD_BACKWARD 3
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_METHOD_FORWARD
+#define DXVA_BITSTREAM_CONCEALMENT_METHOD_FORWARD 2
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_METHOD_INTRA
+#define DXVA_BITSTREAM_CONCEALMENT_METHOD_INTRA 1
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_METHOD_UNSPECIFIED
+#define DXVA_BITSTREAM_CONCEALMENT_METHOD_UNSPECIFIED 0
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_NEED_LIKELY
+#define DXVA_BITSTREAM_CONCEALMENT_NEED_LIKELY 2
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_NEED_MILD
+#define DXVA_BITSTREAM_CONCEALMENT_NEED_MILD 1
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_NEED_SEVERE
+#define DXVA_BITSTREAM_CONCEALMENT_NEED_SEVERE 3
+#endif
+#ifndef DXVA_BITSTREAM_CONCEALMENT_NEED_UNLIKELY
+#define DXVA_BITSTREAM_CONCEALMENT_NEED_UNLIKELY 0
+#endif
+#ifndef DXVA_BITSTREAM_DATA_BUFFER
+#define DXVA_BITSTREAM_DATA_BUFFER 7
+#endif
+#ifndef DXVA_CHROMA_FORMAT_420
+#define DXVA_CHROMA_FORMAT_420 1
+#endif
+#ifndef DXVA_CHROMA_FORMAT_422
+#define DXVA_CHROMA_FORMAT_422 2
+#endif
+#ifndef DXVA_CHROMA_FORMAT_444
+#define DXVA_CHROMA_FORMAT_444 3
+#endif
+#ifndef DXVA_COMPBUFFER_TYPE_THAT_IS_NOT_USED
+#define DXVA_COMPBUFFER_TYPE_THAT_IS_NOT_USED 0
+#endif
+#ifndef DXVA_CONFIG_BLEND_TYPE_BACK_HARDWARE
+#define DXVA_CONFIG_BLEND_TYPE_BACK_HARDWARE 1
+#endif
+#ifndef DXVA_CONFIG_BLEND_TYPE_FRONT_BUFFER
+#define DXVA_CONFIG_BLEND_TYPE_FRONT_BUFFER 0
+#endif
+#ifndef DXVA_CONFIG_DATA_TYPE_AI44
+#define DXVA_CONFIG_DATA_TYPE_AI44 1
+#endif
+#ifndef DXVA_CONFIG_DATA_TYPE_AYUV
+#define DXVA_CONFIG_DATA_TYPE_AYUV 3
+#endif
+#ifndef DXVA_CONFIG_DATA_TYPE_DPXD
+#define DXVA_CONFIG_DATA_TYPE_DPXD 2
+#endif
+#ifndef DXVA_CONFIG_DATA_TYPE_IA44
+#define DXVA_CONFIG_DATA_TYPE_IA44 0
+#endif
+#ifndef DXVA_COPPCommandFnCode
+#define DXVA_COPPCommandFnCode 0x04
+#endif
+#ifndef DXVA_COPPGetCertificateLengthFnCode
+#define DXVA_COPPGetCertificateLengthFnCode 0x01
+#endif
+#ifndef DXVA_COPPKeyExchangeFnCode
+#define DXVA_COPPKeyExchangeFnCode 0x02
+#endif
+#ifndef DXVA_COPPQueryStatusFnCode
+#define DXVA_COPPQueryStatusFnCode 0x05
+#endif
+#ifndef DXVA_COPPSequenceStartFnCode
+#define DXVA_COPPSequenceStartFnCode 0x03
+#endif
+#ifndef DXVA_DCCMD_SURFACE_BUFFER
+#define DXVA_DCCMD_SURFACE_BUFFER 12
+#endif
+#ifndef DXVA_DEBLOCKING_CONTROL_BUFFER
+#define DXVA_DEBLOCKING_CONTROL_BUFFER 4
+#endif
+#ifndef DXVA_DPXD_SURFACE_BUFFER
+#define DXVA_DPXD_SURFACE_BUFFER 10
+#endif
+#ifndef DXVA_DeinterlaceBltExFnCode
+#define DXVA_DeinterlaceBltExFnCode 0x02
+#endif
+#ifndef DXVA_DeinterlaceBltFnCode
+#define DXVA_DeinterlaceBltFnCode 0x01
+#endif
+#ifndef DXVA_DeinterlaceQueryAvailableModesFnCode
+#define DXVA_DeinterlaceQueryAvailableModesFnCode 0x01
+#endif
+#ifndef DXVA_DeinterlaceQueryModeCapsFnCode
+#define DXVA_DeinterlaceQueryModeCapsFnCode 0x02
+#endif
+#ifndef DXVA_ENCRYPTPROTOCOLFUNCFLAG_ACCEL
+#define DXVA_ENCRYPTPROTOCOLFUNCFLAG_ACCEL 0xFFFF08
+#endif
+#ifndef DXVA_ENCRYPTPROTOCOLFUNCFLAG_HOST
+#define DXVA_ENCRYPTPROTOCOLFUNCFLAG_HOST 0xFFFF00
+#endif
+#ifndef DXVA_EXECUTE_RETURN_DATA_ERROR_MINOR
+#define DXVA_EXECUTE_RETURN_DATA_ERROR_MINOR 1
+#endif
+#ifndef DXVA_EXECUTE_RETURN_DATA_ERROR_SEVERE
+#define DXVA_EXECUTE_RETURN_DATA_ERROR_SEVERE 3
+#endif
+#ifndef DXVA_EXECUTE_RETURN_DATA_ERROR_SIGNIF
+#define DXVA_EXECUTE_RETURN_DATA_ERROR_SIGNIF 2
+#endif
+#ifndef DXVA_EXECUTE_RETURN_OK
+#define DXVA_EXECUTE_RETURN_OK 0
+#endif
+#ifndef DXVA_EXECUTE_RETURN_OTHER_ERROR_SEVERE
+#define DXVA_EXECUTE_RETURN_OTHER_ERROR_SEVERE 4
+#endif
+#ifndef DXVA_ExtColorData_ShiftBase
+#define DXVA_ExtColorData_ShiftBase 8
+#endif
+#ifndef DXVA_FILM_GRAIN_BUFFER
+#define DXVA_FILM_GRAIN_BUFFER 17
+#endif
+#ifndef DXVA_HIGHLIGHT_BUFFER
+#define DXVA_HIGHLIGHT_BUFFER 11
+#endif
+#ifndef DXVA_IA44_SURFACE_BUFFER
+#define DXVA_IA44_SURFACE_BUFFER 9
+#endif
+#ifndef DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER
+#define DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER 5
+#endif
+#ifndef DXVA_MACROBLOCK_CONTROL_BUFFER
+#define DXVA_MACROBLOCK_CONTROL_BUFFER 2
+#endif
+#ifndef DXVA_MOTION_VECTOR_BUFFER
+#define DXVA_MOTION_VECTOR_BUFFER 16
+#endif
+#ifndef DXVA_MV_PRECISION_AND_CHROMA_RELATION_H261
+#define DXVA_MV_PRECISION_AND_CHROMA_RELATION_H261 2
+#endif
+#ifndef DXVA_MV_PRECISION_AND_CHROMA_RELATION_H263
+#define DXVA_MV_PRECISION_AND_CHROMA_RELATION_H263 1
+#endif
+#ifndef DXVA_MV_PRECISION_AND_CHROMA_RELATION_MPEG2
+#define DXVA_MV_PRECISION_AND_CHROMA_RELATION_MPEG2 0
+#endif
+#ifndef DXVA_NUM_TYPES_COMP_BUFFERS
+#define DXVA_NUM_TYPES_COMP_BUFFERS 18
+#endif
+#ifndef DXVA_NumMV_OBMC_off_BinPBwith4MV_off
+#define DXVA_NumMV_OBMC_off_BinPBwith4MV_off 4
+#endif
+#ifndef DXVA_NumMV_OBMC_on__BinPB_off
+#define DXVA_NumMV_OBMC_on__BinPB_off 10
+#endif
+#ifndef DXVA_NumMV_OBMC_on__BinPB_on
+#define DXVA_NumMV_OBMC_on__BinPB_on 11
+#endif
+#ifndef DXVA_PICTURE_DECODE_BUFFER
+#define DXVA_PICTURE_DECODE_BUFFER 1
+#endif
+#ifndef DXVA_PICTURE_RESAMPLE_BUFFER
+#define DXVA_PICTURE_RESAMPLE_BUFFER 14
+#endif
+#ifndef DXVA_PICTURE_STRUCTURE_BOTTOM_FIELD
+#define DXVA_PICTURE_STRUCTURE_BOTTOM_FIELD 2
+#endif
+#ifndef DXVA_PICTURE_STRUCTURE_FRAME
+#define DXVA_PICTURE_STRUCTURE_FRAME 3
+#endif
+#ifndef DXVA_PICTURE_STRUCTURE_TOP_FIELD
+#define DXVA_PICTURE_STRUCTURE_TOP_FIELD 1
+#endif
+#ifndef DXVA_ProcAmpControlBltFnCode
+#define DXVA_ProcAmpControlBltFnCode 0x01
+#endif
+#ifndef DXVA_ProcAmpControlQueryCapsFnCode
+#define DXVA_ProcAmpControlQueryCapsFnCode 0x03
+#endif
+#ifndef DXVA_ProcAmpControlQueryRangeFnCode
+#define DXVA_ProcAmpControlQueryRangeFnCode 0x04
+#endif
+#ifndef DXVA_QUERYORREPLYFUNCFLAG_ACCEL_LOCK_FALSE_PLUS
+#define DXVA_QUERYORREPLYFUNCFLAG_ACCEL_LOCK_FALSE_PLUS 0xFFFFFF
+#endif
+#ifndef DXVA_QUERYORREPLYFUNCFLAG_ACCEL_LOCK_OK_COPY
+#define DXVA_QUERYORREPLYFUNCFLAG_ACCEL_LOCK_OK_COPY 0xFFFFFC
+#endif
+#ifndef DXVA_QUERYORREPLYFUNCFLAG_ACCEL_PROBE_FALSE_PLUS
+#define DXVA_QUERYORREPLYFUNCFLAG_ACCEL_PROBE_FALSE_PLUS 0xFFFFFB
+#endif
+#ifndef DXVA_QUERYORREPLYFUNCFLAG_ACCEL_PROBE_OK_COPY
+#define DXVA_QUERYORREPLYFUNCFLAG_ACCEL_PROBE_OK_COPY 0xFFFFF8
+#endif
+#ifndef DXVA_QUERYORREPLYFUNCFLAG_ACCEL_PROBE_OK_PLUS
+#define DXVA_QUERYORREPLYFUNCFLAG_ACCEL_PROBE_OK_PLUS 0xFFFFF9
+#endif
+#ifndef DXVA_QUERYORREPLYFUNCFLAG_DECODER_LOCK_QUERY
+#define DXVA_QUERYORREPLYFUNCFLAG_DECODER_LOCK_QUERY 0xFFFFF5
+#endif
+#ifndef DXVA_QUERYORREPLYFUNCFLAG_DECODER_PROBE_QUERY
+#define DXVA_QUERYORREPLYFUNCFLAG_DECODER_PROBE_QUERY 0xFFFFF1
+#endif
+#ifndef DXVA_READ_BACK_BUFFER
+#define DXVA_READ_BACK_BUFFER 15
+#endif
+#ifndef DXVA_RESIDUAL_DIFFERENCE_BUFFER
+#define DXVA_RESIDUAL_DIFFERENCE_BUFFER 3
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H261_A
+#define DXVA_RESTRICTED_MODE_H261_A 1
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H261_B
+#define DXVA_RESTRICTED_MODE_H261_B 2
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H263_A
+#define DXVA_RESTRICTED_MODE_H263_A 3
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H263_B
+#define DXVA_RESTRICTED_MODE_H263_B 4
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H263_C
+#define DXVA_RESTRICTED_MODE_H263_C 5
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H263_D
+#define DXVA_RESTRICTED_MODE_H263_D 6
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H263_E
+#define DXVA_RESTRICTED_MODE_H263_E 7
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H263_F
+#define DXVA_RESTRICTED_MODE_H263_F 8
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_A
+#define DXVA_RESTRICTED_MODE_H264_A 0x64
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_B
+#define DXVA_RESTRICTED_MODE_H264_B 0x65
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_C
+#define DXVA_RESTRICTED_MODE_H264_C 0x66
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_D
+#define DXVA_RESTRICTED_MODE_H264_D 0x67
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_E
+#define DXVA_RESTRICTED_MODE_H264_E 0x68
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_F
+#define DXVA_RESTRICTED_MODE_H264_F 0x69
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_VLD_MULTIVIEW_NOFGT
+#define DXVA_RESTRICTED_MODE_H264_VLD_MULTIVIEW_NOFGT 0x73
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_VLD_STEREO_NOFGT
+#define DXVA_RESTRICTED_MODE_H264_VLD_STEREO_NOFGT 0x72
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_VLD_STEREO_PROGRESSIVE_NOFGT
+#define DXVA_RESTRICTED_MODE_H264_VLD_STEREO_PROGRESSIVE_NOFGT 0x71
+#endif
+#ifndef DXVA_RESTRICTED_MODE_H264_VLD_WITHFMOASO_NOFGT
+#define DXVA_RESTRICTED_MODE_H264_VLD_WITHFMOASO_NOFGT 0x70
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG1_A
+#define DXVA_RESTRICTED_MODE_MPEG1_A 9
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG1_VLD
+#define DXVA_RESTRICTED_MODE_MPEG1_VLD 0x10
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG2_A
+#define DXVA_RESTRICTED_MODE_MPEG2_A 0xA
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG2_B
+#define DXVA_RESTRICTED_MODE_MPEG2_B 0xB
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG2_C
+#define DXVA_RESTRICTED_MODE_MPEG2_C 0xC
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG2_D
+#define DXVA_RESTRICTED_MODE_MPEG2_D 0xD
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG2and1_VLD
+#define DXVA_RESTRICTED_MODE_MPEG2and1_VLD 0x11
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG4PT2_VLD_ADV_SIMPLE_GMC
+#define DXVA_RESTRICTED_MODE_MPEG4PT2_VLD_ADV_SIMPLE_GMC 0xB2
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG4PT2_VLD_ADV_SIMPLE_NOGMC
+#define DXVA_RESTRICTED_MODE_MPEG4PT2_VLD_ADV_SIMPLE_NOGMC 0xB1
+#endif
+#ifndef DXVA_RESTRICTED_MODE_MPEG4PT2_VLD_SIMPLE
+#define DXVA_RESTRICTED_MODE_MPEG4PT2_VLD_SIMPLE 0xB0
+#endif
+#ifndef DXVA_RESTRICTED_MODE_VC1_A
+#define DXVA_RESTRICTED_MODE_VC1_A 0xA0
+#endif
+#ifndef DXVA_RESTRICTED_MODE_VC1_B
+#define DXVA_RESTRICTED_MODE_VC1_B 0xA1
+#endif
+#ifndef DXVA_RESTRICTED_MODE_VC1_C
+#define DXVA_RESTRICTED_MODE_VC1_C 0xA2
+#endif
+#ifndef DXVA_RESTRICTED_MODE_VC1_D
+#define DXVA_RESTRICTED_MODE_VC1_D 0xA3
+#endif
+#ifndef DXVA_RESTRICTED_MODE_VC1_D2010
+#define DXVA_RESTRICTED_MODE_VC1_D2010 0xA4
+#endif
+#ifndef DXVA_RESTRICTED_MODE_WMV8_A
+#define DXVA_RESTRICTED_MODE_WMV8_A 0x80
+#endif
+#ifndef DXVA_RESTRICTED_MODE_WMV8_B
+#define DXVA_RESTRICTED_MODE_WMV8_B 0x81
+#endif
+#ifndef DXVA_RESTRICTED_MODE_WMV9_A
+#define DXVA_RESTRICTED_MODE_WMV9_A 0x90
+#endif
+#ifndef DXVA_RESTRICTED_MODE_WMV9_B
+#define DXVA_RESTRICTED_MODE_WMV9_B 0x91
+#endif
+#ifndef DXVA_RESTRICTED_MODE_WMV9_C
+#define DXVA_RESTRICTED_MODE_WMV9_C 0x94
+#endif
+#ifndef DXVA_SCAN_METHOD_ALTERNATE_HORIZONTAL
+#define DXVA_SCAN_METHOD_ALTERNATE_HORIZONTAL 2
+#endif
+#ifndef DXVA_SCAN_METHOD_ALTERNATE_VERTICAL
+#define DXVA_SCAN_METHOD_ALTERNATE_VERTICAL 1
+#endif
+#ifndef DXVA_SCAN_METHOD_ARBITRARY
+#define DXVA_SCAN_METHOD_ARBITRARY 3
+#endif
+#ifndef DXVA_SCAN_METHOD_ZIG_ZAG
+#define DXVA_SCAN_METHOD_ZIG_ZAG 0
+#endif
+#ifndef DXVA_SLICE_CONTROL_BUFFER
+#define DXVA_SLICE_CONTROL_BUFFER 6
+#endif
+#ifndef MAX_DEINTERLACE_DEVICE_GUIDS
+#define MAX_DEINTERLACE_DEVICE_GUIDS 32
+#endif
+#ifndef MAX_DEINTERLACE_SURFACES
+#define MAX_DEINTERLACE_SURFACES 32
+#endif
+
+typedef enum _COPP_ACP_Protection_Level {
+    COPP_ACP_Level0 = 0,
+    COPP_ACP_LevelMin = 0,
+    COPP_ACP_Level1 = 1,
+    COPP_ACP_Level2 = 2,
+    COPP_ACP_Level3 = 3,
+    COPP_ACP_LevelMax = 3,
+    COPP_ACP_ForceDWORD = 0x7FFFFFFF
+} COPP_ACP_Protection_Level;
+
+typedef enum _COPP_BusType {
+    COPP_BusType_Unknown = 0,
+    COPP_BusType_PCI = 1,
+    COPP_BusType_PCIX = 2,
+    COPP_BusType_PCIExpress = 3,
+    COPP_BusType_AGP = 4,
+    COPP_BusType_Integrated = (-2147483648),
+    COPP_BusType_ForceDWORD = 0x7FFFFFFF
+} COPP_BusType;
+
+typedef enum _COPP_CGMSA_Protection_Level {
+    COPP_CGMSA_Disabled = 0,
+    COPP_CGMSA_LevelMin = 0,
+    COPP_CGMSA_CopyFreely = 1,
+    COPP_CGMSA_CopyNoMore = 2,
+    COPP_CGMSA_CopyOneGeneration = 3,
+    COPP_CGMSA_CopyNever = 4,
+    COPP_CGMSA_RedistributionControlRequired = 8,
+    COPP_CGMSA_LevelMax = 12,
+    COPP_CGMSA_ForceDWORD = 0x7FFFFFFF
+} COPP_CGMSA_Protection_Level;
+
+typedef enum _COPP_ConnectorType {
+    COPP_ConnectorType_Unknown = (-1),
+    COPP_ConnectorType_VGA = 0,
+    COPP_ConnectorType_SVideo = 1,
+    COPP_ConnectorType_CompositeVideo = 2,
+    COPP_ConnectorType_ComponentVideo = 3,
+    COPP_ConnectorType_DVI = 4,
+    COPP_ConnectorType_HDMI = 5,
+    COPP_ConnectorType_LVDS = 6,
+    COPP_ConnectorType_TMDS = 7,
+    COPP_ConnectorType_D_JPN = 8,
+    COPP_ConnectorType_SDI = 9,
+    COPP_ConnectorType_DisplayPortExternal = 10,
+    COPP_ConnectorType_DisplayPortEmbedded = 11,
+    COPP_ConnectorType_UDIExternal = 12,
+    COPP_ConnectorType_UDIEmbedded = 13,
+    COPP_ConnectorType_Internal = (-2147483648),
+    COPP_ConnectorType_ForceDWORD = 0x7FFFFFFF
+} COPP_ConnectorType;
+
+typedef enum _COPP_DPCP_Protection_Level {
+    COPP_DPCP_Level0 = 0,
+    COPP_DPCP_LevelMin = 0,
+    COPP_DPCP_Level1 = 1,
+    COPP_DPCP_LevelMax = 1,
+    COPP_DPCP_ForceDWORD = 0x7FFFFFFF
+} COPP_DPCP_Protection_Level;
+
+typedef enum _COPP_HDCP_Protection_Level {
+    COPP_HDCP_Level0 = 0,
+    COPP_HDCP_LevelMin = 0,
+    COPP_HDCP_Level1 = 1,
+    COPP_HDCP_LevelMax = 1,
+    COPP_HDCP_ForceDWORD = 0x7FFFFFFF
+} COPP_HDCP_Protection_Level;
+
+typedef enum _COPP_ImageAspectRatio_EN300294 {
+    COPP_AspectRatio_EN300294_FullFormat4by3 = 0,
+    COPP_AspectRatio_EN300294_Box14by9Center = 1,
+    COPP_AspectRatio_EN300294_Box14by9Top = 2,
+    COPP_AspectRatio_EN300294_Box16by9Center = 3,
+    COPP_AspectRatio_EN300294_Box16by9Top = 4,
+    COPP_AspectRatio_EN300294_BoxGT16by9Center = 5,
+    COPP_AspectRatio_EN300294_FullFormat4by3ProtectedCenter = 6,
+    COPP_AspectRatio_EN300294_FullFormat16by9Anamorphic = 7,
+    COPP_AspectRatio_ForceDWORD = 0x7FFFFFFF
+} COPP_ImageAspectRatio_EN300294;
+
+typedef enum _COPP_StatusFlags {
+    COPP_StatusNormal = 0,
+    COPP_LinkLost = 1,
+    COPP_RenegotiationRequired = 2,
+    COPP_StatusFlagsReserved = (-4)
+} COPP_StatusFlags;
+
+typedef enum _COPP_StatusHDCPFlags {
+    COPP_HDCPRepeater = 1,
+    COPP_HDCPFlagsReserved = (-2)
+} COPP_StatusHDCPFlags;
+
+typedef enum _COPP_TVProtectionStandard {
+    COPP_ProtectionStandard_Unknown = (-2147483648),
+    COPP_ProtectionStandard_None = 0,
+    COPP_ProtectionStandard_IEC61880_525i = 1,
+    COPP_ProtectionStandard_IEC61880_2_525i = 2,
+    COPP_ProtectionStandard_IEC62375_625p = 4,
+    COPP_ProtectionStandard_EIA608B_525 = 8,
+    COPP_ProtectionStandard_EN300294_625i = 16,
+    COPP_ProtectionStandard_CEA805A_TypeA_525p = 32,
+    COPP_ProtectionStandard_CEA805A_TypeA_750p = 64,
+    COPP_ProtectionStandard_CEA805A_TypeA_1125i = 128,
+    COPP_ProtectionStandard_CEA805A_TypeB_525p = 0x100,
+    COPP_ProtectionStandard_CEA805A_TypeB_750p = 0x200,
+    COPP_ProtectionStandard_CEA805A_TypeB_1125i = 0x400,
+    COPP_ProtectionStandard_ARIBTRB15_525i = 0x800,
+    COPP_ProtectionStandard_ARIBTRB15_525p = 0x1000,
+    COPP_ProtectionStandard_ARIBTRB15_750p = 0x2000,
+    COPP_ProtectionStandard_ARIBTRB15_1125i = 0x4000,
+    COPP_ProtectionStandard_Mask = (-2147450881),
+    COPP_ProtectionStandard_Reserved = 0x7FFF8000
+} COPP_TVProtectionStandard;
+
+typedef enum _DXVA_DeinterlaceTech {
+    DXVA_DeinterlaceTech_Unknown = 0,
+    DXVA_DeinterlaceTech_BOBLineReplicate = 1,
+    DXVA_DeinterlaceTech_BOBVerticalStretch = 2,
+    DXVA_DeinterlaceTech_BOBVerticalStretch4Tap = 0x100,
+    DXVA_DeinterlaceTech_MedianFiltering = 4,
+    DXVA_DeinterlaceTech_EdgeFiltering = 16,
+    DXVA_DeinterlaceTech_FieldAdaptive = 32,
+    DXVA_DeinterlaceTech_PixelAdaptive = 64,
+    DXVA_DeinterlaceTech_MotionVectorSteered = 128
+} DXVA_DeinterlaceTech;
+
+typedef enum _DXVA_DestinationFlags {
+    DXVA_DestinationFlagMask = 15,
+    DXVA_DestinationFlag_Background_Changed = 1,
+    DXVA_DestinationFlag_TargetRect_Changed = 2,
+    DXVA_DestinationFlag_ColorData_Changed = 4,
+    DXVA_DestinationFlag_Alpha_Changed = 8
+} DXVA_DestinationFlags;
+
+typedef enum _DXVA_ProcAmpControlProp {
+    DXVA_ProcAmp_None = 0,
+    DXVA_ProcAmp_Brightness = 1,
+    DXVA_ProcAmp_Contrast = 2,
+    DXVA_ProcAmp_Hue = 4,
+    DXVA_ProcAmp_Saturation = 8
+} DXVA_ProcAmpControlProp;
+
+typedef enum _DXVA_SampleFlags {
+    DXVA_SampleFlagsMask = 15,
+    DXVA_SampleFlag_Palette_Changed = 1,
+    DXVA_SampleFlag_SrcRect_Changed = 2,
+    DXVA_SampleFlag_DstRect_Changed = 4,
+    DXVA_SampleFlag_ColorData_Changed = 8
+} DXVA_SampleFlags;
+
+typedef enum _DXVA_SampleFormat {
+    DXVA_SampleFormatMask = 255,
+    DXVA_SampleUnknown = 0,
+    DXVA_SamplePreviousFrame = 1,
+    DXVA_SampleProgressiveFrame = 2,
+    DXVA_SampleFieldInterleavedEvenFirst = 3,
+    DXVA_SampleFieldInterleavedOddFirst = 4,
+    DXVA_SampleFieldSingleEven = 5,
+    DXVA_SampleFieldSingleOdd = 6,
+    DXVA_SampleSubStream = 7
+} DXVA_SampleFormat;
+
+typedef enum _DXVA_VideoProcessCaps {
+    DXVA_VideoProcess_None = 0,
+    DXVA_VideoProcess_YUV2RGB = 1,
+    DXVA_VideoProcess_StretchX = 2,
+    DXVA_VideoProcess_StretchY = 4,
+    DXVA_VideoProcess_AlphaBlend = 8,
+    DXVA_VideoProcess_SubRects = 16,
+    DXVA_VideoProcess_SubStreams = 32,
+    DXVA_VideoProcess_SubStreamsExtended = 64,
+    DXVA_VideoProcess_YUV2RGBExtended = 128,
+    DXVA_VideoProcess_AlphaBlendExtended = 0x100
+} DXVA_VideoProcessCaps;
+
+enum {
+    COPP_ProtectionType_Unknown = (-2147483648),
+    COPP_ProtectionType_None = 0,
+    COPP_ProtectionType_HDCP = 1,
+    COPP_ProtectionType_ACP = 2,
+    COPP_ProtectionType_CGMSA = 4,
+    COPP_ProtectionType_DPCP = 16,
+    COPP_ProtectionType_Mask = (-2147483625),
+    COPP_ProtectionType_Reserved = 0x7FFFFFF8
+};
+
+typedef BYTE DXVA_AI44sample;
+typedef DWORD DXVA_ConfigQueryOrReplyFunc;
+typedef WORD DXVA_DCCMD;
+typedef BYTE DXVA_DeblockingEdgeControl;
+typedef BYTE DXVA_DPXD;
+typedef DWORD DXVA_EncryptProtocolFunc;
+typedef BYTE DXVA_IA44sample;
+typedef BYTE * LPDXVA_AI44sample;
+typedef DWORD * LPDXVA_ConfigQueryOrReplyFunc;
+typedef WORD * LPDXVA_DCCMD;
+typedef DXVA_DeblockingEdgeControl * LPDXVA_DeblockingEdgeControl;
+typedef BYTE * LPDXVA_DPXD;
+typedef DWORD * LPDXVA_EncryptProtocolFunc;
+typedef BYTE * LPDXVA_IA44sample;
+
+typedef struct _DXVA_AYUVsample2 {
+  BYTE bCrValue;
+  BYTE bCbValue;
+  BYTE bY_Value;
+  BYTE bSampleAlpha8;
+} DXVA_AYUVsample2, *LPDXVA_AYUVsample2;
+
+#pragma pack(push, 1)
+typedef struct _DXVA_BlendCombination {
+  WORD wPictureSourceIndex;
+  WORD wBlendedDestinationIndex;
+  RECT PictureSourceRect16thPel;
+  RECT PictureDestinationRect;
+  RECT GraphicSourceRect;
+  RECT GraphicDestinationRect;
+  WORD wBlendDelay;
+  BYTE bBlendOn;
+  BYTE bWholePlaneAlpha;
+  DXVA_AYUVsample2 OutsideYUVcolor;
+} DXVA_BlendCombination, *LPDXVA_BlendCombination;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_BufferDescription {
+  DWORD dwTypeIndex;
+  DWORD dwBufferIndex;
+  DWORD dwDataOffset;
+  DWORD dwDataSize;
+  DWORD dwFirstMBaddress;
+  DWORD dwNumMBsInBuffer;
+  DWORD dwWidth;
+  DWORD dwHeight;
+  DWORD dwStride;
+  DWORD dwReservedBits;
+} DXVA_BufferDescription, *LPDXVA_BufferDescription;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_ConfigAlphaCombine {
+  DXVA_ConfigQueryOrReplyFunc dwFunction;
+  DWORD dwReservedBits[3];
+  BYTE bConfigBlendType;
+  BYTE bConfigPictureResizing;
+  BYTE bConfigOnlyUsePicDestRectArea;
+  BYTE bConfigGraphicResizing;
+  BYTE bConfigWholePlaneAlpha;
+} DXVA_ConfigAlphaCombine, *LPDXVA_ConfigAlphaCombine;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_ConfigAlphaLoad {
+  DXVA_ConfigQueryOrReplyFunc dwFunction;
+  DWORD dwReservedBits[3];
+  BYTE bConfigDataType;
+} DXVA_ConfigAlphaLoad, *LPDXVA_ConfigAlphaLoad;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_ConfigPictureDecode {
+  DXVA_ConfigQueryOrReplyFunc dwFunction;
+  DWORD dwReservedBits[3];
+  GUID guidConfigBitstreamEncryption;
+  GUID guidConfigMBcontrolEncryption;
+  GUID guidConfigResidDiffEncryption;
+  BYTE bConfigBitstreamRaw;
+  BYTE bConfigMBcontrolRasterOrder;
+  BYTE bConfigResidDiffHost;
+  BYTE bConfigSpatialResid8;
+  BYTE bConfigResid8Subtraction;
+  BYTE bConfigSpatialHost8or9Clipping;
+  BYTE bConfigSpatialResidInterleaved;
+  BYTE bConfigIntraResidUnsigned;
+  BYTE bConfigResidDiffAccelerator;
+  BYTE bConfigHostInverseScan;
+  BYTE bConfigSpecificIDCT;
+  BYTE bConfig4GroupedCoefs;
+} DXVA_ConfigPictureDecode, *LPDXVA_ConfigPictureDecode;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_ConnectMode {
+  GUID guidMode;
+  WORD wRestrictedMode;
+} DXVA_ConnectMode, *LPDXVA_ConnectMode;
+#pragma pack(pop)
+
+typedef struct _DXVA_COPPCommand {
+  GUID macKDI;
+  GUID guidCommandID;
+  ULONG dwSequence;
+  ULONG cbSizeData;
+  UCHAR CommandData[4056];
+} DXVA_COPPCommand, *LPDXVA_COPPCommand;
+
+typedef struct _DXVA_COPPSetProtectionLevelCmdData {
+  ULONG ProtType;
+  ULONG ProtLevel;
+  ULONG ExtendedInfoChangeMask;
+  ULONG ExtendedInfoData;
+} DXVA_COPPSetProtectionLevelCmdData;
+
+typedef struct _DXVA_COPPSetSignalingCmdData {
+  ULONG ActiveTVProtectionStandard;
+  ULONG AspectRatioChangeMask1;
+  ULONG AspectRatioData1;
+  ULONG AspectRatioChangeMask2;
+  ULONG AspectRatioData2;
+  ULONG AspectRatioChangeMask3;
+  ULONG AspectRatioData3;
+  ULONG ExtendedInfoChangeMask[4];
+  ULONG ExtendedInfoData[4];
+  ULONG Reserved;
+} DXVA_COPPSetSignalingCmdData;
+
+typedef struct _DXVA_COPPSignature {
+  UCHAR Signature[256];
+} DXVA_COPPSignature, *LPDXVA_COPPSignature;
+
+typedef struct _DXVA_COPPStatusData {
+  GUID rApp;
+  ULONG dwFlags;
+  ULONG dwData;
+  ULONG ExtendedInfoValidMask;
+  ULONG ExtendedInfoData;
+} DXVA_COPPStatusData;
+
+typedef struct _DXVA_COPPStatusDisplayData {
+  GUID rApp;
+  ULONG dwFlags;
+  ULONG DisplayWidth;
+  ULONG DisplayHeight;
+  ULONG Format;
+  ULONG d3dFormat;
+  ULONG FreqNumerator;
+  ULONG FreqDenominator;
+} DXVA_COPPStatusDisplayData;
+
+typedef struct _DXVA_COPPStatusHDCPKeyData {
+  GUID rApp;
+  ULONG dwFlags;
+  ULONG dwHDCPFlags;
+  GUID BKey;
+  GUID Reserved1;
+  GUID Reserved2;
+} DXVA_COPPStatusHDCPKeyData;
+
+typedef struct _DXVA_COPPStatusInput {
+  GUID rApp;
+  GUID guidStatusRequestID;
+  ULONG dwSequence;
+  ULONG cbSizeData;
+  UCHAR StatusData[4056];
+} DXVA_COPPStatusInput, *LPDXVA_COPPStatusInput;
+
+typedef struct _DXVA_COPPStatusOutput {
+  GUID macKDI;
+  ULONG cbSizeData;
+  UCHAR COPPStatus[4076];
+} DXVA_COPPStatusOutput, *LPDXVA_COPPStatusOutput;
+
+typedef struct _DXVA_COPPStatusSignalingCmdData {
+  GUID rApp;
+  ULONG dwFlags;
+  ULONG AvailableTVProtectionStandards;
+  ULONG ActiveTVProtectionStandard;
+  ULONG TVType;
+  ULONG AspectRatioValidMask1;
+  ULONG AspectRatioData1;
+  ULONG AspectRatioValidMask2;
+  ULONG AspectRatioData2;
+  ULONG AspectRatioValidMask3;
+  ULONG AspectRatioData3;
+  ULONG ExtendedInfoValidMask[4];
+  ULONG ExtendedInfoData[4];
+} DXVA_COPPStatusSignalingCmdData;
+
+typedef struct _DXVA_DeblockIndexAB_H264 {
+  UCHAR bIndexAinternal;
+  UCHAR bIndexBinternal;
+  UCHAR bIndexAleft0;
+  UCHAR bIndexBleft0;
+  UCHAR bIndexAleft1;
+  UCHAR bIndexBleft1;
+  UCHAR bIndexAtop0;
+  UCHAR bIndexBtop0;
+  UCHAR bIndexAtop1;
+  UCHAR bIndexBtop1;
+} DXVA_DeblockIndexAB_H264, *LPDXVA_DeblockIndexAB_H264;
+
+typedef struct _DXVA_DeinterlaceQueryAvailableModes {
+  DWORD Size;
+  DWORD NumGuids;
+  GUID Guids[32];
+} DXVA_DeinterlaceQueryAvailableModes;
+
+#pragma pack(push, 1)
+typedef struct _DXVA_EncryptProtocolHeader {
+  DXVA_EncryptProtocolFunc dwFunction;
+  DWORD ReservedBits[3];
+  GUID guidEncryptProtocol;
+} DXVA_EncryptProtocolHeader, *LPDXVA_EncryptProtocolHeader;
+#pragma pack(pop)
+
+typedef struct _DXVA_Frequency {
+  DWORD Numerator;
+  DWORD Denominator;
+} DXVA_Frequency;
+
+#pragma pack(push, 1)
+typedef struct _DXVA_Highlight {
+  WORD wHighlightActive;
+  WORD wHighlightIndices;
+  WORD wHighlightAlphas;
+  RECT HighlightRect;
+} DXVA_Highlight, *LPDXVA_Highlight;
+#pragma pack(pop)
+
+typedef struct _DXVA_HuffmanTable_MJPEG {
+  UINT8 bits_ac[4][16];
+  UINT8 table_ac[4][256];
+  UINT8 bits_dc[4][16];
+  UINT8 table_dc[4][256];
+} DXVA_HuffmanTable_MJPEG, *LPDXVA_HuffmanTable_MJPEG;
+
+#pragma pack(push, 1)
+typedef struct _DXVA_MBctrl_I_HostResidDiff_1 {
+  WORD wMBaddress;
+  WORD wMBtype;
+  DWORD dwMB_SNL;
+  WORD wPatternCode;
+  WORD wPC_Overflow;
+  DWORD dwReservedBits2;
+} DXVA_MBctrl_I_HostResidDiff_1;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_MBctrl_I_OffHostIDCT_1 {
+  WORD wMBaddress;
+  WORD wMBtype;
+  DWORD dwMB_SNL;
+  WORD wPatternCode;
+  BYTE bNumCoef[6];
+} DXVA_MBctrl_I_OffHostIDCT_1;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_MVvalue {
+  SHORT horz;
+  SHORT vert;
+} DXVA_MVvalue, *LPDXVA_MVvalue;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_MBctrl_P_HostResidDiff_1 {
+  WORD wMBaddress;
+  WORD wMBtype;
+  DWORD dwMB_SNL;
+  WORD wPatternCode;
+  WORD wPC_Overflow;
+  DWORD dwReservedBits2;
+  DXVA_MVvalue MVector[4];
+} DXVA_MBctrl_P_HostResidDiff_1;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_MBctrl_P_OffHostIDCT_1 {
+  WORD wMBaddress;
+  WORD wMBtype;
+  DWORD dwMB_SNL;
+  WORD wPatternCode;
+  BYTE bNumCoef[6];
+  DXVA_MVvalue MVector[4];
+} DXVA_MBctrl_P_OffHostIDCT_1;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_PicParams_MJPEG {
+  UINT width;
+  UINT height;
+  UCHAR numComponents;
+  UCHAR bitDepth;
+  USHORT reserved16Bits;
+  UCHAR quantizationTableSelector[4];
+  UINT scanOffset[4];
+  UINT scanSize[4];
+  UCHAR componentIdentifier[4];
+  USHORT restartInterval;
+  USHORT reserved16Bits2;
+  UINT reserved32Bits;
+  UINT statusReportFeedbackNumber;
+} DXVA_PicParams_MJPEG, *LPDXVA_PicParams_MJPEG;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_PicResample {
+  WORD wPicResampleSourcePicIndex;
+  WORD wPicResampleDestPicIndex;
+  WORD wPicResampleRcontrol;
+  BYTE bPicResampleExtrapWidth;
+  BYTE bPicResampleExtrapHeight;
+  DWORD dwPicResampleSourceWidth;
+  DWORD dwPicResampleSourceHeight;
+  DWORD dwPicResampleDestWidth;
+  DWORD dwPicResampleDestHeight;
+  DWORD dwPicResampleFullDestWidth;
+  DWORD dwPicResampleFullDestHeight;
+} DXVA_PicResample, *LPDXVA_PicResample;
+#pragma pack(pop)
+
+typedef struct _DXVA_ProcAmpControlBlt {
+  DWORD Size;
+  RECT DstRect;
+  RECT SrcRect;
+  FLOAT Alpha;
+  FLOAT Brightness;
+  FLOAT Contrast;
+  FLOAT Hue;
+  FLOAT Saturation;
+} DXVA_ProcAmpControlBlt;
+
+typedef struct _DXVA_Qmatrix_APV {
+  UCHAR NumComponents;
+  UINT qmatrix_reserved_zero_32bits;
+  UCHAR QMatrix[4][8][8];
+  UINT64 qmatrix_reserved_zero_64bits;
+} DXVA_Qmatrix_APV, *LPDXVA_Qmatrix_APV;
+
+#pragma pack(push, 1)
+typedef struct _DXVA_QMatrix_MJPEG {
+  UINT16 quantvals[4][64];
+} DXVA_QMatrix_MJPEG, *LPDXVA_QMatrix_MJPEG;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_Status_HEVC {
+  USHORT StatusReportFeedbackNumber;
+  DXVA_PicEntry_HEVC CurrPic;
+  UCHAR bBufType;
+  UCHAR bStatus;
+  UCHAR bReserved8Bits;
+  USHORT wNumMbsAffected;
+} DXVA_Status_HEVC, *LPDXVA_Status_HEVC;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_Status_VC1 {
+  USHORT StatusReportFeedbackNumber;
+  WORD wDecodedPictureIndex;
+  WORD wDeblockedPictureIndex;
+  UCHAR bPicStructure;
+  UCHAR bBufType;
+  UCHAR bStatus;
+  UCHAR bReserved8Bits;
+  USHORT wNumMbsAffected;
+} DXVA_Status_VC1, *LPDXVA_Status_VC1;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_TCoef4Group {
+  BYTE TCoefIDX[4];
+  SHORT TCoefValue[4];
+} DXVA_TCoef4Group, *LPDXVA_TCoef4Group;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _DXVA_TCoefSingle {
+  WORD wIndexWithEOB;
+  SHORT TCoefValue;
+} DXVA_TCoefSingle, *LPDXVA_TCoefSingle;
+#pragma pack(pop)
+
+typedef struct _DXVA_Tile_APV {
+  UINT tile_data_offset;
+  UINT tile_total_size;
+  UINT tile_data_reserved_zero_32bits;
+  USHORT tile_index;
+  UINT32 tile_header_reserved_zero_32bits;
+  USHORT tile_header_size;
+  UINT tile_component_data_size[4];
+  UCHAR tile_component_qp[4];
+  UINT tile_component_qp_zero_32bits;
+} DXVA_Tile_APV, *LPDXVA_Tile_APV;
+
+typedef struct _DXVA_VideoPropertyRange {
+  FLOAT MinValue;
+  FLOAT MaxValue;
+  FLOAT DefaultValue;
+  FLOAT StepSize;
+} DXVA_VideoPropertyRange, *LPDXVA_VideoPropertyRange;
+
+#define _DIRECTX_APV_VA_
+#define _DIRECTX_MJPEG_VA_
+#define DXVA_ModeVC1_IDCT DXVA_ModeVC1_C
+#define DXVA_ModeVC1_MoComp DXVA_ModeVC1_B
+#define DXVA_ModeVC1_PostProc DXVA_ModeVC1_A
+#define DXVA_ModeVC1_VLD DXVA_ModeVC1_D
+#define DXVA_ModeWMV8_MoComp DXVA_ModeWMV8_B
+#define DXVA_ModeWMV8_PostProc DXVA_ModeWMV8_A
+#define DXVA_ModeWMV9_IDCT DXVA_ModeWMV9_C
+#define DXVA_ModeWMV9_MoComp DXVA_ModeWMV9_B
+#define DXVA_ModeWMV9_PostProc DXVA_ModeWMV9_A
+#define DXVA_NumBlocksPerMB_420 6
+#define DXVA_NumBlocksPerMB_422 8
+#define DXVA_NumBlocksPerMB_444 0xC
+#define DXVA_NumMV_OBMC_off_BinPBwith4MV_on 5
+#define DXVA_RESTRICTED_MODE_H264_IDCT_FGT 0x67
+#define DXVA_RESTRICTED_MODE_H264_IDCT_NOFGT 0x66
+#define DXVA_RESTRICTED_MODE_H264_MOCOMP_FGT 0x65
+#define DXVA_RESTRICTED_MODE_H264_MOCOMP_NOFGT 0x64
+#define DXVA_RESTRICTED_MODE_H264_VLD_FGT 0x69
+#define DXVA_RESTRICTED_MODE_H264_VLD_NOFGT 0x68
+#define DXVA_RESTRICTED_MODE_UNRESTRICTED 0xFFFF
+#define DXVA_RESTRICTED_MODE_VC1_IDCT 0xA2
+#define DXVA_RESTRICTED_MODE_VC1_MOCOMP 0xA1
+#define DXVA_RESTRICTED_MODE_VC1_POSTPROC 0xA0
+#define DXVA_RESTRICTED_MODE_VC1_VLD 0xA3
+#define DXVA_RESTRICTED_MODE_WMV8_MOCOMP 0x81
+#define DXVA_RESTRICTED_MODE_WMV8_POSTPROC 0x80
+#define DXVA_RESTRICTED_MODE_WMV9_IDCT 0x94
+#define DXVA_RESTRICTED_MODE_WMV9_MOCOMP 0x91
+#define DXVA_RESTRICTED_MODE_WMV9_POSTPROC 0x90
+
+#pragma pack(push, 1)
+struct _DXVA_Deblock_H264
+{
+    USHORT CurrMbAddr;
+    union
+    {
+        struct
+        {
+            UCHAR ReservedBit : 1;
+            UCHAR FieldModeCurrentMbFlag : 1;
+            UCHAR FieldModeLeftMbFlag : 1;
+            UCHAR FieldModeAboveMbFlag : 1;
+            UCHAR FilterInternal8x8EdgesFlag : 1;
+            UCHAR FilterInternal4x4EdgesFlag : 1;
+            UCHAR FilterLeftMbEdgeFlag : 1;
+            UCHAR FilterTopMbEdgeFlag : 1;
+        };
+        UCHAR FirstByte;
+    };
+    UCHAR Reserved8Bits;
+    UCHAR bbSinternalLeftVert;
+    UCHAR bbSinternalMidVert;
+    UCHAR bbSinternalRightVert;
+    UCHAR bbSinternalTopHorz;
+    UCHAR bbSinternalMidHorz;
+    UCHAR bbSinternalBotHorz;
+    USHORT wbSLeft0;
+    USHORT wbSLeft1;
+    USHORT wbSTop0;
+    USHORT wbSTop1;
+    DXVA_DeblockIndexAB_H264 IndexAB[3];
+};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+struct _DXVA_MBctrl_H264
+{
+    union
+    {
+        struct
+        {
+            UINT bSliceID : 8;
+            UINT MbType5Bits : 5;
+            UINT IntraMbFlag : 1;
+            UINT mb_field_decoding_flag : 1;
+            UINT transform_size_8x8_flag : 1;
+            UINT HostResidDiff : 1;
+            UINT DcBlockCodedCrFlag : 1;
+            UINT DcBlockCodedCbFlag : 1;
+            UINT DcBlockCodedYFlag : 1;
+            UINT FilterInternalEdgesFlag : 1;
+            UINT FilterLeftMbEdgeFlag : 1;
+            UINT FilterTopMbEdgeFlag : 1;
+            UINT ReservedBit : 1;
+            UINT bMvQuantity : 8;
+        };
+        UINT dwMBtype;
+    };
+    USHORT CurrMbAddr;
+    USHORT wPatternCode[3];
+    UCHAR bQpPrime[3];
+    UCHAR bMBresidDataQuantity;
+    ULONG dwMBdataLocation;
+    union
+    {
+        struct
+        {
+            USHORT LumaIntraPredModes[4];
+            union
+            {
+                struct
+                {
+                    UCHAR intra_chroma_pred_mode : 2;
+                    UCHAR IntraPredAvailFlags : 5;
+                    UCHAR ReservedIntraBit : 1;
+                };
+                UCHAR bMbIntraStruct;
+            };
+            UCHAR ReservedIntra24Bits[3];
+        };
+        struct
+        {
+            UCHAR bSubMbShapes;
+            UCHAR bSubMbPredModes;
+            USHORT wMvBuffOffset;
+            UCHAR bRefPicSelect[2][4];
+        };
+    };
+};
+#pragma pack(pop)
+
+struct _DXVA_PicEntry_APV
+{
+    union
+    {
+        struct
+        {
+            UCHAR Index7Bits : 7;
+            UCHAR ReservedFlag : 1;
+        };
+        UCHAR bPicEntry;
+    };
+};
+
+#pragma pack(push, 1)
+struct _DXVA_PicParams_H264_MVC
+{
+    USHORT wFrameWidthInMbsMinus1;
+    USHORT wFrameHeightInMbsMinus1;
+    DXVA_PicEntry_H264 CurrPic;
+    UCHAR num_ref_frames;
+    union
+    {
+        struct
+        {
+            USHORT field_pic_flag : 1;
+            USHORT MbaffFrameFlag : 1;
+            USHORT residual_colour_transform_flag : 1;
+            USHORT sp_for_switch_flag : 1;
+            USHORT chroma_format_idc : 2;
+            USHORT RefPicFlag : 1;
+            USHORT constrained_intra_pred_flag : 1;
+            USHORT weighted_pred_flag : 1;
+            USHORT weighted_bipred_idc : 2;
+            USHORT MbsConsecutiveFlag : 1;
+            USHORT frame_mbs_only_flag : 1;
+            USHORT transform_8x8_mode_flag : 1;
+            USHORT MinLumaBipredSize8x8Flag : 1;
+            USHORT IntraPicFlag : 1;
+        };
+        USHORT wBitFields;
+    };
+    UCHAR bit_depth_luma_minus8;
+    UCHAR bit_depth_chroma_minus8;
+    USHORT Reserved16Bits;
+    UINT StatusReportFeedbackNumber;
+    DXVA_PicEntry_H264 RefFrameList[16];
+    INT CurrFieldOrderCnt[2];
+    INT FieldOrderCntList[16][2];
+    CHAR pic_init_qs_minus26;
+    CHAR chroma_qp_index_offset;
+    CHAR second_chroma_qp_index_offset;
+    UCHAR ContinuationFlag;
+    CHAR pic_init_qp_minus26;
+    UCHAR num_ref_idx_l0_active_minus1;
+    UCHAR num_ref_idx_l1_active_minus1;
+    UCHAR Reserved8BitsA;
+    USHORT FrameNumList[16];
+    UINT UsedForReferenceFlags;
+    USHORT NonExistingFrameFlags;
+    USHORT frame_num;
+    UCHAR log2_max_frame_num_minus4;
+    UCHAR pic_order_cnt_type;
+    UCHAR log2_max_pic_order_cnt_lsb_minus4;
+    UCHAR delta_pic_order_always_zero_flag;
+    UCHAR direct_8x8_inference_flag;
+    UCHAR entropy_coding_mode_flag;
+    UCHAR pic_order_present_flag;
+    UCHAR num_slice_groups_minus1;
+    UCHAR slice_group_map_type;
+    UCHAR deblocking_filter_control_present_flag;
+    UCHAR redundant_pic_cnt_present_flag;
+    UCHAR Reserved8BitsB;
+    USHORT slice_group_change_rate_minus1;
+    UCHAR num_views_minus1;
+    USHORT view_id[16];
+    UCHAR num_anchor_refs_l0[16];
+    USHORT anchor_ref_l0[16][16];
+    UCHAR num_anchor_refs_l1[16];
+    USHORT anchor_ref_l1[16][16];
+    UCHAR num_non_anchor_refs_l0[16];
+    USHORT non_anchor_ref_l0[16][16];
+    UCHAR num_non_anchor_refs_l1[16];
+    USHORT non_anchor_ref_l1[16][16];
+    USHORT curr_view_id;
+    UCHAR anchor_pic_flag;
+    UCHAR inter_view_flag;
+    USHORT ViewIDList[16];
+};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+struct _DXVA_PicParams_MPEG4_PART2
+{
+    UCHAR short_video_header;
+    UCHAR vop_coding_type;
+    UCHAR vop_quant;
+    WORD wDecodedPictureIndex;
+    WORD wDeblockedPictureIndex;
+    WORD wForwardRefPictureIndex;
+    WORD wBackwardRefPictureIndex;
+    USHORT vop_time_increment_resolution;
+    UINT TRB[2];
+    UINT TRD[2];
+    union
+    {
+        struct
+        {
+            USHORT unPicPostProc : 2;
+            USHORT interlaced : 1;
+            USHORT quant_type : 1;
+            USHORT quarter_sample : 1;
+            USHORT resync_marker_disable : 1;
+            USHORT data_partitioned : 1;
+            USHORT reversible_vlc : 1;
+            USHORT reduced_resolution_vop_enable : 1;
+            USHORT vop_coded : 1;
+            USHORT vop_rounding_type : 1;
+            USHORT intra_dc_vlc_thr : 3;
+            USHORT top_field_first : 1;
+            USHORT alternate_vertical_scan_flag : 1;
+        };
+        USHORT wPicFlagBitFields;
+    };
+    UCHAR profile_and_level_indication;
+    UCHAR video_object_layer_verid;
+    WORD vop_width;
+    WORD vop_height;
+    union
+    {
+        struct
+        {
+            USHORT sprite_enable : 2;
+            USHORT no_of_sprite_warping_points : 6;
+            USHORT sprite_warping_accuracy : 2;
+        };
+        USHORT wSpriteBitFields;
+    };
+    SHORT warping_mv[4][2];
+    union
+    {
+        struct
+        {
+            UCHAR vop_fcode_forward : 3;
+            UCHAR vop_fcode_backward : 3;
+        };
+        UCHAR wFcodeBitFields;
+    };
+    USHORT StatusReportFeedbackNumber;
+    USHORT Reserved16BitsA;
+    USHORT Reserved16BitsB;
+};
+#pragma pack(pop)
+
+typedef LONGLONG REFERENCE_TIME;
+
+#if (defined(_WIN64))
+struct _DXVA_VideoSample32
+{
+    REFERENCE_TIME rtStart;
+    REFERENCE_TIME rtEnd;
+    DWORD SampleFormat;
+    DWORD SampleFlags;
+    DWORD lpDDSSrcSurface;
+    RECT rcSrc;
+    RECT rcDst;
+    DXVA_AYUVsample2 Palette[16];
+};
+#endif
+
+typedef struct _DXVA_Deblock_H264 DXVA_Deblock_H264;
+
+typedef struct _DXVA_MBctrl_H264 DXVA_MBctrl_H264;
+
+typedef struct _DXVA_PicEntry_APV DXVA_PicEntry_APV;
+
+struct _DXVA_PicParams_APV
+{
+    UCHAR pbu_reserved_zero_8bits;
+    UINT reserved_zero_32bits;
+    UINT32 frame_width;
+    UINT32 frame_height;
+    UCHAR chroma_format_idc;
+    UCHAR bit_depth_minus8;
+    UINT32 frame_info_reserved_zero_32bits;
+    UCHAR frame_header_reserved_zero_8bits;
+    UCHAR use_q_matrix;
+    UCHAR q_reserved_zero_8bits;
+    UINT32 tile_width_in_mbs;
+    UINT32 tile_height_in_mbs;
+    UCHAR tile_size_present_in_fh_flag;
+    UCHAR tileinfo_reserved_zero_8bits;
+    UINT16 tile_reserved_16bits;
+    UINT32 statusReportFeedbackNumber;
+    DXVA_PicEntry_APV CurrPic;
+};
+
+typedef struct _DXVA_PicParams_APV DXVA_PicParams_APV;
+
+typedef struct _DXVA_PicParams_H264_MVC DXVA_PicParams_H264_MVC;
+
+typedef struct _DXVA_PicParams_MPEG4_PART2 DXVA_PicParams_MPEG4_PART2;
+
+typedef SHORT DXVA_Sample16[64];
+
+typedef signed char DXVA_Sample8[64];
+
+#if (defined(_WIN64))
+typedef struct _DXVA_VideoSample32 DXVA_VideoSample32;
+
+struct _DXVA_DeinterlaceBltEx32
+{
+    DWORD Size;
+    DXVA_AYUVsample2 BackgroundColor;
+    RECT rcTarget;
+    REFERENCE_TIME rtTarget;
+    DWORD NumSourceSurfaces;
+    FLOAT Alpha;
+    DXVA_VideoSample32 Source[32];
+    DWORD DestinationFormat;
+    DWORD DestinationFlags;
+};
+
+typedef struct _DXVA_DeinterlaceBltEx32 DXVA_DeinterlaceBltEx32;
+#endif
+
+typedef struct _DXVA_Deblock_H264 *LPDXVA_Deblock_H264;
+
+typedef struct _DXVA_MBctrl_H264 *LPDXVA_MBctrl_H264;
+
+typedef DXVA_MBctrl_I_HostResidDiff_1 *LPDXVA_MBctrl_I_HostResidDiff_1;
+
+typedef DXVA_MBctrl_I_OffHostIDCT_1 *LPDXVA_MBctrl_I_OffHostIDCT_1;
+
+typedef DXVA_MBctrl_P_HostResidDiff_1 *LPDXVA_MBctrl_P_HostResidDiff_1;
+
+typedef DXVA_MBctrl_P_OffHostIDCT_1 *LPDXVA_MBctrl_P_OffHostIDCT_1;
+
+typedef struct _DXVA_PicEntry_APV *LPDXVA_PicEntry_APV;
+
+typedef struct _DXVA_PicParams_APV *LPDXVA_PicParams_APV;
+
+typedef struct _DXVA_PicParams_H264_MVC *LPDXVA_PicParams_H264_MVC;
+
+typedef struct _DXVA_PicParams_MPEG4_PART2 *LPDXVA_PicParams_MPEG4_PART2;
+
+
+
+#if !defined(_D3D8FORMAT_H_) && ((DIRECT3D_VERSION < 0x0800) || !defined(DIRECT3D_VERSION))
+#define _DXVA_DWORD_D3DFORMAT
+typedef DWORD D3DFORMAT;
+#endif
+
+struct _DXVA_DeinterlaceCaps
+{
+    DWORD Size;
+    DWORD NumPreviousOutputFrames;
+    DWORD InputPool;
+    DWORD NumForwardRefSamples;
+    DWORD NumBackwardRefSamples;
+    D3DFORMAT d3dOutputFormat;
+    DXVA_VideoProcessCaps VideoProcessingCaps;
+    DXVA_DeinterlaceTech DeinterlaceTechnology;
+};
+
+struct _DXVA_ProcAmpControlCaps
+{
+    DWORD Size;
+    DWORD InputPool;
+    D3DFORMAT d3dOutputFormat;
+    DWORD ProcAmpControlProps;
+    DWORD VideoProcessingCaps;
+};
+
+struct _DXVA_VideoDesc
+{
+    DWORD Size;
+    DWORD SampleWidth;
+    DWORD SampleHeight;
+    DWORD SampleFormat;
+    D3DFORMAT d3dFormat;
+    DXVA_Frequency InputSampleFreq;
+    DXVA_Frequency OutputFrameFreq;
+};
+
+struct _DXVA_VideoSample
+{
+    REFERENCE_TIME rtStart;
+    REFERENCE_TIME rtEnd;
+    DXVA_SampleFormat SampleFormat;
+    void *lpDDSSrcSurface;
+};
+
+struct _DXVA_VideoSample2
+{
+    DWORD Size;
+    DWORD Reserved;
+    REFERENCE_TIME rtStart;
+    REFERENCE_TIME rtEnd;
+    DWORD SampleFormat;
+    DWORD SampleFlags;
+    void *lpDDSSrcSurface;
+    RECT rcSrc;
+    RECT rcDst;
+    DXVA_AYUVsample2 Palette[16];
+};
+
+typedef struct _DXVA_DeinterlaceBlt DXVA_DeinterlaceBlt;
+
+typedef struct _DXVA_DeinterlaceBltEx DXVA_DeinterlaceBltEx;
+
+typedef struct _DXVA_DeinterlaceCaps DXVA_DeinterlaceCaps;
+
+typedef struct _DXVA_DeinterlaceQueryModeCaps DXVA_DeinterlaceQueryModeCaps;
+
+typedef struct _DXVA_ProcAmpControlCaps DXVA_ProcAmpControlCaps;
+
+typedef struct _DXVA_ProcAmpControlQueryRange DXVA_ProcAmpControlQueryRange;
+
+typedef struct _DXVA_VideoDesc DXVA_VideoDesc;
+
+struct _DXVA_DeinterlaceQueryModeCaps
+{
+    DWORD Size;
+    GUID Guid;
+    DXVA_VideoDesc VideoDesc;
+};
+
+struct _DXVA_ProcAmpControlQueryRange
+{
+    DWORD Size;
+    DXVA_ProcAmpControlProp ProcAmpControlProp;
+    DXVA_VideoDesc VideoDesc;
+};
+
+typedef struct _DXVA_VideoSample DXVA_VideoSample;
+
+struct _DXVA_DeinterlaceBlt
+{
+    DWORD Size;
+    DWORD Reserved;
+    REFERENCE_TIME rtTarget;
+    RECT DstRect;
+    RECT SrcRect;
+    DWORD NumSourceSurfaces;
+    FLOAT Alpha;
+    DXVA_VideoSample Source[32];
+};
+
+typedef struct _DXVA_VideoSample2 DXVA_VideoSample2;
+
+struct _DXVA_DeinterlaceBltEx
+{
+    DWORD Size;
+    DXVA_AYUVsample2 BackgroundColor;
+    RECT rcTarget;
+    REFERENCE_TIME rtTarget;
+    DWORD NumSourceSurfaces;
+    FLOAT Alpha;
+    DXVA_VideoSample2 Source[32];
+    DWORD DestinationFormat;
+    DWORD DestinationFlags;
+};
+
+typedef struct _DXVA_DeinterlaceCaps *LPDXVA_DeinterlaceCaps;
+
+typedef struct _DXVA_ProcAmpControlCaps *LPDXVA_ProcAmpControlCaps;
+
+typedef struct _DXVA_ProcAmpControlQueryRange *LPDXVA_ProcAmpControlQueryRange;
+
+typedef struct _DXVA_VideoDesc *LPDXVA_VideoDesc;
+
+typedef struct _DXVA_VideoSample *LPDXVA_VideoSample;
+
+typedef struct _DXVA_VideoSample2 *LPDXVA_VideoSample2;
+
+#define DXVA_ExtractExtColorData(_sf, _Mask, _Shift) (((_sf) & (_Mask)) >> (_Shift))
+#define DXVA_ExtractSampleFormat(_sf) ((_sf) & (DXVA_SampleFormatMask))
+#define DXVABit(__x) (1 << __x)
+#define DXVABitMask(__n) (~((~0) << __n))
+#define DXVAColorMask(__bits, __base) (DXVABitMask(__bits) << (__base))
+#define readDXVA_AI44alpha(ptr) (((* (ptr)) & 0xF0) >> 4)
+#define readDXVA_AI44index(ptr) ((* (ptr)) & 0x0F)
+#define readDXVA_Cb__4coded(ptr) (((ptr) -> wPatternCode & 0x0080) >> 7)
+#define readDXVA_Cb__4oflow(ptr) (((ptr) -> wPC_Overflow & 0x0080) >> 7)
+#define readDXVA_Cb__6coded(ptr) (((ptr) -> wPatternCode & 0x0020) >> 5)
+#define readDXVA_Cb__6oflow(ptr) (((ptr) -> wPC_Overflow & 0x0020) >> 5)
+#define readDXVA_Cb__8coded(ptr) (((ptr) -> wPatternCode & 0x0008) >> 3)
+#define readDXVA_Cb__8oflow(ptr) (((ptr) -> wPC_Overflow & 0x0008) >> 3)
+#define readDXVA_Cb__9coded(ptr) (((ptr) -> wPatternCode & 0x0004) >> 2)
+#define readDXVA_Cb__9oflow(ptr) (((ptr) -> wPC_Overflow & 0x0004) >> 2)
+#define readDXVA_Cr_10coded(ptr) (((ptr) -> wPatternCode & 0x0002) >> 1)
+#define readDXVA_Cr_10oflow(ptr) (((ptr) -> wPC_Overflow & 0x0002) >> 1)
+#define readDXVA_Cr_11coded(ptr) (((ptr) -> wPatternCode & 0x0001))
+#define readDXVA_Cr_11oflow(ptr) (((ptr) -> wPC_Overflow & 0x0001))
+#define readDXVA_Cr__5coded(ptr) (((ptr) -> wPatternCode & 0x0040) >> 6)
+#define readDXVA_Cr__5oflow(ptr) (((ptr) -> wPC_Overflow & 0x0040) >> 6)
+#define readDXVA_Cr__7coded(ptr) (((ptr) -> wPatternCode & 0x0010) >> 4)
+#define readDXVA_Cr__7oflow(ptr) (((ptr) -> wPC_Overflow & 0x0010) >> 4)
+#define readDXVA_EdgeFilterOn(ptr) ((* (ptr)) & 1)
+#define readDXVA_EdgeFilterStrength(ptr) ((* (ptr)) >> 1)
+#define readDXVA_EncryptProtocolFuncFlag(ptr) ((* (ptr)) >> 8)
+#define readDXVA_EncryptProtocolFuncFlag_ACCEL(ptr) (((* (ptr)) >> 11) & 1)
+#define readDXVA_EncryptProtocolFuncFunc(ptr) ((* (ptr)) & 0xFF)
+#define readDXVA_FieldResidual(ptr) (((ptr) -> wMBtype & 0x0020) >> 5)
+#define readDXVA_H261LoopFilter(ptr) (((ptr) -> wMBtype & 0x0010) >> 4)
+#define readDXVA_HostResidDiff(ptr) (((ptr) -> wMBtype & 0x0400) >> 10)
+#define readDXVA_IA44alpha(ptr) ((* (ptr)) & 0x0F)
+#define readDXVA_IA44index(ptr) (((* (ptr)) & 0xF0) >> 4)
+#define readDXVA_IntraMacroblock(ptr) (((ptr) -> wMBtype & 0x0001))
+#define readDXVA_MBdataLocation(ptr) (((ptr) -> dwMB_SNL & 0x00FFFFFF))
+#define readDXVA_MBscanMethod(ptr) (((ptr) -> wMBtype & 0x00C0) >> 6)
+#define readDXVA_MBskipsFollowing(ptr) (((ptr) -> dwMB_SNL & 0xFF000000) >> 24)
+#define readDXVA_Motion4MV(ptr) (((ptr) -> wMBtype & 0x0008) >> 3)
+#define readDXVA_MotionBackward(ptr) (((ptr) -> wMBtype & 0x0004) >> 2)
+#define readDXVA_MotionForward(ptr) (((ptr) -> wMBtype & 0x0002) >> 1)
+#define readDXVA_MotionType(ptr) (((ptr) -> wMBtype & 0x0300) >> 8)
+#define readDXVA_MvertFieldSel_0(ptr) (((ptr) -> wMBtype & 0x1000) >> 12)
+#define readDXVA_MvertFieldSel_1(ptr) (((ptr) -> wMBtype & 0x2000) >> 13)
+#define readDXVA_MvertFieldSel_2(ptr) (((ptr) -> wMBtype & 0x4000) >> 14)
+#define readDXVA_MvertFieldSel_3(ptr) (((ptr) -> wMBtype & 0x8000) >> 15)
+#define readDXVA_QueryOrReplyFuncFlag(ptr) ((* (ptr)) >> 8)
+#define readDXVA_QueryOrReplyFuncFlag_ACCEL(ptr) (((* (ptr)) >> 11) & 1)
+#define readDXVA_QueryOrReplyFuncFlag_BAD(ptr) (((* (ptr)) >> 9) & 1)
+#define readDXVA_QueryOrReplyFuncFlag_LOCK(ptr) (((* (ptr)) >> 10) & 1)
+#define readDXVA_QueryOrReplyFuncFlag_PLUS(ptr) (((* (ptr)) >> 8) & 1)
+#define readDXVA_QueryOrReplyFuncFunc(ptr) ((* (ptr)) & 0xFF)
+#define readDXVA_ReservedBits(ptr) (((ptr) -> wMBtype & 0x0800) >> 11)
+#define readDXVA_TCoefSingleEOB(ptr) ((ptr) -> wIndexWithEOB & 1)
+#define readDXVA_TCoefSingleIDX(ptr) ((ptr) -> wIndexWithEOB >> 1)
+#define readDXVA_Y___0coded(ptr) (((ptr) -> wPatternCode & 0x0800) >> 11)
+#define readDXVA_Y___0oflow(ptr) (((ptr) -> wPC_Overflow & 0x0800) >> 11)
+#define readDXVA_Y___1coded(ptr) (((ptr) -> wPatternCode & 0x0400) >> 10)
+#define readDXVA_Y___1oflow(ptr) (((ptr) -> wPC_Overflow & 0x0400) >> 10)
+#define readDXVA_Y___2coded(ptr) (((ptr) -> wPatternCode & 0x0200) >> 9)
+#define readDXVA_Y___2oflow(ptr) (((ptr) -> wPC_Overflow & 0x0200) >> 9)
+#define readDXVA_Y___3coded(ptr) (((ptr) -> wPatternCode & 0x0100) >> 8)
+#define readDXVA_Y___3oflow(ptr) (((ptr) -> wPC_Overflow & 0x0100) >> 8)
+#define setDXVA_AI44alpha(ptr, alpha) ((* (ptr)) |= ((alpha) << 4))
+#define setDXVA_AI44index(ptr, idx) ((* (ptr)) |= (idx))
+#define setDXVA_EdgeFilterOn(ptr) ((* (ptr)) |= 1)
+#define setDXVA_EdgeFilterStrength(ptr, str) ((* (ptr)) |= ((str) << 1))
+#define setDXVA_EncryptProtocolFuncFlag(ptr, flg) ((* (ptr)) |= ((flg) << 8))
+#define setDXVA_EncryptProtocolFuncFunc(ptr, fnc) ((* (ptr)) |= (fnc));
+#define setDXVA_FieldResidual(ptr) ((ptr) -> wMBtype |= 0x0020)
+#define setDXVA_H261LoopFilter(ptr) ((ptr) -> wMBtype |= 0x0010)
+#define setDXVA_HostResidDiff(ptr) ((ptr) -> wMBtype |= 0x0400)
+#define setDXVA_IA44alpha(ptr, alpha) ((* (ptr)) |= (alpha))
+#define setDXVA_IA44index(ptr, idx) ((* (ptr)) |= ((idx) << 4))
+#define setDXVA_IntraMacroblock(ptr) ((ptr) -> wMBtype |= 0x0001)
+#define setDXVA_MBdataLocation(ptr, dloc) ((ptr) -> dwMB_SNL |= (dloc))
+#define setDXVA_MBscanMethod(ptr, value) ((ptr) -> wMBtype |= ((value) << 6))
+#define setDXVA_MBskipsFollowing(ptr, skips) ((ptr) -> dwMB_SNL |= ((skips) << 24))
+#define setDXVA_Motion4MV(ptr) ((ptr) -> wMBtype |= 0x0008)
+#define setDXVA_MotionBackward(ptr) ((ptr) -> wMBtype |= 0x0004)
+#define setDXVA_MotionForward(ptr) ((ptr) -> wMBtype |= 0x0002)
+#define setDXVA_MotionType(ptr, value) ((ptr) -> wMBtype |= ((value) << 8))
+#define setDXVA_MvertFieldSel_0(ptr) ((ptr) -> wMBtype |= 0x1000)
+#define setDXVA_MvertFieldSel_1(ptr) ((ptr) -> wMBtype |= 0x2000)
+#define setDXVA_MvertFieldSel_2(ptr) ((ptr) -> wMBtype |= 0x4000)
+#define setDXVA_MvertFieldSel_3(ptr) ((ptr) -> wMBtype |= 0x8000)
+#define setDXVA_QueryOrReplyFuncFlag(ptr, flg) ((* (ptr)) |= ((flg) << 8))
+#define setDXVA_QueryOrReplyFuncFunc(ptr, fnc) ((* (ptr)) |= (fnc));
+#define setDXVA_ReservedBits(ptr) ((ptr) -> wMBtype |= 0x0800)
+#define setDXVA_TCoefSingleEOB(ptr) ((ptr) -> wIndexWithEOB |= 1)
+#define setDXVA_TCoefSingleIDX(ptr, idx) ((ptr) -> wIndexWithEOB |= ((idx) << 1))
+#define writeDXVA_AI44(ptr, idx, alpha) ((* (ptr)) = (((alpha) << 4) | (idx)))
+#define writeDXVA_DeblockingEdgeControl(ptr, str, fon) ((* (ptr)) = ((str) << 1) | (fon))
+#define writeDXVA_EncryptProtocolFunc(ptr, flg, fnc) ((* (ptr)) = ((flg) << 8) | (fnc))
+#define writeDXVA_IA44(ptr, idx, alpha) ((* (ptr)) = (((idx) << 4) | (alpha)))
+#define writeDXVA_MB_SNL(ptr, skips, dloc) ((ptr) -> dwMB_SNL = (((skips) << 24) | (dloc)))
+#define writeDXVA_QueryOrReplyFunc(ptr, flg, fnc) ((* (ptr)) = ((flg) << 8) | (fnc))
+#define writeDXVA_TCoefSingleIndexWithEOB(ptr, idx, eob) ((ptr) -> wIndexWithEOB = ((idx) << 1) | (eob))
 
 #endif /* __WINE_DXVA_H */

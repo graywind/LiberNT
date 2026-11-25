@@ -37,6 +37,9 @@ typedef enum _POWER_PLATFORM_ROLE {
 #define EnableWakeOnRing		    0x08
 #define EnableVideoDimDisplay		0x10
 
+#define POWER_ATTRIBUTE_HIDE        0x00000001
+#define POWER_ATTRIBUTE_SHOW_AOAC   0x00000002
+
 typedef struct _GLOBAL_MACHINE_POWER_POLICY {
     ULONG Revision;
     SYSTEM_POWER_STATE LidOpenWakeAc;
@@ -150,6 +153,7 @@ typedef enum _POWER_DATA_ACCESSOR {
     ACCESS_PROFILE,
     ACCESS_OVERLAY_SCHEME,
     ACCESS_ACTIVE_OVERLAY_SCHEME,
+    ACCESS_POWER_MODE = 0x1A,
 } POWER_DATA_ACCESSOR, *PPOWER_DATA_ACCESSOR;
 
 typedef BOOLEAN (CALLBACK* PWRSCHEMESENUMPROC)(UINT, DWORD, LPWSTR, DWORD, LPWSTR, PPOWER_POLICY, LPARAM);
@@ -181,6 +185,7 @@ DWORD   WINAPI PowerReadACDefaultIndex(_In_opt_ HKEY, _In_ const GUID *, _In_opt
 DWORD   WINAPI PowerReadACValueIndex(_In_opt_ HKEY, _In_opt_ const GUID *, _In_opt_ const GUID *, _In_opt_ const GUID *, _Out_ LPDWORD);
 DWORD   WINAPI PowerReadDCDefaultIndex(_In_opt_ HKEY, _In_ const GUID *, _In_opt_ const GUID *, _In_ const GUID *, _Out_ LPDWORD);
 DWORD   WINAPI PowerReadDCValueIndex(_In_opt_ HKEY, _In_opt_ const GUID *, _In_opt_ const GUID *, _In_opt_ const GUID *, _Out_ LPDWORD);
+DWORD   WINAPI PowerReadSettingAttributes(_In_opt_ const GUID *, _In_opt_ const GUID *);
 #endif
 DWORD   WINAPI PowerRegisterSuspendResumeNotification(DWORD, HANDLE, PHPOWERNOTIFY);
 DWORD   WINAPI PowerUnregisterSuspendResumeNotification(HPOWERNOTIFY);
@@ -219,6 +224,140 @@ BOOLEAN WINAPI WritePwrScheme(PUINT, LPWSTR, LPWSTR, PPOWER_POLICY);
 
 /* Power scheme */
 POWER_PLATFORM_ROLE WINAPI PowerDeterminePlatformRole(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef DEVICEPOWER_AND_OPERATION
+#define DEVICEPOWER_AND_OPERATION 0x40000000
+#endif
+#ifndef DEVICEPOWER_CLEAR_WAKEENABLED
+#define DEVICEPOWER_CLEAR_WAKEENABLED 0x00000002
+#endif
+#ifndef DEVICEPOWER_FILTER_DEVICES_PRESENT
+#define DEVICEPOWER_FILTER_DEVICES_PRESENT 0x20000000
+#endif
+#ifndef DEVICEPOWER_FILTER_HARDWARE
+#define DEVICEPOWER_FILTER_HARDWARE 0x10000000
+#endif
+#ifndef DEVICEPOWER_FILTER_ON_NAME
+#define DEVICEPOWER_FILTER_ON_NAME 0x02000000
+#endif
+#ifndef DEVICEPOWER_FILTER_WAKEENABLED
+#define DEVICEPOWER_FILTER_WAKEENABLED 0x08000000
+#endif
+#ifndef DEVICEPOWER_FILTER_WAKEPROGRAMMABLE
+#define DEVICEPOWER_FILTER_WAKEPROGRAMMABLE 0x04000000
+#endif
+#ifndef DEVICEPOWER_HARDWAREID
+#define DEVICEPOWER_HARDWAREID 0x80000000
+#endif
+#ifndef DEVICEPOWER_SET_WAKEENABLED
+#define DEVICEPOWER_SET_WAKEENABLED 0x00000001
+#endif
+#ifndef DEVICE_NOTIFY_CALLBACK
+#define DEVICE_NOTIFY_CALLBACK 2
+#endif
+#ifndef PDCAP_S0_SUPPORTED
+#define PDCAP_S0_SUPPORTED 0x00010000
+#endif
+#ifndef PDCAP_S1_SUPPORTED
+#define PDCAP_S1_SUPPORTED 0x00020000
+#endif
+#ifndef PDCAP_S2_SUPPORTED
+#define PDCAP_S2_SUPPORTED 0x00040000
+#endif
+#ifndef PDCAP_S3_SUPPORTED
+#define PDCAP_S3_SUPPORTED 0x00080000
+#endif
+#ifndef PDCAP_S4_SUPPORTED
+#define PDCAP_S4_SUPPORTED 0x01000000
+#endif
+#ifndef PDCAP_S5_SUPPORTED
+#define PDCAP_S5_SUPPORTED 0x02000000
+#endif
+#ifndef PDCAP_WAKE_FROM_S0_SUPPORTED
+#define PDCAP_WAKE_FROM_S0_SUPPORTED 0x00100000
+#endif
+#ifndef PDCAP_WAKE_FROM_S1_SUPPORTED
+#define PDCAP_WAKE_FROM_S1_SUPPORTED 0x00200000
+#endif
+#ifndef PDCAP_WAKE_FROM_S2_SUPPORTED
+#define PDCAP_WAKE_FROM_S2_SUPPORTED 0x00400000
+#endif
+#ifndef PDCAP_WAKE_FROM_S3_SUPPORTED
+#define PDCAP_WAKE_FROM_S3_SUPPORTED 0x00800000
+#endif
+#ifndef POWER_ATTRIBUTE_HIDE
+#define POWER_ATTRIBUTE_HIDE 0x00000001
+#endif
+#ifndef POWER_ATTRIBUTE_SHOW_AOAC
+#define POWER_ATTRIBUTE_SHOW_AOAC 0x00000002
+#endif
+#ifndef THERMAL_EVENT_VERSION
+#define THERMAL_EVENT_VERSION 1
+#endif
+
+typedef struct _THERMAL_EVENT {
+  ULONG Version;
+  ULONG Size;
+  ULONG Type;
+  ULONG Temperature;
+  ULONG TripPointTemperature;
+  LPWSTR Initiator;
+} THERMAL_EVENT, *PTHERMAL_EVENT;
+
+typedef ULONG WINAPI DEVICE_NOTIFY_CALLBACK_ROUTINE(PVOID, ULONG, PVOID);
+
+typedef DEVICE_NOTIFY_CALLBACK_ROUTINE *PDEVICE_NOTIFY_CALLBACK_ROUTINE;
+
+struct _DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS
+{
+    PDEVICE_NOTIFY_CALLBACK_ROUTINE Callback;
+    PVOID Context;
+};
+
+typedef struct _DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS;
+
+typedef struct _DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS *PDEVICE_NOTIFY_SUBSCRIBE_PARAMETERS;
+
+typedef BOOLEAN WINAPI PWRSCHEMESENUMPROC_V1(UINT, DWORD, LPTSTR, DWORD, LPTSTR, PPOWER_POLICY, LPARAM);
+
+typedef BOOLEAN WINAPI PWRSCHEMESENUMPROC_V2(UINT, DWORD, LPWSTR, DWORD, LPWSTR, PPOWER_POLICY, LPARAM);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOLEAN STDAPICALLTYPE DevicePowerClose(void);
+BOOLEAN STDAPICALLTYPE DevicePowerEnumDevices(ULONG QueryIndex, ULONG QueryInterpretationFlags, ULONG QueryFlags, PBYTE pReturnBuffer, PULONG pBufferSize);
+BOOLEAN STDAPICALLTYPE DevicePowerOpen(ULONG DebugMask);
+DWORD STDAPICALLTYPE DevicePowerSetDeviceState(LPCWSTR DeviceDescription, ULONG SetFlags, PVOID SetData);
+DWORD STDAPICALLTYPE PowerCanRestoreIndividualDefaultPowerScheme(const GUID *SchemeGuid);
+DWORD STDAPICALLTYPE PowerGetUserConfiguredACPowerMode(GUID *PowerModeGuid);
+DWORD STDAPICALLTYPE PowerGetUserConfiguredDCPowerMode(GUID *PowerModeGuid);
+DWORD STDAPICALLTYPE PowerImportPowerScheme(HKEY RootPowerKey, LPCWSTR ImportFileNamePath, GUID **DestinationSchemeGuid);
+BOOLEAN STDAPICALLTYPE PowerIsSettingRangeDefined(const GUID *SubKeyGuid, const GUID *SettingGuid);
+DWORD STDAPICALLTYPE PowerOpenSystemPowerKey(HKEY *phSystemPowerKey, REGSAM Access, BOOL OpenExisting);
+DWORD STDAPICALLTYPE PowerOpenUserPowerKey(HKEY *phUserPowerKey, REGSAM Access, BOOL OpenExisting);
+DWORD STDAPICALLTYPE PowerReadIconResourceSpecifier(HKEY RootPowerKey, const GUID *SchemeGuid, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, PUCHAR Buffer, LPDWORD BufferSize);
+DWORD STDAPICALLTYPE PowerReadPossibleDescription(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, ULONG PossibleSettingIndex, PUCHAR Buffer, LPDWORD BufferSize);
+DWORD STDAPICALLTYPE PowerReadPossibleFriendlyName(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, ULONG PossibleSettingIndex, PUCHAR Buffer, LPDWORD BufferSize);
+DWORD STDAPICALLTYPE PowerReadPossibleValue(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, PULONG Type, ULONG PossibleSettingIndex, PUCHAR Buffer, LPDWORD BufferSize);
+DWORD STDAPICALLTYPE PowerReadSettingAttributes(const GUID *SubGroupGuid, const GUID *PowerSettingGuid);
+DWORD STDAPICALLTYPE PowerReadValueIncrement(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, LPDWORD ValueIncrement);
+DWORD STDAPICALLTYPE PowerReadValueMax(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, LPDWORD ValueMaximum);
+DWORD STDAPICALLTYPE PowerReadValueMin(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, LPDWORD ValueMinimum);
+DWORD STDAPICALLTYPE PowerReadValueUnitsSpecifier(HKEY RootPowerKey, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, UCHAR *Buffer, LPDWORD BufferSize);
+DWORD STDAPICALLTYPE PowerReplaceDefaultPowerSchemes(void);
+DWORD STDAPICALLTYPE PowerReportThermalEvent(PTHERMAL_EVENT Event);
+DWORD STDAPICALLTYPE PowerRestoreDefaultPowerSchemes(void);
+DWORD STDAPICALLTYPE PowerRestoreIndividualDefaultPowerScheme(const GUID *SchemeGuid);
+DWORD STDAPICALLTYPE PowerSetUserConfiguredACPowerMode(const GUID *PowerModeGuid);
+DWORD STDAPICALLTYPE PowerSetUserConfiguredDCPowerMode(const GUID *PowerModeGuid);
+DWORD STDAPICALLTYPE PowerWriteIconResourceSpecifier(HKEY RootPowerKey, const GUID *SchemeGuid, const GUID *SubGroupOfPowerSettingsGuid, const GUID *PowerSettingGuid, UCHAR *Buffer, DWORD BufferSize);
 
 #ifdef __cplusplus
 }

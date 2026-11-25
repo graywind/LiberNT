@@ -100,10 +100,12 @@ extern "C" {
 
 typedef ULONG DVD_SESSION_ID, *PDVD_SESSION_ID;
 
+#pragma pack(push, 1)
 typedef struct _STORAGE_SET_READ_AHEAD {
   LARGE_INTEGER  TriggerAddress;
   LARGE_INTEGER  TargetAddress;
 } STORAGE_SET_READ_AHEAD, *PSTORAGE_SET_READ_AHEAD;
+#pragma pack(pop)
 
 typedef enum DVD_STRUCTURE_FORMAT {
   DvdPhysicalDescriptor,
@@ -121,7 +123,6 @@ typedef struct DVD_READ_STRUCTURE {
   DVD_SESSION_ID  SessionId;
   UCHAR  LayerNumber;
 } DVD_READ_STRUCTURE, *PDVD_READ_STRUCTURE;
-#pragma pack(pop)
 
 typedef struct _DVD_DESCRIPTOR_HEADER {
     USHORT Length;
@@ -129,7 +130,6 @@ typedef struct _DVD_DESCRIPTOR_HEADER {
     UCHAR Data[0];
 } DVD_DESCRIPTOR_HEADER, *PDVD_DESCRIPTOR_HEADER;
 
-#pragma pack(push, 1)
 typedef struct _DVD_LAYER_DESCRIPTOR {
   UCHAR  BookVersion : 4;
   UCHAR  BookType : 4;
@@ -146,9 +146,7 @@ typedef struct _DVD_LAYER_DESCRIPTOR {
   ULONG  EndLayerZeroSector;
   UCHAR  Reserved5 : 7;
   UCHAR  BCAFlag : 1;
-  UCHAR  Reserved6;
 } DVD_LAYER_DESCRIPTOR, *PDVD_LAYER_DESCRIPTOR;
-#pragma pack(pop)
 
 typedef struct _DVD_COPYRIGHT_DESCRIPTOR {
   UCHAR  CopyrightProtectionType;
@@ -245,6 +243,7 @@ typedef struct _DVD_REGION {
   UCHAR  SystemRegion;
   UCHAR  ResetCount;
 } DVD_REGION, *PDVD_REGION;
+#pragma pack(pop)
 
 #ifdef __cplusplus
 }
@@ -328,5 +327,297 @@ typedef struct _AACS_READ_BINDING_NONCE
     ULONGLONG ForceStructureLengthToMatch64bit;
   };
 } AACS_READ_BINDING_NONCE, *PAACS_READ_BINDING_NONCE;
+
+typedef enum _DISC_CONTROL_BLOCK_TYPE {
+    FormattingDiscControlBlock = 0x46444300,
+    WriteInhibitDiscControlBlock = 0x57444300,
+    SessionInfoDiscControlBlock = 0x53444300,
+    DiscControlBlockList = (-1)
+} DISC_CONTROL_BLOCK_TYPE, *PDISC_CONTROL_BLOCK_TYPE;
+
+typedef struct _BD_PAC_HEADER {
+  UCHAR PACId[3];
+  UCHAR PACFormatNumber;
+  UCHAR PACUpdateCount[4];
+  UCHAR UnknownPACRules[4];
+  UCHAR UnkownPACEntireDiscFlag;
+  UCHAR Reserved1[2];
+  UCHAR NumberOfSegments;
+  UCHAR Segments[8][32];
+  UCHAR Reserved2[112];
+} BD_PAC_HEADER, *PBD_PAC_HEADER;
+
+typedef struct _BD_DISC_WRITE_PROTECT_PAC {
+  BD_PAC_HEADER Header;
+  UCHAR KnownPACEntireDiscFlags;
+  UCHAR Reserved1[3];
+  UCHAR WriteProtectControlByte;
+  UCHAR Reserved2[7];
+  UCHAR WriteProtectPassword[32];
+} BD_DISC_WRITE_PROTECT_PAC, *PBD_DISC_WRITE_PROTECT_PAC;
+
+typedef struct _DVD_BD_SPARE_AREA_INFORMATION {
+  UCHAR Reserved1[4];
+  UCHAR NumberOfFreeSpareBlocks[4];
+  UCHAR NumberOfAllocatedSpareBlocks[4];
+} DVD_BD_SPARE_AREA_INFORMATION, *PDVD_BD_SPARE_AREA_INFORMATION;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_LIST_DCB {
+  UCHAR DcbIdentifier[4];
+} DVD_DISC_CONTROL_BLOCK_LIST_DCB, *PDVD_DISC_CONTROL_BLOCK_LIST_DCB;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_SESSION_ITEM {
+  UCHAR AsByte[16];
+} DVD_DISC_CONTROL_BLOCK_SESSION_ITEM, *PDVD_DISC_CONTROL_BLOCK_SESSION_ITEM;
+
+typedef struct _DVD_DUAL_LAYER_JUMP_INTERVAL_SIZE {
+  UCHAR Reserved1[4];
+  UCHAR JumpIntervalSize[4];
+} DVD_DUAL_LAYER_JUMP_INTERVAL_SIZE, *PDVD_DUAL_LAYER_JUMP_INTERVAL_SIZE;
+
+typedef struct _DVD_DUAL_LAYER_MANUAL_LAYER_JUMP {
+  UCHAR Reserved1[4];
+  UCHAR ManualJumpLayerAddress[4];
+} DVD_DUAL_LAYER_MANUAL_LAYER_JUMP, *PDVD_DUAL_LAYER_MANUAL_LAYER_JUMP;
+
+typedef struct _DVD_DUAL_LAYER_MIDDLE_ZONE_START_ADDRESS {
+  UCHAR Reserved0 : 7;
+  UCHAR InitStatus : 1;
+  UCHAR Reserved1[3];
+  UCHAR ShiftedMiddleAreaStartAddress[4];
+} DVD_DUAL_LAYER_MIDDLE_ZONE_START_ADDRESS, *PDVD_DUAL_LAYER_MIDDLE_ZONE_START_ADDRESS;
+
+typedef struct _DVD_DUAL_LAYER_RECORDING_INFORMATION {
+  UCHAR Reserved0 : 7;
+  UCHAR Layer0SectorsImmutable : 1;
+  UCHAR Reserved1[3];
+  UCHAR Layer0Sectors[4];
+} DVD_DUAL_LAYER_RECORDING_INFORMATION, *PDVD_DUAL_LAYER_RECORDING_INFORMATION;
+
+typedef struct _DVD_DUAL_LAYER_REMAPPING_INFORMATION {
+  UCHAR Reserved1[4];
+  UCHAR RemappingAddress[4];
+} DVD_DUAL_LAYER_REMAPPING_INFORMATION, *PDVD_DUAL_LAYER_REMAPPING_INFORMATION;
+
+typedef struct _DVD_FULL_LAYER_DESCRIPTOR {
+  DVD_LAYER_DESCRIPTOR commonHeader;
+  UCHAR MediaSpecific[2031];
+} DVD_FULL_LAYER_DESCRIPTOR, *PDVD_FULL_LAYER_DESCRIPTOR;
+
+typedef struct _DVD_LIST_OF_RECOGNIZED_FORMAT_LAYERS {
+  UCHAR NumberOfRecognizedFormatLayers;
+  UCHAR OnlineFormatlayer : 2;
+  UCHAR Reserved1 : 2;
+  UCHAR DefaultFormatLayer : 2;
+  UCHAR Reserved2 : 2;
+} DVD_LIST_OF_RECOGNIZED_FORMAT_LAYERS_TYPE_CODE, *PDVD_LIST_OF_RECOGNIZED_FORMAT_LAYERS_TYPE_CODE;
+
+typedef struct _DVD_LIST_OF_RECOGNIZED_FORMAT_LAYERS_TYPE_CODE {
+  UCHAR TypeCodeOfFormatLayer[2];
+} DVD_LIST_OF_RECOGNIZED_FORMAT_LAYERS, *PDVD_LIST_OF_RECOGNIZED_FORMAT_LAYERS;
+
+typedef struct _DVD_PRERECORDED_INFORMATION {
+  UCHAR FieldID_1;
+  UCHAR DiscApplicationCode;
+  UCHAR DiscPhysicalCode;
+  UCHAR LastAddressOfDataRecordableArea[3];
+  UCHAR ExtensionCode : 4;
+  UCHAR PartVers1on : 4;
+  UCHAR Reserved0;
+  UCHAR FieldID_2;
+  UCHAR OpcSuggestedCode;
+  UCHAR WavelengthCode;
+  UCHAR WriteStrategyCode[4];
+  UCHAR Reserved2;
+  UCHAR FieldID_3;
+  UCHAR ManufacturerId_3[6];
+  UCHAR Reserved3;
+  UCHAR FieldID_4;
+  UCHAR ManufacturerId_4[6];
+  UCHAR Reserved4;
+  UCHAR FieldID_5;
+  UCHAR ManufacturerId_5[6];
+  UCHAR Reserved5;
+  UCHAR Reserved99[24];
+} DVD_PRERECORDED_INFORMATION, *PDVD_PRERECORDED_INFORMATION;
+
+typedef struct _DVD_RAM_MEDIUM_STATUS {
+  UCHAR Reserved0 : 1;
+  UCHAR PersistentWriteProtect : 1;
+  UCHAR CartridgeWriteProtect : 1;
+  UCHAR MediaSpecificWriteInhibit : 1;
+  UCHAR Reserved1 : 2;
+  UCHAR CartridgeNotSealed : 1;
+  UCHAR MediaInCartridge : 1;
+  UCHAR DiscTypeIdentification;
+  UCHAR Reserved2;
+  UCHAR MediaSpecificWriteInhibitInformation;
+} DVD_RAM_MEDIUM_STATUS, *PDVD_RAM_MEDIUM_STATUS;
+
+typedef struct _DVD_RAM_RECORDING_TYPE {
+  UCHAR Reserved0 : 4;
+  UCHAR RealTimeData : 1;
+  UCHAR Reserved1 : 3;
+  UCHAR Reserved2[3];
+} DVD_RAM_RECORDING_TYPE, *PDVD_RAM_RECORDING_TYPE;
+
+typedef struct _DVD_RAM_SPARE_AREA_INFORMATION {
+  UCHAR FreePrimarySpareSectors[4];
+  UCHAR FreeSupplementalSpareSectors[4];
+  UCHAR AllocatedSupplementalSpareSectors[4];
+} DVD_RAM_SPARE_AREA_INFORMATION, *PDVD_RAM_SPARE_AREA_INFORMATION;
+
+typedef struct _DVD_RECORDING_MANAGEMENT_AREA_DATA {
+  UCHAR LastRecordedRMASectorNumber[4];
+  UCHAR RMDBytes[0];
+} DVD_RECORDING_MANAGEMENT_AREA_DATA, *PDVD_RECORDING_MANAGEMENT_AREA_DATA;
+
+typedef struct _DVD_STRUCTURE_LIST_ENTRY {
+  UCHAR FormatCode;
+  UCHAR Reserved0 : 6;
+  UCHAR Readable : 1;
+  UCHAR Sendable : 1;
+  UCHAR FormatLength[2];
+} DVD_STRUCTURE_LIST_ENTRY, *PDVD_STRUCTURE_LIST_ENTRY;
+
+typedef struct _DVD_UNIQUE_DISC_IDENTIFIER {
+  UCHAR Reserved0[2];
+  UCHAR RandomNumber[2];
+  UCHAR Year[4];
+  UCHAR Month[2];
+  UCHAR Day[2];
+  UCHAR Hour[2];
+  UCHAR Minute[2];
+  UCHAR Second[2];
+} DVD_UNIQUE_DISC_IDENTIFIER, *PDVD_UNIQUE_DISC_IDENTIFIER;
+
+typedef struct _DVD_WRITE_PROTECTION_STATUS {
+  UCHAR SoftwareWriteProtectUntilPowerdown : 1;
+  UCHAR MediaPersistentWriteProtect : 1;
+  UCHAR CartridgeWriteProtect : 1;
+  UCHAR MediaSpecificWriteProtect : 1;
+  UCHAR Reserved0 : 4;
+  UCHAR Reserved1[3];
+} DVD_WRITE_PROTECTION_STATUS, *PDVD_WRITE_PROTECTION_STATUS;
+
+typedef struct _HD_DVD_R_MEDIUM_STATUS {
+  UCHAR ExtendedTestZone : 1;
+  UCHAR Reserved1 : 7;
+  UCHAR NumberOfRemainingRMDsInRDZ;
+  UCHAR NumberOfRemainingRMDsInCurrentRMZ[2];
+} HD_DVD_R_MEDIUM_STATUS, *PHD_DVD_R_MEDIUM_STATUS;
+
+struct _DVD_COPYRIGHT_MANAGEMENT_DESCRIPTOR
+{
+    union
+    {
+        struct
+        {
+            UCHAR CopyProtectionMode : 4;
+            UCHAR ContentGenerationManagementSystem : 2;
+            UCHAR CopyProtectedSector : 1;
+            UCHAR CopyProtectedMaterial : 1;
+        } Dvdrom;
+        struct
+        {
+            UCHAR Reserved0001 : 4;
+            UCHAR ContentGenerationManagementSystem : 2;
+            UCHAR Reserved0002 : 1;
+            UCHAR CopyProtectedMaterial : 1;
+        } DvdRecordable_Version1;
+        struct
+        {
+            UCHAR Reserved0003;
+        } Dvdram;
+        struct
+        {
+            UCHAR Reserved0004 : 2;
+            UCHAR ADP_TY : 2;
+            UCHAR Reserved0005 : 4;
+        } DvdRecordable;
+        UCHAR CPR_MAI;
+    };
+    UCHAR Reserved0[3];
+};
+
+struct _DVD_DISC_CONTROL_BLOCK_HEADER
+{
+    UCHAR ContentDescriptor[4];
+    union
+    {
+        struct
+        {
+            UCHAR ReservedDoNotUse_UseAsByteInstead_0[3];
+            UCHAR RecordingWithinTheUserDataArea : 1;
+            UCHAR ReadingDiscControlBlocks : 1;
+            UCHAR FormattingTheMedium : 1;
+            UCHAR ModificationOfThisDiscControlBlock : 1;
+            UCHAR ReservedDoNotUse_UseAsByteInstead_1 : 4;
+        };
+        UCHAR AsByte[4];
+    } ProhibitedActions;
+    UCHAR VendorId[32];
+};
+
+typedef struct _DVD_COPYRIGHT_MANAGEMENT_DESCRIPTOR DVD_COPYRIGHT_MANAGEMENT_DESCRIPTOR;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_HEADER DVD_DISC_CONTROL_BLOCK_HEADER;
+
+struct _DVD_DISC_CONTROL_BLOCK_LIST
+{
+    DVD_DISC_CONTROL_BLOCK_HEADER header;
+    UCHAR Reserved0;
+    UCHAR ReadabldDCBs;
+    UCHAR Reserved1;
+    UCHAR WritableDCBs;
+    DVD_DISC_CONTROL_BLOCK_LIST_DCB Dcbs[0];
+};
+
+struct _DVD_DISC_CONTROL_BLOCK_SESSION
+{
+    DVD_DISC_CONTROL_BLOCK_HEADER header;
+    UCHAR SessionNumber[2];
+    UCHAR Reserved0[22];
+    UCHAR DiscID[32];
+    UCHAR Reserved1[32];
+    DVD_DISC_CONTROL_BLOCK_SESSION_ITEM SessionItem[504];
+    UCHAR Reserved2[24576];
+};
+
+struct _DVD_DISC_CONTROL_BLOCK_WRITE_INHIBIT
+{
+    DVD_DISC_CONTROL_BLOCK_HEADER header;
+    UCHAR UpdateCount[4];
+    union
+    {
+        struct
+        {
+            UCHAR ReservedDoNotUse_UseAsByteInstead_0[3];
+            UCHAR WriteProtectStatus : 2;
+            UCHAR ReservedDoNotUse_UseAsByteInstead_1 : 5;
+            UCHAR UpdateRequiresPassword : 1;
+        };
+        UCHAR AsByte[4];
+    } WriteProtectActions;
+    UCHAR Reserved0[16];
+    UCHAR UpdatePassword[32];
+    UCHAR Reserved1[32672];
+};
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_LIST DVD_DISC_CONTROL_BLOCK_LIST;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_SESSION DVD_DISC_CONTROL_BLOCK_SESSION;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_WRITE_INHIBIT DVD_DISC_CONTROL_BLOCK_WRITE_INHIBIT;
+
+typedef struct _DVD_COPYRIGHT_MANAGEMENT_DESCRIPTOR *PDVD_COPYRIGHT_MANAGEMENT_DESCRIPTOR;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_HEADER *PDVD_DISC_CONTROL_BLOCK_HEADER;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_LIST *PDVD_DISC_CONTROL_BLOCK_LIST;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_SESSION *PDVD_DISC_CONTROL_BLOCK_SESSION;
+
+typedef struct _DVD_DISC_CONTROL_BLOCK_WRITE_INHIBIT *PDVD_DISC_CONTROL_BLOCK_WRITE_INHIBIT;
 
 #endif /* _NTDDCDVD_ */

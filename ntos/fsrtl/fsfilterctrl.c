@@ -487,11 +487,6 @@ FsRtlpAcquireForCcFlush(
 {
     PFAST_IO_DISPATCH Fast = FsRtlpFastIoOf(Base);
 
-    if (IoGetTopLevelIrp() == NULL)
-    {
-        IoSetTopLevelIrp((PIRP)FSRTL_CACHE_TOP_LEVEL_IRP);
-    }
-
     if (FSRTL_FAST_IO_HAS(Fast, AcquireForCcFlush))
     {
         NTSTATUS Status = Fast->AcquireForCcFlush(FileObject, Base);
@@ -547,6 +542,7 @@ FsRtlAcquireFileExclusiveCommon(
     Data.Parameters.AcquireForSectionSynchronization.SyncType = SyncType;
     Data.Parameters.AcquireForSectionSynchronization.PageProtection =
         PageProtection;
+    /* TODO: AllocationAttributes and Flags are not supplied by the section creator; filters see zero */
 
     Status = FsFilterPerformCallbacks(&Data, &Stack);
 

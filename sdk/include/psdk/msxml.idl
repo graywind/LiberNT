@@ -355,3 +355,103 @@ coclass XMLDocument
 }
 
 } /* Library MSXML */
+
+cpp_quote("#ifndef __msxml_cpp_quote_1_DEFINED__")
+cpp_quote("#define __msxml_cpp_quote_1_DEFINED__")
+cpp_quote("#ifndef __IXTLRuntime_FWD_DEFINED__")
+cpp_quote("#define __IXTLRuntime_FWD_DEFINED__")
+cpp_quote("typedef interface IXTLRuntime IXTLRuntime;")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#endif")
+[
+local,
+object,
+dual,
+oleautomation,
+uuid (3efaa425-272f-11d2-836f-0000f87a7782)
+]
+interface IXTLRuntime : IXMLDOMNode
+{
+    [id(DISPID_XTLRUNTIME_UNIQUEID)] 
+    HRESULT uniqueID(
+        [in]IXMLDOMNode *pNode, 
+        [retval, out]LONG *pID);
+
+    [id(DISPID_XTLRUNTIME_DEPTH)]
+    HRESULT depth(
+        [in] IXMLDOMNode *pNode, 
+        [retval, out]LONG * pDepth);
+
+    [id(DISPID_XTLRUNTIME_CHILDNUMBER)] 
+    HRESULT childNumber(
+        [in]IXMLDOMNode *pNode, 
+        [retval, out] LONG *pNumber);
+
+    [id(DISPID_XTLRUNTIME_ANCESTORCHILDNUMBER)]
+    HRESULT ancestorChildNumber(
+        [in]BSTR bstr, 
+        [in]IXMLDOMNode *pNode, 
+        [retval, out]LONG *pNumber);
+
+    [id(DISPID_XTLRUNTIME_ABSOLUTECHILDNUMBER)]
+    HRESULT absoluteChildNumber(
+        [in]IXMLDOMNode *pNode, 
+        [retval, out]LONG *pNumber);
+
+    [id(DISPID_XTLRUNTIME_FORMATINDEX)]
+    HRESULT formatIndex(
+        [in] LONG lIndex,
+        [in] BSTR bstr, 
+        [retval, out]BSTR *pbstr);
+
+    [id(DISPID_XTLRUNTIME_FORMATNUMBER)]
+    HRESULT formatNumber(
+        [in] double dblNumber, 
+        [in] BSTR bstr, 
+        [retval, out]BSTR *pbstr);
+
+    [id(DISPID_XTLRUNTIME_FORMATDATE)]
+    HRESULT formatDate(
+        [in] VARIANT var1, 
+        [in] BSTR bstr, 
+        [optional, in] VARIANT var2,
+        [retval, out]BSTR *pbstr);
+
+    [id(DISPID_XTLRUNTIME_FORMATTIME)]
+    HRESULT formatTime(
+        [in] VARIANT var1, 
+        [in] BSTR bstr, 
+        [optional, in] VARIANT var2,
+        [retval, out]BSTR *pbstr);
+
+}
+
+cpp_quote("")

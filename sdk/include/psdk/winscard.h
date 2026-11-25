@@ -194,4 +194,455 @@ WINSCARDAPI LONG        WINAPI SCardTransmit(SCARDHANDLE,LPCSCARD_IO_REQUEST,LPC
 }
 #endif
 
+#ifndef SCARD_AUDIT_CHV_SUCCESS
+#define SCARD_AUDIT_CHV_SUCCESS 0x1
+#endif
+#ifndef SCARD_PROVIDER_CSP
+#define SCARD_PROVIDER_CSP 2
+#endif
+#ifndef SCARD_PROVIDER_KSP
+#define SCARD_PROVIDER_KSP 3
+#endif
+#ifndef SCARD_PROVIDER_PRIMARY
+#define SCARD_PROVIDER_PRIMARY 1
+#endif
+#ifndef SCERR_NOCARDNAME
+#define SCERR_NOCARDNAME 0x4000
+#endif
+#ifndef SCERR_NOGUIDS
+#define SCERR_NOGUIDS 0x8000
+#endif
+#ifndef SC_DLG_FORCE_UI
+#define SC_DLG_FORCE_UI 0x04
+#endif
+#ifndef SC_DLG_NO_UI
+#define SC_DLG_NO_UI 0x02
+#endif
+
+typedef enum READER_SEL_REQUEST_MATCH_TYPE {
+    RSR_MATCH_TYPE_READER_AND_CONTAINER = 1,
+    RSR_MATCH_TYPE_SERIAL_NUMBER = 2,
+    RSR_MATCH_TYPE_ALL_CARDS = 3
+} READER_SEL_REQUEST_MATCH_TYPE;
+
+typedef struct READER_SEL_RESPONSE {
+  DWORD cbReaderNameOffset;
+  DWORD cchReaderNameLength;
+  DWORD cbCardNameOffset;
+  DWORD cchCardNameLength;
+} READER_SEL_RESPONSE, *PREADER_SEL_RESPONSE;
+
+#ifdef UNICODE
+#define GetOpenCardName GetOpenCardNameW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GetOpenCardName GetOpenCardNameW
+#else
+#define GetOpenCardName GetOpenCardNameA
+#endif
+#endif
+#endif
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define LPOCNCONNPROC LPOCNCONNPROCW
+#else
+#define LPOCNCONNPROC LPOCNCONNPROCA
+#endif
+#endif
+#define LPOPENCARDNAME_A LPOPENCARDNAMEA
+#define LPOPENCARDNAME_W LPOPENCARDNAMEW
+#ifdef UNICODE
+#define LPOPENCARDNAMEA_EX LPOPENCARDNAME_EXW
+#else
+#define LPOPENCARDNAMEA_EX LPOPENCARDNAME_EXA
+#endif
+#define LPOPENCARDNAMEW_EX LPOPENCARDNAME_EXW
+#define LPSCARD_READERSTATE_A LPSCARD_READERSTATEA
+#define LPSCARD_READERSTATE_W LPSCARD_READERSTATEW
+#define OPENCARDNAME_A OPENCARDNAMEA
+#define OPENCARDNAME_W OPENCARDNAMEW
+#ifdef UNICODE
+#define OPENCARDNAMEA_EX OPENCARDNAME_EXW
+#else
+#define OPENCARDNAMEA_EX OPENCARDNAME_EXA
+#endif
+#define OPENCARDNAMEW_EX OPENCARDNAME_EXW
+#define POPENCARDNAME_A POPENCARDNAMEA
+#define POPENCARDNAME_W POPENCARDNAMEW
+#ifdef UNICODE
+#define POPENCARDNAMEA_EX POPENCARDNAME_EXW
+#else
+#define POPENCARDNAMEA_EX POPENCARDNAME_EXA
+#endif
+#define POPENCARDNAMEW_EX POPENCARDNAME_EXW
+#define PSCARD_READERSTATE_A PSCARD_READERSTATEA
+#define PSCARD_READERSTATE_W PSCARD_READERSTATEW
+#define SC_DLG_MINIMAL_UI 0x01
+#define SCARD_ALL_READERS TEXT("SCard$AllReaders\000")
+#define SCARD_AUDIT_CHV_FAILURE 0x0
+#define SCARD_DEFAULT_READERS TEXT("SCard$DefaultReaders\000")
+#define SCARD_LOCAL_READERS TEXT("SCard$LocalReaders\000")
+#define SCARD_READER_SEL_AUTH_PACKAGE ((DWORD) - 629)
+#define SCARD_READERSTATE_A SCARD_READERSTATEA
+#define SCARD_READERSTATE_W SCARD_READERSTATEW
+#define SCARD_SYSTEM_READERS TEXT("SCard$SystemReaders\000")
+#ifdef UNICODE
+#define SCardGetDeviceTypeId SCardGetDeviceTypeIdW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SCardGetDeviceTypeId SCardGetDeviceTypeIdW
+#else
+#define SCardGetDeviceTypeId SCardGetDeviceTypeIdA
+#endif
+#endif
+#endif
+#define SCardGetReaderCapabilities SCardGetAttrib
+#ifdef UNICODE
+#define SCardGetReaderDeviceInstanceId SCardGetReaderDeviceInstanceIdW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SCardGetReaderDeviceInstanceId SCardGetReaderDeviceInstanceIdW
+#else
+#define SCardGetReaderDeviceInstanceId SCardGetReaderDeviceInstanceIdA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define SCardGetReaderIcon SCardGetReaderIconW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SCardGetReaderIcon SCardGetReaderIconW
+#else
+#define SCardGetReaderIcon SCardGetReaderIconA
+#endif
+#endif
+#endif
+#define SCardListCardTypes SCardListCards
+#ifdef UNICODE
+#define SCardListReadersWithDeviceInstanceId SCardListReadersWithDeviceInstanceIdW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SCardListReadersWithDeviceInstanceId SCardListReadersWithDeviceInstanceIdW
+#else
+#define SCardListReadersWithDeviceInstanceId SCardListReadersWithDeviceInstanceIdA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define SCardReadCache SCardReadCacheW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SCardReadCache SCardReadCacheW
+#else
+#define SCardReadCache SCardReadCacheA
+#endif
+#endif
+#endif
+#define SCardSetReaderCapabilities SCardSetAttrib
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SCardUIDlgSelectCard SCardUIDlgSelectCardW
+#else
+#define SCardUIDlgSelectCard SCardUIDlgSelectCardA
+#endif
+#endif
+#ifdef UNICODE
+#define SCardWriteCache SCardWriteCacheW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SCardWriteCache SCardWriteCacheW
+#else
+#define SCardWriteCache SCardWriteCacheA
+#endif
+#endif
+#endif
+
+typedef BOOL (WINAPI *LPOCNCHKPROC)(SCARDCONTEXT, SCARDHANDLE, PVOID);
+
+typedef SCARDHANDLE (WINAPI *LPOCNCONNPROCA)(SCARDCONTEXT, LPSTR, LPSTR, PVOID);
+
+typedef SCARDHANDLE (WINAPI *LPOCNCONNPROCW)(SCARDCONTEXT, LPWSTR, LPWSTR, PVOID);
+
+typedef void (WINAPI *LPOCNDSCPROC)(SCARDCONTEXT, SCARDHANDLE, PVOID);
+
+typedef struct OPENCARD_SEARCH_CRITERIAA OPENCARD_SEARCH_CRITERIAA;
+
+struct OPENCARD_SEARCH_CRITERIAA
+{
+    DWORD dwStructSize;
+    LPSTR lpstrGroupNames;
+    DWORD nMaxGroupNames;
+    LPCGUID rgguidInterfaces;
+    DWORD cguidInterfaces;
+    LPSTR lpstrCardNames;
+    DWORD nMaxCardNames;
+    LPOCNCHKPROC lpfnCheck;
+    LPOCNCONNPROCA lpfnConnect;
+    LPOCNDSCPROC lpfnDisconnect;
+    LPVOID pvUserData;
+    DWORD dwShareMode;
+    DWORD dwPreferredProtocols;
+};
+
+typedef struct OPENCARD_SEARCH_CRITERIAA *LPOPENCARD_SEARCH_CRITERIAA;
+
+typedef struct OPENCARD_SEARCH_CRITERIAW OPENCARD_SEARCH_CRITERIAW;
+
+typedef struct OPENCARD_SEARCH_CRITERIAW *LPOPENCARD_SEARCH_CRITERIAW;
+
+#if (!(defined(UNICODE)))
+typedef LPOPENCARD_SEARCH_CRITERIAA LPOPENCARD_SEARCH_CRITERIA;
+
+typedef OPENCARD_SEARCH_CRITERIAA OPENCARD_SEARCH_CRITERIA;
+#else
+typedef LPOPENCARD_SEARCH_CRITERIAW LPOPENCARD_SEARCH_CRITERIA;
+
+typedef OPENCARD_SEARCH_CRITERIAW OPENCARD_SEARCH_CRITERIA;
+#endif
+
+struct OPENCARD_SEARCH_CRITERIAW
+{
+    DWORD dwStructSize;
+    LPWSTR lpstrGroupNames;
+    DWORD nMaxGroupNames;
+    LPCGUID rgguidInterfaces;
+    DWORD cguidInterfaces;
+    LPWSTR lpstrCardNames;
+    DWORD nMaxCardNames;
+    LPOCNCHKPROC lpfnCheck;
+    LPOCNCONNPROCW lpfnConnect;
+    LPOCNDSCPROC lpfnDisconnect;
+    LPVOID pvUserData;
+    DWORD dwShareMode;
+    DWORD dwPreferredProtocols;
+};
+
+typedef struct OPENCARDNAMEA OPENCARDNAMEA;
+
+struct OPENCARDNAMEA
+{
+    DWORD dwStructSize;
+    HWND hwndOwner;
+    SCARDCONTEXT hSCardContext;
+    LPSTR lpstrGroupNames;
+    DWORD nMaxGroupNames;
+    LPSTR lpstrCardNames;
+    DWORD nMaxCardNames;
+    LPCGUID rgguidInterfaces;
+    DWORD cguidInterfaces;
+    LPSTR lpstrRdr;
+    DWORD nMaxRdr;
+    LPSTR lpstrCard;
+    DWORD nMaxCard;
+    LPCSTR lpstrTitle;
+    DWORD dwFlags;
+    LPVOID pvUserData;
+    DWORD dwShareMode;
+    DWORD dwPreferredProtocols;
+    DWORD dwActiveProtocol;
+    LPOCNCONNPROCA lpfnConnect;
+    LPOCNCHKPROC lpfnCheck;
+    LPOCNDSCPROC lpfnDisconnect;
+    SCARDHANDLE hCardHandle;
+};
+
+typedef struct OPENCARDNAMEA *LPOPENCARDNAMEA;
+
+typedef struct OPENCARDNAMEW OPENCARDNAMEW;
+
+typedef struct OPENCARDNAMEW *LPOPENCARDNAMEW;
+
+#if (!(defined(UNICODE)))
+typedef LPOPENCARDNAMEA LPOPENCARDNAME;
+
+typedef OPENCARDNAMEA OPENCARDNAME;
+#else
+typedef LPOPENCARDNAMEW LPOPENCARDNAME;
+
+typedef OPENCARDNAMEW OPENCARDNAME;
+#endif
+
+struct OPENCARDNAMEW
+{
+    DWORD dwStructSize;
+    HWND hwndOwner;
+    SCARDCONTEXT hSCardContext;
+    LPWSTR lpstrGroupNames;
+    DWORD nMaxGroupNames;
+    LPWSTR lpstrCardNames;
+    DWORD nMaxCardNames;
+    LPCGUID rgguidInterfaces;
+    DWORD cguidInterfaces;
+    LPWSTR lpstrRdr;
+    DWORD nMaxRdr;
+    LPWSTR lpstrCard;
+    DWORD nMaxCard;
+    LPCWSTR lpstrTitle;
+    DWORD dwFlags;
+    LPVOID pvUserData;
+    DWORD dwShareMode;
+    DWORD dwPreferredProtocols;
+    DWORD dwActiveProtocol;
+    LPOCNCONNPROCW lpfnConnect;
+    LPOCNCHKPROC lpfnCheck;
+    LPOCNDSCPROC lpfnDisconnect;
+    SCARDHANDLE hCardHandle;
+};
+
+typedef struct OPENCARD_SEARCH_CRITERIAA *POPENCARD_SEARCH_CRITERIAA;
+
+typedef struct OPENCARDNAME_EXA OPENCARDNAME_EXA;
+
+struct OPENCARDNAME_EXA
+{
+    DWORD dwStructSize;
+    SCARDCONTEXT hSCardContext;
+    HWND hwndOwner;
+    DWORD dwFlags;
+    LPCSTR lpstrTitle;
+    LPCSTR lpstrSearchDesc;
+    HICON hIcon;
+    POPENCARD_SEARCH_CRITERIAA pOpenCardSearchCriteria;
+    LPOCNCONNPROCA lpfnConnect;
+    LPVOID pvUserData;
+    DWORD dwShareMode;
+    DWORD dwPreferredProtocols;
+    LPSTR lpstrRdr;
+    DWORD nMaxRdr;
+    LPSTR lpstrCard;
+    DWORD nMaxCard;
+    DWORD dwActiveProtocol;
+    SCARDHANDLE hCardHandle;
+};
+
+typedef struct OPENCARDNAME_EXA *LPOPENCARDNAME_EXA;
+
+typedef struct OPENCARD_SEARCH_CRITERIAW *POPENCARD_SEARCH_CRITERIAW;
+
+typedef struct OPENCARDNAME_EXW OPENCARDNAME_EXW;
+
+typedef struct OPENCARDNAME_EXW *LPOPENCARDNAME_EXW;
+
+#if (!(defined(UNICODE)))
+typedef LPOPENCARDNAME_EXA LPOPENCARDNAME_EX;
+
+typedef OPENCARDNAME_EXA OPENCARDNAME_EX;
+
+typedef POPENCARD_SEARCH_CRITERIAA POPENCARD_SEARCH_CRITERIA;
+#else
+typedef LPOPENCARDNAME_EXW LPOPENCARDNAME_EX;
+
+typedef OPENCARDNAME_EXW OPENCARDNAME_EX;
+
+typedef POPENCARD_SEARCH_CRITERIAW POPENCARD_SEARCH_CRITERIA;
+#endif
+
+struct OPENCARDNAME_EXW
+{
+    DWORD dwStructSize;
+    SCARDCONTEXT hSCardContext;
+    HWND hwndOwner;
+    DWORD dwFlags;
+    LPCWSTR lpstrTitle;
+    LPCWSTR lpstrSearchDesc;
+    HICON hIcon;
+    POPENCARD_SEARCH_CRITERIAW pOpenCardSearchCriteria;
+    LPOCNCONNPROCW lpfnConnect;
+    LPVOID pvUserData;
+    DWORD dwShareMode;
+    DWORD dwPreferredProtocols;
+    LPWSTR lpstrRdr;
+    DWORD nMaxRdr;
+    LPWSTR lpstrCard;
+    DWORD nMaxCard;
+    DWORD dwActiveProtocol;
+    SCARDHANDLE hCardHandle;
+};
+
+typedef struct OPENCARDNAME_EXA *POPENCARDNAME_EXA;
+typedef struct OPENCARDNAME_EXW *POPENCARDNAME_EXW;
+
+#if (!(defined(UNICODE)))
+typedef POPENCARDNAME_EXA POPENCARDNAME_EX;
+#else
+typedef POPENCARDNAME_EXW POPENCARDNAME_EX;
+#endif
+
+typedef struct OPENCARDNAMEA *POPENCARDNAMEA;
+typedef struct OPENCARDNAMEW *POPENCARDNAMEW;
+
+#if (!(defined(UNICODE)))
+typedef POPENCARDNAMEA POPENCARDNAME;
+#else
+typedef POPENCARDNAMEW POPENCARDNAME;
+#endif
+
+typedef struct READER_SEL_REQUEST READER_SEL_REQUEST;
+
+struct READER_SEL_REQUEST
+{
+    DWORD dwShareMode;
+    DWORD dwPreferredProtocols;
+    READER_SEL_REQUEST_MATCH_TYPE MatchType;
+    union
+    {
+        struct
+        {
+            DWORD cbReaderNameOffset;
+            DWORD cchReaderNameLength;
+            DWORD cbContainerNameOffset;
+            DWORD cchContainerNameLength;
+            DWORD dwDesiredCardModuleVersion;
+            DWORD dwCspFlags;
+        } ReaderAndContainerParameter;
+        struct
+        {
+            DWORD cbSerialNumberOffset;
+            DWORD cbSerialNumberLength;
+            DWORD dwDesiredCardModuleVersion;
+        } SerialNumberParameter;
+    };
+};
+
+typedef struct READER_SEL_REQUEST *PREADER_SEL_REQUEST;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+LONG WINAPI GetOpenCardNameA(LPOPENCARDNAMEA);
+LONG WINAPI GetOpenCardNameW(LPOPENCARDNAMEW);
+LONG WINAPI SCardAudit(SCARDCONTEXT hContext, DWORD dwEvent);
+LONG WINAPI SCardCancelTransaction(SCARDHANDLE hCard);
+LONG WINAPI SCardDlgExtendedError(void);
+LONG WINAPI SCardGetDeviceTypeIdA(SCARDCONTEXT hContext, LPCSTR szReaderName, LPDWORD pdwDeviceTypeId);
+LONG WINAPI SCardGetDeviceTypeIdW(SCARDCONTEXT hContext, LPCWSTR szReaderName, LPDWORD pdwDeviceTypeId);
+LONG WINAPI SCardGetReaderDeviceInstanceIdA(SCARDCONTEXT hContext, LPCSTR szReaderName, LPSTR szDeviceInstanceId, LPDWORD pcchDeviceInstanceId);
+LONG WINAPI SCardGetReaderDeviceInstanceIdW(SCARDCONTEXT hContext, LPCWSTR szReaderName, LPWSTR szDeviceInstanceId, LPDWORD pcchDeviceInstanceId);
+LONG WINAPI SCardGetReaderIconA(SCARDCONTEXT hContext, LPCSTR szReaderName, LPBYTE pbIcon, LPDWORD pcbIcon);
+LONG WINAPI SCardGetReaderIconW(SCARDCONTEXT hContext, LPCWSTR szReaderName, LPBYTE pbIcon, LPDWORD pcbIcon);
+LONG WINAPI SCardGetTransmitCount(SCARDHANDLE hCard, LPDWORD pcTransmitCount);
+LONG WINAPI SCardListReadersWithDeviceInstanceIdA(SCARDCONTEXT hContext, LPCSTR szDeviceInstanceId, LPSTR mszReaders, LPDWORD pcchReaders);
+LONG WINAPI SCardListReadersWithDeviceInstanceIdW(SCARDCONTEXT hContext, LPCWSTR szDeviceInstanceId, LPWSTR mszReaders, LPDWORD pcchReaders);
+LONG WINAPI SCardReadCacheA(SCARDCONTEXT hContext, UUID *CardIdentifier, DWORD FreshnessCounter, LPSTR LookupName, PBYTE Data, DWORD *DataLen);
+LONG WINAPI SCardReadCacheW(SCARDCONTEXT hContext, UUID *CardIdentifier, DWORD FreshnessCounter, LPWSTR LookupName, PBYTE Data, DWORD *DataLen);
+LONG WINAPI SCardUIDlgSelectCardA(LPOPENCARDNAME_EXA);
+LONG WINAPI SCardUIDlgSelectCardW(LPOPENCARDNAME_EXW);
+LONG WINAPI SCardWriteCacheA(SCARDCONTEXT hContext, UUID *CardIdentifier, DWORD FreshnessCounter, LPSTR LookupName, PBYTE Data, DWORD DataLen);
+LONG WINAPI SCardWriteCacheW(SCARDCONTEXT hContext, UUID *CardIdentifier, DWORD FreshnessCounter, LPWSTR LookupName, PBYTE Data, DWORD DataLen);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define PCSCardIntroduceCardType(hContext, szCardName, pbAtr, pbAtrMask, cbAtrLen, pguidPrimaryProvider, rgguidInterfaces, dwInterfaceCount) SCardIntroduceCardType(hContext, szCardName, pguidPrimaryProvider, rgguidInterfaces, dwInterfaceCount, pbAtr, pbAtrMask, cbAtrLen)
+
 #endif  /* __WINE_WINSCARD_H */

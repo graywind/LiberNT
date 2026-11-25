@@ -86,6 +86,7 @@ typedef struct _aviextheader
 
 #ifndef ckidSTREAMHEADER
 #define ckidSTREAMHEADER FCC('s','t','r','h')
+
 #endif
 
 #ifndef streamtypeVIDEO
@@ -142,9 +143,11 @@ typedef struct _avioldindex
         DWORD dwFlags;
         DWORD dwOffset;
         DWORD dwSize;
-    } aIndex[ANYSIZE_ARRAY];
+    } aIndex[];
 } AVIOLDINDEX;
 
+#ifndef TIMECODE_DEFINED
+#define TIMECODE_DEFINED
 typedef union _timecode
 {
     struct
@@ -155,6 +158,18 @@ typedef union _timecode
     } DUMMYSTRUCTNAME;
     DWORDLONG qw;
 } TIMECODE;
+
+typedef struct tagTIMECODE_SAMPLE
+{
+    LONGLONG qwTick;
+    TIMECODE timecode;
+    DWORD dwUser;
+    DWORD dwFlags;
+} TIMECODE_SAMPLE;
+
+typedef TIMECODE *PTIMECODE;
+typedef TIMECODE_SAMPLE *PTIMECODE_SAMPLE;
+#endif
 
 #define TIMECODE_RATE_30DROP 0
 
@@ -188,10 +203,14 @@ typedef struct _avimetaindex
     DWORD nEntriesInUse;
     DWORD dwChunkId;
     DWORD dwReserved[3];
-    DWORD adwIndex[ANYSIZE_ARRAY];
+    DWORD adwIndex[];
 } AVIMETAINDEX;
 
 #define ckidAVISUPERINDEX FCC('i','n','d','x')
+#define STDINDEXSIZE 0x4000
+#define NUMINDEX(wLongsPerEntry) ((STDINDEXSIZE-32)/4/(wLongsPerEntry))
+#define NUMINDEXFILL(wLongsPerEntry) ((STDINDEXSIZE/4) - NUMINDEX(wLongsPerEntry))
+
 typedef struct _avisuperindex {
     FOURCC fcc;
     UINT cb;
@@ -205,7 +224,7 @@ typedef struct _avisuperindex {
         DWORDLONG qwOffset;
         DWORD dwSize;
         DWORD dwDuration;
-    } aIndex[ANYSIZE_ARRAY];
+    } aIndex[NUMINDEX(4)];
 } AVISUPERINDEX;
 
 #define AVISTDINDEX_DELTAFRAME (0x80000000)
@@ -226,7 +245,7 @@ typedef struct _avistdindex {
     DWORD    dwChunkId;
     DWORDLONG qwBaseOffset;
     DWORD    dwReserved_3;
-    AVISTDINDEX_ENTRY aIndex[ANYSIZE_ARRAY];
+    AVISTDINDEX_ENTRY aIndex[NUMINDEX(2)];
 } AVISTDINDEX;
 
 typedef struct _avitimedindex_entry {
@@ -245,8 +264,8 @@ typedef struct _avitimedindex {
     DWORD dwChunkId;
     DWORDLONG qwBaseOffset;
     DWORD dwReserved_3;
-    AVITIMEDINDEX_ENTRY aIndex[ANYSIZE_ARRAY];
-    /* DWORD adwTrailingFill[ANYSIZE_ARRAY]; */
+    AVITIMEDINDEX_ENTRY aIndex[NUMINDEX(3)];
+    DWORD adwTrailingFill[NUMINDEXFILL(3)];
 } AVITIMEDINDEX;
 
 typedef struct _avitimecodeindex {
@@ -258,7 +277,7 @@ typedef struct _avitimecodeindex {
     DWORD nEntriesInUse;
     DWORD dwChunkId;
     DWORD dwReserved[3];
-    TIMECODEDATA aIndex[ANYSIZE_ARRAY];
+    TIMECODEDATA aIndex[NUMINDEX(sizeof(TIMECODEDATA)/sizeof(LONG))];
 } AVITIMECODEINDEX;
 
 typedef struct _avitcdlindex_entryA {
@@ -320,7 +339,38 @@ typedef struct _avifieldindex_chunk {
         DWORD dwOffset;
         DWORD dwSize;
         DWORD dwOffsetField2;
-    } aIndex[ANYSIZE_ARRAY];
+    } aIndex[];
 } AVIFIELDINDEX, * PAVIFIELDINDEX;
 
 #pragma pack(pop)
+
+#ifndef WINE_NO_UNICODE_MACROS
+#pragma pack(push, 2)
+struct _avitcdlindex
+{
+    FOURCC fcc;
+    UINT cb;
+    WORD wLongsPerEntry;
+    BYTE bIndexSubType;
+    BYTE bIndexType;
+    DWORD nEntriesInUse;
+    DWORD dwChunkId;
+    DWORD dwReserved[3];
+    AVITCDLINDEX_ENTRY aIndex[584];
+    DWORD adwTrailingFill[3512];
+};
+#pragma pack(pop)
+#endif
+
+#pragma pack(push, 2)
+struct _avitcdlindex_entry
+{
+    DWORD dwTick;
+    TIMECODE time;
+    DWORD dwSMPTEflags;
+    DWORD dwUser;
+    TCHAR szReelId[12];
+};
+#pragma pack(pop)
+
+#define Valid_SUPERINDEX(pi) (* (DWORD *) (& ((pi) -> wLongsPerEntry)) == (4 | (AVI_INDEX_OF_INDEXES << 24)))

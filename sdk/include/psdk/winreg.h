@@ -2,6 +2,8 @@
 #define _WINREG_H
 #define _WINREG_
 
+#include <apisetcconv.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -81,13 +83,13 @@ typedef _Return_type_success_(return==ERROR_SUCCESS) LONG LSTATUS;
 typedef struct value_entA {
 	LPSTR ve_valuename;
 	DWORD ve_valuelen;
-	DWORD ve_valueptr;
+	DWORD_PTR ve_valueptr;
 	DWORD ve_type;
 } VALENTA,*PVALENTA;
 typedef struct value_entW {
 	LPWSTR ve_valuename;
 	DWORD ve_valuelen;
-	DWORD ve_valueptr;
+	DWORD_PTR ve_valueptr;
 	DWORD ve_type;
 } VALENTW,*PVALENTW;
 
@@ -573,4 +575,187 @@ typedef VALENTA VALENT,*PVALENT;
 #ifdef __cplusplus
 }
 #endif
+#ifndef PROVIDER_KEEPS_VALUE_LENGTH
+#define PROVIDER_KEEPS_VALUE_LENGTH 0x1
+#endif
+#ifndef REG_ALLOW_TRANSPORT_FALLBACK
+#define REG_ALLOW_TRANSPORT_FALLBACK 0x2
+#endif
+#ifndef REG_ALLOW_UNSECURE_CONNECTION
+#define REG_ALLOW_UNSECURE_CONNECTION 0x4
+#endif
+#ifndef REG_SECURE_CONNECTION
+#define REG_SECURE_CONNECTION 0x1
+#endif
+#ifndef REG_USE_CURRENT_SECURITY_CONTEXT
+#define REG_USE_CURRENT_SECURITY_CONTEXT 0x00000002
+#endif
+#ifndef SHUTDOWN_ARSO
+#define SHUTDOWN_ARSO 0x00002000
+#endif
+#ifndef SHUTDOWN_CHECK_SAFE_FOR_SERVER
+#define SHUTDOWN_CHECK_SAFE_FOR_SERVER 0x00004000
+#endif
+#ifndef SHUTDOWN_HYBRID
+#define SHUTDOWN_HYBRID 0x00000200
+#endif
+#ifndef SHUTDOWN_MOBILE_UI
+#define SHUTDOWN_MOBILE_UI 0x00001000
+#endif
+#ifndef SHUTDOWN_RESTART_BOOTOPTIONS
+#define SHUTDOWN_RESTART_BOOTOPTIONS 0x00000400
+#endif
+#ifndef SHUTDOWN_SKIP_SVC_PRESHUTDOWN
+#define SHUTDOWN_SKIP_SVC_PRESHUTDOWN 0x00000100
+#endif
+#ifndef SHUTDOWN_SOFT_REBOOT
+#define SHUTDOWN_SOFT_REBOOT 0x00000800
+#endif
+#ifndef SHUTDOWN_SYSTEM_INITIATED
+#define SHUTDOWN_SYSTEM_INITIATED 0x00010000
+#endif
+#ifndef SHUTDOWN_UPDATE_POWEROFF
+#define SHUTDOWN_UPDATE_POWEROFF 0x00020000
+#endif
+#ifndef SHUTDOWN_VAIL_CONTAINER
+#define SHUTDOWN_VAIL_CONTAINER 0x00008000
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+LSTATUS WINAPI RegOpenUserClassesRoot(HANDLE hToken, DWORD dwOptions, REGSAM samDesired, PHKEY phkResult);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct pvalueA {
+  LPSTR pv_valuename;
+  int pv_valuelen;
+  LPVOID pv_value_context;
+  DWORD pv_type;
+} PVALUEA, *PPVALUEA;
+
+typedef struct pvalueW {
+  LPWSTR pv_valuename;
+  int pv_valuelen;
+  LPVOID pv_value_context;
+  DWORD pv_type;
+} PVALUEW, *PPVALUEW;
+
+typedef struct val_context {
+  int valuelen;
+  LPVOID value_context;
+  LPVOID val_buff_ptr;
+} *PVALCONTEXT;
+
+#ifdef _WIN64
+#define HKEY_CURRENT_USER_LOCAL_SETTINGS (-2147483641)
+#else
+#define HKEY_CURRENT_USER_LOCAL_SETTINGS 0x80000007
+#endif
+#define REASON_HWINSTALL 0x10002
+#define REASON_LEGACY_API 0x80070000
+#define REASON_OTHER 0
+#define REASON_PLANNED_FLAG 0x80000000
+#define REASON_SERVICEHANG 0x30005
+#define REASON_SWHWRECONF 0x30004
+#define REASON_SWINSTALL (SHTDN_REASON_MAJOR_SOFTWARE | SHTDN_REASON_MINOR_INSTALLATION)
+#define REASON_UNKNOWN 0xFF
+#define REASON_UNSTABLE 0x50006
+#ifdef UNICODE
+#define RegConnectRegistryEx RegConnectRegistryExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RegConnectRegistryEx RegConnectRegistryExW
+#else
+#define RegConnectRegistryEx RegConnectRegistryExA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RegCreateKeyTransacted RegCreateKeyTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RegCreateKeyTransacted RegCreateKeyTransactedW
+#else
+#define RegCreateKeyTransacted RegCreateKeyTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RegDeleteKeyTransacted RegDeleteKeyTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RegDeleteKeyTransacted RegDeleteKeyTransactedW
+#else
+#define RegDeleteKeyTransacted RegDeleteKeyTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RegOpenKeyTransacted RegOpenKeyTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RegOpenKeyTransacted RegOpenKeyTransactedW
+#else
+#define RegOpenKeyTransacted RegOpenKeyTransactedA
+#endif
+#endif
+#endif
+#define WIN31_CLASS 0
+
+#if (!(defined(UNICODE)))
+typedef PPVALUEA PPVALUE;
+#else
+typedef PPVALUEW PPVALUE;
+#endif
+
+typedef DWORD (*PQUERYHANDLER)(LPVOID, PVALCONTEXT, DWORD, LPVOID, DWORD *, DWORD);
+
+struct provider_info
+{
+    PQUERYHANDLER pi_R0_1val;
+    PQUERYHANDLER pi_R0_allvals;
+    PQUERYHANDLER pi_R3_1val;
+    PQUERYHANDLER pi_R3_allvals;
+    DWORD pi_flags;
+    LPVOID pi_key_context;
+};
+
+typedef struct provider_info *PPROVIDER;
+
+#if (!(defined(UNICODE)))
+typedef PVALUEA PVALUE;
+#else
+typedef PVALUEW PVALUE;
+#endif
+
+typedef DWORD __cdecl QUERYHANDLER(LPVOID, PVALCONTEXT, DWORD, LPVOID, DWORD *, DWORD);
+
+typedef struct provider_info REG_PROVIDER;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+WINADVAPI DWORD APIENTRY CheckForHiberboot(PBOOLEAN pHiberboot, BOOLEAN bClearFlag);
+WINADVAPI LSTATUS APIENTRY RegConnectRegistryExA(LPCSTR lpMachineName, HKEY hKey, ULONG Flags, PHKEY phkResult);
+WINADVAPI LSTATUS APIENTRY RegConnectRegistryExW(LPCWSTR lpMachineName, HKEY hKey, ULONG Flags, PHKEY phkResult);
+WINADVAPI LSTATUS APIENTRY RegCreateKeyTransactedA(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition, HANDLE hTransaction, PVOID pExtendedParemeter);
+WINADVAPI LSTATUS APIENTRY RegCreateKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition, HANDLE hTransaction, PVOID pExtendedParemeter);
+WINADVAPI LSTATUS APIENTRY RegDeleteKeyTransactedA(HKEY hKey, LPCSTR lpSubKey, REGSAM samDesired, DWORD Reserved, HANDLE hTransaction, PVOID pExtendedParameter);
+WINADVAPI LSTATUS APIENTRY RegDeleteKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, REGSAM samDesired, DWORD Reserved, HANDLE hTransaction, PVOID pExtendedParameter);
+WINADVAPI LSTATUS APIENTRY RegOpenKeyTransactedA(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult, HANDLE hTransaction, PVOID pExtendedParemeter);
+WINADVAPI LSTATUS APIENTRY RegOpenKeyTransactedW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult, HANDLE hTransaction, PVOID pExtendedParemeter);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

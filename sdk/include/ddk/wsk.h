@@ -329,6 +329,36 @@ NTSTATUS
     _In_ PWSK_SOCKET Socket,
     _In_ PWSK_DATA_INDICATION DataIndication);
 
+typedef
+NTSTATUS
+(WSKAPI * PFN_WSK_CONNECT_EX)(
+    _In_ PWSK_SOCKET Socket,
+    _In_ PSOCKADDR RemoteAddress,
+    _In_opt_ PWSK_BUF Buffer,
+    _Reserved_ ULONG Flags,
+    _Inout_ PIRP Irp);
+
+typedef
+NTSTATUS
+(WSKAPI * PFN_WSK_SEND_EX)(
+    _In_ PWSK_SOCKET Socket,
+    _In_ PWSK_BUF Buffer,
+    _In_ ULONG Flags,
+    _In_ ULONG ControlInfoLength,
+    _In_reads_bytes_opt_(ControlInfoLength) PCMSGHDR ControlInfo,
+    _Inout_ PIRP Irp);
+
+typedef
+NTSTATUS
+(WSKAPI * PFN_WSK_RECEIVE_EX)(
+    _In_ PWSK_SOCKET Socket,
+    _In_ PWSK_BUF Buffer,
+    _In_ ULONG Flags,
+    _Inout_opt_ PULONG ControlInfoLength,
+    _Out_writes_bytes_opt_(*ControlInfoLength) PCMSGHDR ControlInfo,
+    _Reserved_ PULONG ControlFlags,
+    _Inout_ PIRP Irp);
+
 typedef struct _WSK_PROVIDER_CONNECTION_DISPATCH
 {
 #ifdef __cplusplus
@@ -344,6 +374,9 @@ typedef struct _WSK_PROVIDER_CONNECTION_DISPATCH
     PFN_WSK_RECEIVE WskReceive;
     PFN_WSK_DISCONNECT WskDisconnect;
     PFN_WSK_RELEASE_DATA_INDICATION_LIST WskRelease;
+    PFN_WSK_CONNECT_EX WskConnectEx;
+    PFN_WSK_SEND_EX WskSendEx;
+    PFN_WSK_RECEIVE_EX WskReceiveEx;
 } WSK_PROVIDER_CONNECTION_DISPATCH, *PWSK_PROVIDER_CONNECTION_DISPATCH;
 
 typedef
@@ -625,19 +658,47 @@ WskDeregister(
 /* WSK_BUF_LIST and PFN_WSK_SEND_MESSAGES are declared with the rest of the
  * core surface above, under the NTDDI_WIN8 guard. */
 
-/* PFN_WSK_CONNECT_EX — Win7 addition: connect with initial send data */
-typedef
-_Must_inspect_result_
-NTSTATUS
-(WSKAPI * PFN_WSK_CONNECT_EX)(
-    _In_ PWSK_SOCKET Socket,
-    _In_ PSOCKADDR RemoteAddress,
-    _In_opt_ PWSK_BUF Buffer,
-    _In_opt_ ULONG Flags,
-    _Inout_ PIRP Irp);
 
 #ifdef __cplusplus
 }
 #endif
 
+#ifndef WSK_FLAG_OOB
+#define WSK_FLAG_OOB 0x00000001
+#endif
+typedef struct _WSK_CLIENT_STREAM_DISPATCH {
+  const WSK_CLIENT_LISTEN_DISPATCH * Listen;
+  const WSK_CLIENT_CONNECTION_DISPATCH * Connect;
+} WSK_CLIENT_STREAM_DISPATCH, *PWSK_CLIENT_STREAM_DISPATCH;
 
+#define SIO_WSK_SET_RECEIVE_EX_CALLBACK 0x8F000008
+#define SIO_WSK_SET_TCP_SILENT_MODE 0x2F000007
+
+typedef NTSTATUS (NTAPI *PFN_WSK_LISTEN)(PWSK_SOCKET, PIRP);
+
+struct _WSK_PROVIDER_STREAM_DISPATCH
+{
+    PFN_WSK_BIND WskBind;
+    PFN_WSK_ACCEPT WskAccept;
+    PFN_WSK_CONNECT WskConnect;
+    PFN_WSK_LISTEN WskListen;
+    PFN_WSK_SEND WskSend;
+    PFN_WSK_RECEIVE WskReceive;
+    PFN_WSK_DISCONNECT WskDisconnect;
+    PFN_WSK_RELEASE_DATA_INDICATION_LIST WskRelease;
+    PFN_WSK_GET_LOCAL_ADDRESS WskGetLocalAddress;
+    PFN_WSK_GET_REMOTE_ADDRESS WskGetRemoteAddress;
+    PFN_WSK_CONNECT_EX WskConnectEx;
+    PFN_WSK_SEND_EX WskSendEx;
+    PFN_WSK_RECEIVE_EX WskReceiveEx;
+};
+
+typedef NTSTATUS (NTAPI *PFN_WSK_RECEIVE_EX_EVENT)(PVOID, ULONG, PWSK_DATA_INDICATION, PCMSGHDR, ULONG, SIZE_T, SIZE_T *);
+
+typedef struct _WSK_PROVIDER_STREAM_DISPATCH *PWSK_PROVIDER_STREAM_DISPATCH;
+
+typedef struct _WSK_PROVIDER_STREAM_DISPATCH WSK_PROVIDER_STREAM_DISPATCH;
+
+#ifndef WSK_FLAG_STREAM_SOCKET
+#define WSK_FLAG_STREAM_SOCKET 0x00000008
+#endif

@@ -633,4 +633,6 @@ typedef struct _WLX_NOTIFICATION_INFO {
 }
 #endif
 
+#define _WINWLX_
+
 #endif /*__WINWLX_H */

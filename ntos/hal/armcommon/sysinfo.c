@@ -10,8 +10,8 @@
 /* INCLUDES *******************************************************************/
 
 #include <hal.h>
-#include <reactos/hal/msi.h>
-#include <reactos/hal/acpi_pci.h>
+#include <libernt/hal/msi.h>
+#include <libernt/hal/acpi_pci.h>
 #include "halext.h"
 #define NDEBUG
 #include <debug.h>
@@ -328,9 +328,9 @@ HalGetProcessorIdByNtNumber(
 NTSTATUS
 NTAPI
 HalDmaAllocateCrashDumpRegistersEx(
-    _In_ PVOID Adapter,
+    _In_ PADAPTER_OBJECT Adapter,
     _In_ ULONG NumberOfMapRegisters,
-    _In_ ULONG Type,
+    _In_ HAL_DMA_CRASH_DUMP_REGISTER_TYPE Type,
     _Out_ PVOID *MapRegisterBase,
     _Out_ PULONG MapRegistersAvailable)
 {
@@ -348,8 +348,8 @@ HalDmaAllocateCrashDumpRegistersEx(
 NTSTATUS
 NTAPI
 HalDmaFreeCrashDumpRegistersEx(
-    _In_ PVOID Adapter,
-    _In_ ULONG Type)
+    _In_ PADAPTER_OBJECT Adapter,
+    _In_ HAL_DMA_CRASH_DUMP_REGISTER_TYPE Type)
 {
     DPRINT1("HalDmaFreeCrashDumpRegistersEx: STUB (Win8+ API)\n");
     UNREFERENCED_PARAMETER(Adapter);

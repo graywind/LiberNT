@@ -131,3 +131,7 @@ interface IDXGIFactory5 : IDXGIFactory4
         UINT support_data_size
     );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

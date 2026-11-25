@@ -1027,6 +1027,11 @@ static void STDMETHODCALLTYPE d3d11_device_context_Begin(ID3D11DeviceContext4 *i
 
     TRACE("iface %p, asynchronous %p.\n", iface, asynchronous);
 
+#ifdef __REACTOS__
+    if (context->type == D3D11_DEVICE_CONTEXT_IMMEDIATE &&
+            query->desc.Query != D3D11_QUERY_EVENT && query->desc.Query != D3D11_QUERY_TIMESTAMP)
+        query->building = TRUE;
+#endif
     wined3d_device_context_issue_query(context->wined3d_context, query->wined3d_query, WINED3DISSUE_BEGIN);
 }
 
@@ -1038,6 +1043,10 @@ static void STDMETHODCALLTYPE d3d11_device_context_End(ID3D11DeviceContext4 *ifa
 
     TRACE("iface %p, asynchronous %p.\n", iface, asynchronous);
 
+#ifdef __REACTOS__
+    if (context->type == D3D11_DEVICE_CONTEXT_IMMEDIATE)
+        query->building = FALSE;
+#endif
     wined3d_device_context_issue_query(context->wined3d_context, query->wined3d_query, WINED3DISSUE_END);
 }
 
@@ -1058,6 +1067,10 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_context_GetData(ID3D11DeviceContex
     if (!data && data_size)
         return E_INVALIDARG;
 
+#ifdef __REACTOS__
+    if (query->building)
+        return DXGI_ERROR_INVALID_CALL;
+#endif
     wined3d_flags = wined3d_getdata_flags_from_d3d11_async_getdata_flags(data_flags);
 
     wined3d_mutex_lock();
@@ -1348,6 +1361,16 @@ static void STDMETHODCALLTYPE d3d11_device_context_RSSetViewports(ID3D11DeviceCo
         wined3d_vp[i].height = viewports[i].Height;
         wined3d_vp[i].min_z = viewports[i].MinDepth;
         wined3d_vp[i].max_z = viewports[i].MaxDepth;
+#ifdef __REACTOS__
+        /* Hardware below feature level 11_0 takes integer viewports */
+        if (context->device->state->feature_level < D3D_FEATURE_LEVEL_11_0)
+        {
+            wined3d_vp[i].x = (float)(int)wined3d_vp[i].x;
+            wined3d_vp[i].y = (float)(int)wined3d_vp[i].y;
+            wined3d_vp[i].width = (float)(int)wined3d_vp[i].width;
+            wined3d_vp[i].height = (float)(int)wined3d_vp[i].height;
+        }
+#endif
     }
 
     wined3d_device_context_set_viewports(context->wined3d_context, viewport_count, wined3d_vp);
@@ -4635,9 +4658,16 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CreatePredicate(ID3D11Device5 *ifa
 static HRESULT STDMETHODCALLTYPE d3d11_device_CreateCounter(ID3D11Device5 *iface, const D3D11_COUNTER_DESC *desc,
         ID3D11Counter **counter)
 {
+#ifdef __REACTOS__
+    TRACE("iface %p, desc %p, counter %p.\n", iface, desc, counter);
+
+    /* wined3d exposes no device-dependent counter, so no counter ID is valid */
+    return E_INVALIDARG;
+#else
     FIXME("iface %p, desc %p, counter %p stub!\n", iface, desc, counter);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT d3d11_deferred_context_create(struct d3d_device *device,
@@ -4846,6 +4876,17 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFormatSupport(ID3D11Device5 *
         case DXGI_FORMAT_R16_UINT: case DXGI_FORMAT_R16_SINT:
         case DXGI_FORMAT_R8_UINT: case DXGI_FORMAT_R8_SINT:
             *format_support &= ~(D3D11_FORMAT_SUPPORT_SHADER_SAMPLE | D3D11_FORMAT_SUPPORT_BLENDABLE);
+            /* Level 9 hardware takes integer formats only as vertex and index formats */
+            if (feature_level < D3D_FEATURE_LEVEL_10_0)
+                *format_support &= D3D11_FORMAT_SUPPORT_IA_VERTEX_BUFFER | D3D11_FORMAT_SUPPORT_IA_INDEX_BUFFER;
+            break;
+        case DXGI_FORMAT_R32G32B32_FLOAT:
+            if (feature_level < D3D_FEATURE_LEVEL_10_0)
+                *format_support &= D3D11_FORMAT_SUPPORT_IA_VERTEX_BUFFER;
+            break;
+        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+            if (feature_level < D3D_FEATURE_LEVEL_9_2)
+                *format_support &= D3D11_FORMAT_SUPPORT_IA_VERTEX_BUFFER;
             break;
         default:
             break;
@@ -4867,7 +4908,47 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFormatSupport(ID3D11Device5 *
         }
     }
 
-    if (*format_support)
+    switch (format)
+    {
+        case DXGI_FORMAT_R32G32B32A32_TYPELESS: case DXGI_FORMAT_R32G32B32_TYPELESS:
+        case DXGI_FORMAT_R16G16B16A16_TYPELESS: case DXGI_FORMAT_R32G32_TYPELESS:
+        case DXGI_FORMAT_R32G8X24_TYPELESS: case DXGI_FORMAT_R10G10B10A2_TYPELESS:
+        case DXGI_FORMAT_R8G8B8A8_TYPELESS: case DXGI_FORMAT_R16G16_TYPELESS:
+        case DXGI_FORMAT_R32_TYPELESS: case DXGI_FORMAT_R24G8_TYPELESS:
+        case DXGI_FORMAT_R8G8_TYPELESS: case DXGI_FORMAT_R16_TYPELESS: case DXGI_FORMAT_R8_TYPELESS:
+        case DXGI_FORMAT_BC1_TYPELESS: case DXGI_FORMAT_BC2_TYPELESS: case DXGI_FORMAT_BC3_TYPELESS:
+        case DXGI_FORMAT_BC4_TYPELESS: case DXGI_FORMAT_BC5_TYPELESS:
+        case DXGI_FORMAT_B8G8R8A8_TYPELESS: case DXGI_FORMAT_B8G8R8X8_TYPELESS:
+        case DXGI_FORMAT_BC6H_TYPELESS: case DXGI_FORMAT_BC7_TYPELESS:
+            /* A typeless format only creates resources; every typed use goes through a view format */
+            *format_support &= D3D11_FORMAT_SUPPORT_BUFFER | D3D11_FORMAT_SUPPORT_TEXTURE1D
+                    | D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_TEXTURE3D
+                    | D3D11_FORMAT_SUPPORT_TEXTURECUBE | D3D11_FORMAT_SUPPORT_MIP;
+            break;
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT: case DXGI_FORMAT_D32_FLOAT:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT: case DXGI_FORMAT_D16_UNORM:
+            /* Shaders read depth through the format's shader-resource view format */
+            *format_support &= ~(D3D11_FORMAT_SUPPORT_RENDER_TARGET | D3D11_FORMAT_SUPPORT_BLENDABLE
+                    | D3D11_FORMAT_SUPPORT_SHADER_LOAD | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE
+                    | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE_COMPARISON | D3D11_FORMAT_SUPPORT_SHADER_GATHER
+                    | D3D11_FORMAT_SUPPORT_SHADER_GATHER_COMPARISON | D3D11_FORMAT_SUPPORT_TYPED_UNORDERED_ACCESS_VIEW
+                    | D3D11_FORMAT_SUPPORT_MULTISAMPLE_LOAD | D3D11_FORMAT_SUPPORT_MULTISAMPLE_RESOLVE);
+            break;
+        case DXGI_FORMAT_R32_FLOAT: case DXGI_FORMAT_R16_UNORM:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS: case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+            /* The shader-resource view formats of depth formats sample with comparison */
+            if (feature_level >= D3D_FEATURE_LEVEL_10_0 && (*format_support & D3D11_FORMAT_SUPPORT_SHADER_SAMPLE))
+                *format_support |= D3D11_FORMAT_SUPPORT_SHADER_SAMPLE_COMPARISON;
+            if (feature_level >= D3D_FEATURE_LEVEL_11_0 && (*format_support & D3D11_FORMAT_SUPPORT_SHADER_GATHER))
+                *format_support |= D3D11_FORMAT_SUPPORT_SHADER_GATHER_COMPARISON;
+            break;
+        default:
+            break;
+    }
+    /* TODO: video processor input and output support once the wined3d device has a video processor */
+
+    if (feature_level >= D3D_FEATURE_LEVEL_10_0 ? *format_support != 0 : (*format_support & (D3D11_FORMAT_SUPPORT_TEXTURE1D
+            | D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_TEXTURE3D)) != 0)
         *format_support |= D3D11_FORMAT_SUPPORT_CPU_LOCKABLE;
 
     if (feature_level >= D3D_FEATURE_LEVEL_10_0 && (*format_support & (D3D11_FORMAT_SUPPORT_TEXTURE1D
@@ -4959,19 +5040,36 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckMultisampleQualityLevels(ID3D
 
 static void STDMETHODCALLTYPE d3d11_device_CheckCounterInfo(ID3D11Device5 *iface, D3D11_COUNTER_INFO *info)
 {
+#ifdef __REACTOS__
+    TRACE("iface %p, info %p.\n", iface, info);
+
+    if (info)
+        memset(info, 0, sizeof(*info));
+#else
     FIXME("iface %p, info %p stub!\n", iface, info);
+#endif
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CheckCounter(ID3D11Device5 *iface, const D3D11_COUNTER_DESC *desc,
         D3D11_COUNTER_TYPE *type, UINT *active_counter_count, char *name, UINT *name_length,
         char *units, UINT *units_length, char *description, UINT *description_length)
 {
+#ifdef __REACTOS__
+    TRACE("iface %p, desc %p, type %p, active_counter_count %p, name %p, name_length %p, "
+            "units %p, units_length %p, description %p, description_length %p.\n",
+            iface, desc, type, active_counter_count, name, name_length,
+            units, units_length, description, description_length);
+
+    /* wined3d exposes no device-dependent counter, so no counter ID is valid */
+    return E_INVALIDARG;
+#else
     FIXME("iface %p, desc %p, type %p, active_counter_count %p, name %p, name_length %p, "
             "units %p, units_length %p, description %p, description_length %p stub!\n",
             iface, desc, type, active_counter_count, name, name_length,
             units, units_length, description, description_length);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device5 *iface, D3D11_FEATURE feature,
@@ -5117,7 +5215,12 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device5 
 
             FIXME("Returning fake Options1 support data.\n");
             options->TiledResourcesTier = D3D11_TILED_RESOURCES_NOT_SUPPORTED;
+#ifdef __REACTOS__
+            /* Min/max filtering is reported only with tiled resources tier 2 */
+            options->MinMaxFiltering = FALSE;
+#else
             options->MinMaxFiltering = wined3d_caps.min_max_filtering;
+#endif
             options->ClearViewAlsoSupportsDepthOnlyFormats = FALSE;
 #ifdef __REACTOS__
             options->MapOnDefaultBuffers = device->state->feature_level >= D3D_FEATURE_LEVEL_11_0;
@@ -5145,7 +5248,12 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device5 
                 return hr;
             }
 
+#ifdef __REACTOS__
+            options->PSSpecifiedStencilRefSupported = wined3d_caps.stencil_export &&
+                    device->state->feature_level >= D3D_FEATURE_LEVEL_11_1;
+#else
             options->PSSpecifiedStencilRefSupported = wined3d_caps.stencil_export;
+#endif
             options->TypedUAVLoadAdditionalFormats = FALSE;
             options->ROVsSupported = FALSE;
             options->ConservativeRasterizationTier = D3D11_CONSERVATIVE_RASTERIZATION_NOT_SUPPORTED;
@@ -5227,9 +5335,81 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device5 
             return S_OK;
         }
 
+#ifdef __REACTOS__
+        case D3D11_FEATURE_D3D9_SHADOW_SUPPORT:
+        {
+            D3D11_FEATURE_DATA_D3D9_SHADOW_SUPPORT *data = feature_support_data;
+            if (feature_support_data_size != sizeof(*data))
+                return E_INVALIDARG;
+            data->SupportsDepthAsTextureWithLessEqualComparisonFilter = TRUE;
+            return S_OK;
+        }
+
+        case D3D11_FEATURE_D3D9_OPTIONS1:
+        {
+            D3D11_FEATURE_DATA_D3D9_OPTIONS1 *data = feature_support_data;
+            if (feature_support_data_size != sizeof(*data))
+                return E_INVALIDARG;
+
+            wined3d_mutex_lock();
+            hr = wined3d_device_get_device_caps(device->wined3d_device, &wined3d_caps);
+            wined3d_mutex_unlock();
+            if (FAILED(hr))
+                return hr;
+
+            data->FullNonPow2TextureSupported = !(wined3d_caps.TextureCaps & WINED3DPTEXTURECAPS_POW2);
+            data->DepthAsTextureWithLessEqualComparisonFilterSupported = TRUE;
+            data->SimpleInstancingSupported = wined3d_caps.simple_instancing;
+            data->TextureCubeFaceRenderTargetWithNonCubeDepthStencilSupported = TRUE;
+            return S_OK;
+        }
+
+        case D3D11_FEATURE_D3D11_OPTIONS4:
+        {
+            D3D11_FEATURE_DATA_D3D11_OPTIONS4 *data = feature_support_data;
+            if (feature_support_data_size != sizeof(*data))
+                return E_INVALIDARG;
+            data->ExtendedNV12SharedTextureSupported = FALSE;
+            return S_OK;
+        }
+
+        case D3D11_FEATURE_SHADER_CACHE:
+        {
+            D3D11_FEATURE_DATA_SHADER_CACHE *data = feature_support_data;
+            if (feature_support_data_size != sizeof(*data))
+                return E_INVALIDARG;
+            data->SupportFlags = D3D11_SHADER_CACHE_SUPPORT_NONE;
+            return S_OK;
+        }
+
+        case D3D11_FEATURE_D3D11_OPTIONS5:
+        {
+            D3D11_FEATURE_DATA_D3D11_OPTIONS5 *data = feature_support_data;
+            if (feature_support_data_size != sizeof(*data))
+                return E_INVALIDARG;
+            data->SharedResourceTier = D3D11_SHARED_RESOURCE_TIER_0;
+            return S_OK;
+        }
+
+        case D3D11_FEATURE_DISPLAYABLE:
+        {
+            D3D11_FEATURE_DATA_DISPLAYABLE *data = feature_support_data;
+            if (feature_support_data_size != sizeof(*data))
+                return E_INVALIDARG;
+            data->DisplayableTexture = FALSE;
+            data->SharedResourceTier = D3D11_SHARED_RESOURCE_TIER_0;
+            return S_OK;
+        }
+
+        default:
+            /* TODO: INFO_NEEDED: whether the Windows 11 runtime answers D3D11_FEATURE_D3D11_OPTIONS6 */
+            WARN("Unhandled feature %#x.\n", feature);
+            return E_INVALIDARG;
+#else
         default:
             FIXME("Unhandled feature %#x.\n", feature);
             return E_NOTIMPL;
+#endif
     }
 }
 

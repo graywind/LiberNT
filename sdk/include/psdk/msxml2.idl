@@ -113,7 +113,6 @@ interface ISchemaAny;
 interface ISchemaIdentityConstraint;
 interface ISchemaNotation;
 
-
 cpp_quote("#define DOMDocument DOMDocument2")
 cpp_quote("#define CLSID_DOMDocument CLSID_DOMDocument2")
 
@@ -257,7 +256,6 @@ typedef enum _SCHEMAWHITESPACE
     SCHEMAWHITESPACE_REPLACE    =  1,
     SCHEMAWHITESPACE_COLLAPSE   =  2,
 } SCHEMAWHITESPACE;
-
 
 typedef enum _SCHEMATYPEVARIETY
 {
@@ -3275,7 +3273,6 @@ interface ISchemaNotation : ISchemaItem
         [out,retval] BSTR* uri);
 }
 
-
 [
     helpstring("SAX XML Reader 3.0"),
     progid("Msxml2.SAXXMLReader.3.0"),
@@ -3574,3 +3571,67 @@ cpp_quote("#define E_XML_INVALID            0xC00CE225")
 cpp_quote("#define E_XML_BUFFERTOOSMALL     0xC00CE226")
 
 } /* Library MSXML */
+
+cpp_quote("#ifndef __msxml2_cpp_quote_1_DEFINED__")
+cpp_quote("#define __msxml2_cpp_quote_1_DEFINED__")
+cpp_quote("typedef struct DSOControl DSOControl;")
+cpp_quote("")
+cpp_quote("typedef struct DSOControl26 DSOControl26;")
+cpp_quote("")
+cpp_quote("typedef struct DSOControl30 DSOControl30;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("#endif")

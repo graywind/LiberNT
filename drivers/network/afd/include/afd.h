@@ -56,6 +56,8 @@
 #define TAG_AFD_WSA_BUFFER                 'bWfA'
 #define TAG_AFD_TDI_IRP_CONTEXT            'iTfA'
 
+#define AFD_CMSG32_HEADER_LENGTH (3 * sizeof(ULONG))
+
 static __inline BOOLEAN
 AfdIs32bitIoctl(PIRP Irp)
 {
@@ -420,6 +422,7 @@ VOID UnlockHandles( PAFD_HANDLE HandleArray, UINT HandleCount );
 PVOID LockRequest( PIRP Irp, PIO_STACK_LOCATION IrpSp, BOOLEAN Output, KPROCESSOR_MODE *LockMode );
 VOID UnlockRequest( PIRP Irp, PIO_STACK_LOCATION IrpSp );
 PVOID GetLockedData( PIRP Irp, PIO_STACK_LOCATION IrpSp );
+NTSTATUS AfdCopyToUserBuffer(PIRP Irp, PVOID Source, ULONG Length);
 BOOLEAN AfdCaptureRecvRequest(PVOID InputBuffer, ULONG InputBufferLength, KPROCESSOR_MODE Mode, BOOLEAN Is32Bit, PAFD_RECV_INFO Request);
 VOID AfdReadUserWsaBuf(PAFD_WSABUF Array, UINT Index, KPROCESSOR_MODE Mode, BOOLEAN Is32Bit, PAFD_WSABUF Buffer);
 NTSTATUS LeaveIrpUntilLater( PAFD_FCB FCB, PIRP Irp, UINT Function );

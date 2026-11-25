@@ -686,4 +686,168 @@ typedef PRINTDLGEXA PRINTDLGEX, *LPPRINTDLGEX;
 #ifdef __cplusplus
 }
 #endif
+#ifndef CF_INACTIVEFONTS
+#define CF_INACTIVEFONTS 0x02000000L
+#endif
+#ifndef FR_NOWRAPAROUND
+#define FR_NOWRAPAROUND 0x00080000
+#endif
+#ifndef FR_RAW
+#define FR_RAW 0x00020000
+#endif
+#ifndef FR_SHOWWRAPAROUND
+#define FR_SHOWWRAPAROUND 0x00040000
+#endif
+#ifndef FR_WRAPAROUND
+#define FR_WRAPAROUND 0x00100000
+#endif
+#ifndef OFN_FORCESHOWHIDDEN
+#define OFN_FORCESHOWHIDDEN 0x10000000
+#endif
+#ifndef PD_CURRENTPAGE
+#define PD_CURRENTPAGE 0x00400000
+#endif
+#ifndef PD_EXCLUSIONFLAGS
+#define PD_EXCLUSIONFLAGS 0x01000000
+#endif
+#ifndef PD_NOCURRENTPAGE
+#define PD_NOCURRENTPAGE 0x00800000
+#endif
+#ifndef PD_USELARGETEMPLATE
+#define PD_USELARGETEMPLATE 0x10000000
+#endif
+#ifndef PSD_NONETWORKBUTTON
+#define PSD_NONETWORKBUTTON 0x00200000
+#endif
+#ifndef PS_OPENTYPE_FONTTYPE
+#define PS_OPENTYPE_FONTTYPE 0x10000
+#endif
+#ifndef SYMBOL_FONTTYPE
+#define SYMBOL_FONTTYPE 0x80000
+#endif
+#ifndef TT_OPENTYPE_FONTTYPE
+#define TT_OPENTYPE_FONTTYPE 0x20000
+#endif
+#ifndef TYPE1_FONTTYPE
+#define TYPE1_FONTTYPE 0x40000
+#endif
+
+#if (!(defined(UNICODE)))
+typedef LPOFNOTIFYEXA LPOFNOTIFYEX;
+typedef OFNOTIFYEXA OFNOTIFYEX;
+#else
+typedef LPOFNOTIFYEXW LPOFNOTIFYEX;
+typedef OFNOTIFYEXW OFNOTIFYEX;
+#endif
+typedef const CHOOSEFONTA * PCCHOOSEFONTA;
+typedef const CHOOSEFONTW *PCCHOOSEFONTW;
+#if (!(defined(UNICODE)))
+typedef PCCHOOSEFONTA PCCHOOSEFONT;
+#else
+typedef PCCHOOSEFONTW PCCHOOSEFONT;
+#endif
+typedef const CHOOSEFONTW * PCCHOOSEFONTW;
+typedef const DEVNAMES * PCDEVNAMES;
+typedef const PRINTPAGERANGE * PCPRINTPAGERANGE;
+
+typedef struct tagOFN_NT4A {
+  DWORD lStructSize;
+  HWND hwndOwner;
+  HINSTANCE hInstance;
+  LPCSTR lpstrFilter;
+  LPSTR lpstrCustomFilter;
+  DWORD nMaxCustFilter;
+  DWORD nFilterIndex;
+  LPSTR lpstrFile;
+  DWORD nMaxFile;
+  LPSTR lpstrFileTitle;
+  DWORD nMaxFileTitle;
+  LPCSTR lpstrInitialDir;
+  LPCSTR lpstrTitle;
+  DWORD Flags;
+  WORD nFileOffset;
+  WORD nFileExtension;
+  LPCSTR lpstrDefExt;
+  LPARAM lCustData;
+  LPOFNHOOKPROC lpfnHook;
+  LPCSTR lpTemplateName;
+} OPENFILENAME_NT4A, *LPOPENFILENAME_NT4A;
+
+typedef struct tagOFN_NT4W {
+  DWORD lStructSize;
+  HWND hwndOwner;
+  HINSTANCE hInstance;
+  LPCWSTR lpstrFilter;
+  LPWSTR lpstrCustomFilter;
+  DWORD nMaxCustFilter;
+  DWORD nFilterIndex;
+  LPWSTR lpstrFile;
+  DWORD nMaxFile;
+  LPWSTR lpstrFileTitle;
+  DWORD nMaxFileTitle;
+  LPCWSTR lpstrInitialDir;
+  LPCWSTR lpstrTitle;
+  DWORD Flags;
+  WORD nFileOffset;
+  WORD nFileExtension;
+  LPCWSTR lpstrDefExt;
+  LPARAM lCustData;
+  LPOFNHOOKPROC lpfnHook;
+  LPCWSTR lpTemplateName;
+} OPENFILENAME_NT4W, *LPOPENFILENAME_NT4W;
+
+#define _INC_COMMDLG
+#define FRM_FIRST (WM_USER + 100)
+#define FRM_LAST 0x4C8
+#define FRM_SETOPERATIONRESULT 0x464
+#define FRM_SETOPERATIONRESULTTEXT 0x465
+#define PD_EXCL_COPIESANDCOLLATE 0x8100
+
+typedef struct IPrintDialogCallbackVtbl IPrintDialogCallbackVtbl;
+
+typedef struct IPrintDialogServicesVtbl IPrintDialogServicesVtbl;
+
+#if (!(defined(UNICODE)))
+typedef LPOPENFILENAME_NT4A LPOPENFILENAME_NT4;
+
+typedef OPENFILENAME_NT4A OPENFILENAME_NT4;
+#else
+typedef LPOPENFILENAME_NT4W LPOPENFILENAME_NT4;
+
+typedef OPENFILENAME_NT4W OPENFILENAME_NT4;
+#endif
+
+struct tagFINDREPLACEA
+{
+    DWORD lStructSize;
+    HWND hwndOwner;
+    HINSTANCE hInstance;
+    DWORD Flags;
+    LPSTR lpstrFindWhat;
+    LPSTR lpstrReplaceWith;
+    WORD wFindWhatLen;
+    WORD wReplaceWithLen;
+    LPARAM lCustData;
+    LPFRHOOKPROC lpfnHook;
+    LPCSTR lpTemplateName;
+};
+
+struct tagFINDREPLACEW
+{
+    DWORD lStructSize;
+    HWND hwndOwner;
+    HINSTANCE hInstance;
+    DWORD Flags;
+    LPWSTR lpstrFindWhat;
+    LPWSTR lpstrReplaceWith;
+    WORD wFindWhatLen;
+    WORD wReplaceWithLen;
+    LPARAM lCustData;
+    LPFRHOOKPROC lpfnHook;
+    LPCWSTR lpTemplateName;
+};
+
+#define CommDlg_FindReplace_SendCustomResult(_hdlg, _psz) (void) SNDMSG(_hdlg, FRM_SETOPERATIONRESULTTEXT, 0, (LPARAM) (LPSTR) (_psz))
+#define CommDlg_FindReplace_SendResult(_hdlg, _flags, _fr) (void) SNDMSG(_hdlg, FRM_SETOPERATIONRESULT, (WPARAM) (_flags), (LPARAM) (_fr))
+
 #endif

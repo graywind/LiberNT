@@ -354,4 +354,431 @@ IPHLPAPI_DLL_LINKAGE NETIO_STATUS NETIOAPI_API_ SetUnicastIpAddressEntry(const M
 IPHLPAPI_DLL_LINKAGE PCHAR NETIOAPI_API_ if_indextoname(NET_IFINDEX,PCHAR);
 IPHLPAPI_DLL_LINKAGE NET_IFINDEX NETIOAPI_API_ if_nametoindex(PCSTR);
 
+#ifndef DNS_DDR_ADAPTER_ENABLE_DOH
+#define DNS_DDR_ADAPTER_ENABLE_DOH 0x0001
+#endif
+#ifndef DNS_DDR_ADAPTER_ENABLE_UDP_FALLBACK
+#define DNS_DDR_ADAPTER_ENABLE_UDP_FALLBACK 0x0002
+#endif
+#ifndef DNS_DDR_ADAPTER_MAKE_DDR_NON_BLOCKING
+#define DNS_DDR_ADAPTER_MAKE_DDR_NON_BLOCKING 0x0004
+#endif
+#ifndef DNS_DOH_AUTO_UPGRADE_SERVER
+#define DNS_DOH_AUTO_UPGRADE_SERVER 0x0008
+#endif
+#ifndef DNS_DOH_POLICY_AUTO
+#define DNS_DOH_POLICY_AUTO 0x0010
+#endif
+#ifndef DNS_DOH_POLICY_BLOCK
+#define DNS_DOH_POLICY_BLOCK 0x0200
+#endif
+#ifndef DNS_DOH_POLICY_DISABLE
+#define DNS_DOH_POLICY_DISABLE 0x0008
+#endif
+#ifndef DNS_DOH_POLICY_NOT_CONFIGURED
+#define DNS_DOH_POLICY_NOT_CONFIGURED 0x0004
+#endif
+#ifndef DNS_DOH_POLICY_REQUIRED
+#define DNS_DOH_POLICY_REQUIRED 0x0020
+#endif
+#ifndef DNS_DOH_SERVER_SETTINGS_ENABLE
+#define DNS_DOH_SERVER_SETTINGS_ENABLE 0x0002
+#endif
+#ifndef DNS_DOH_SERVER_SETTINGS_ENABLE_AUTO
+#define DNS_DOH_SERVER_SETTINGS_ENABLE_AUTO 0x0001
+#endif
+#ifndef DNS_DOH_SERVER_SETTINGS_ENABLE_DDR
+#define DNS_DOH_SERVER_SETTINGS_ENABLE_DDR 0x0010
+#endif
+#ifndef DNS_DOH_SERVER_SETTINGS_FALLBACK_TO_UDP
+#define DNS_DOH_SERVER_SETTINGS_FALLBACK_TO_UDP 0x0004
+#endif
+#ifndef DNS_DOH_SERVER_SETTINGS_MAKE_DDR_NON_BLOCKING
+#define DNS_DOH_SERVER_SETTINGS_MAKE_DDR_NON_BLOCKING 0x0020
+#endif
+#ifndef DNS_DOT_AUTO_UPGRADE_SERVER
+#define DNS_DOT_AUTO_UPGRADE_SERVER 0x0004
+#endif
+#ifndef DNS_DOT_POLICY_BLOCK
+#define DNS_DOT_POLICY_BLOCK 0x0100
+#endif
+#ifndef DNS_DOT_SERVER_SETTINGS_ENABLE
+#define DNS_DOT_SERVER_SETTINGS_ENABLE 0x0001
+#endif
+#ifndef DNS_DOT_SERVER_SETTINGS_ENABLE_AUTO
+#define DNS_DOT_SERVER_SETTINGS_ENABLE_AUTO 0x0008
+#endif
+#ifndef DNS_DOT_SERVER_SETTINGS_ENABLE_DDR
+#define DNS_DOT_SERVER_SETTINGS_ENABLE_DDR 0x0010
+#endif
+#ifndef DNS_DOT_SERVER_SETTINGS_FALLBACK_TO_UDP
+#define DNS_DOT_SERVER_SETTINGS_FALLBACK_TO_UDP 0x0002
+#endif
+#ifndef DNS_DOT_SERVER_SETTINGS_MAKE_DDR_NON_BLOCKING
+#define DNS_DOT_SERVER_SETTINGS_MAKE_DDR_NON_BLOCKING 0x0020
+#endif
+#ifndef DNS_ENABLE_DDR
+#define DNS_ENABLE_DDR 0x0040
+#endif
+#ifndef DNS_ENABLE_DNR
+#define DNS_ENABLE_DNR 0x0400
+#endif
+#ifndef DNS_ENABLE_DOH
+#define DNS_ENABLE_DOH 0x0001
+#endif
+#ifndef DNS_ENABLE_DOT
+#define DNS_ENABLE_DOT 0x0080
+#endif
+#ifndef DNS_INTERFACE_SETTINGS_VERSION1
+#define DNS_INTERFACE_SETTINGS_VERSION1 0x0001
+#endif
+#ifndef DNS_INTERFACE_SETTINGS_VERSION2
+#define DNS_INTERFACE_SETTINGS_VERSION2 0x0002
+#endif
+#ifndef DNS_INTERFACE_SETTINGS_VERSION3
+#define DNS_INTERFACE_SETTINGS_VERSION3 0x0003
+#endif
+#ifndef DNS_INTERFACE_SETTINGS_VERSION4
+#define DNS_INTERFACE_SETTINGS_VERSION4 0x0004
+#endif
+#ifndef DNS_SERVER_PROPERTY_VERSION1
+#define DNS_SERVER_PROPERTY_VERSION1 0x0001
+#endif
+#ifndef DNS_SETTINGS_ENABLE_LLMNR
+#define DNS_SETTINGS_ENABLE_LLMNR 0x0080
+#endif
+#ifndef DNS_SETTINGS_QUERY_ADAPTER_NAME
+#define DNS_SETTINGS_QUERY_ADAPTER_NAME 0x0100
+#endif
+#ifndef DNS_SETTINGS_VERSION1
+#define DNS_SETTINGS_VERSION1 0x0001
+#endif
+#ifndef DNS_SETTINGS_VERSION2
+#define DNS_SETTINGS_VERSION2 0x0002
+#endif
+#ifndef DNS_SETTING_DDR
+#define DNS_SETTING_DDR 0x8000
+#endif
+#ifndef DNS_SETTING_DISABLE_UNCONSTRAINED_QUERIES
+#define DNS_SETTING_DISABLE_UNCONSTRAINED_QUERIES 0x0400
+#endif
+#ifndef DNS_SETTING_DOH
+#define DNS_SETTING_DOH 0x1000
+#endif
+#ifndef DNS_SETTING_DOH_PROFILE
+#define DNS_SETTING_DOH_PROFILE 0x2000
+#endif
+#ifndef DNS_SETTING_DOMAIN
+#define DNS_SETTING_DOMAIN 0x0020
+#endif
+#ifndef DNS_SETTING_DOT
+#define DNS_SETTING_DOT 0x10000
+#endif
+#ifndef DNS_SETTING_DOT_PROFILE
+#define DNS_SETTING_DOT_PROFILE 0x20000
+#endif
+#ifndef DNS_SETTING_ENCRYPTED_DNS_ADAPTER_FLAGS
+#define DNS_SETTING_ENCRYPTED_DNS_ADAPTER_FLAGS 0x4000
+#endif
+#ifndef DNS_SETTING_HOSTNAME
+#define DNS_SETTING_HOSTNAME 0x0040
+#endif
+#ifndef DNS_SETTING_IPV6
+#define DNS_SETTING_IPV6 0x0001
+#endif
+#ifndef DNS_SETTING_NAMESERVER
+#define DNS_SETTING_NAMESERVER 0x0002
+#endif
+#ifndef DNS_SETTING_PROFILE_NAMESERVER
+#define DNS_SETTING_PROFILE_NAMESERVER 0x0200
+#endif
+#ifndef DNS_SETTING_REGISTER_ADAPTER_NAME
+#define DNS_SETTING_REGISTER_ADAPTER_NAME 0x0010
+#endif
+#ifndef DNS_SETTING_REGISTRATION_ENABLED
+#define DNS_SETTING_REGISTRATION_ENABLED 0x0008
+#endif
+#ifndef DNS_SETTING_SEARCHLIST
+#define DNS_SETTING_SEARCHLIST 0x0004
+#endif
+#ifndef DNS_SETTING_SUPPLEMENTAL_SEARCH_LIST
+#define DNS_SETTING_SUPPLEMENTAL_SEARCH_LIST 0x0800
+#endif
+
+typedef enum _DNS_SERVER_PROPERTY_TYPE {
+    DnsServerInvalidProperty = 0,
+    DnsServerDohProperty = 1,
+    DnsServerDotProperty = 2
+} DNS_SERVER_PROPERTY_TYPE;
+
+typedef enum _MIB_IF_ENTRY_LEVEL {
+    MibIfEntryNormal = 0,
+    MibIfEntryNormalWithoutStatistics = 2
+} MIB_IF_ENTRY_LEVEL, *PMIB_IF_ENTRY_LEVEL;
+
+typedef enum _NET_FL_ISOLATION_MODE {
+    NetFlIsolationModeNone = 0,
+    NetFlIsolationModeVlan = 1,
+    NetFlIsolationModeVsid = 2
+} NET_FL_ISOLATION_MODE;
+
+typedef enum _NET_FL_VIRTUAL_INTERFACE_ORIGIN {
+    NetFlVirtualInterfaceOriginOid = 0,
+    NetFlVirtualInterfaceOriginApi = 1,
+    NetFlVirtualInterfaceOriginDefault = 2
+} NET_FL_VIRTUAL_INTERFACE_ORIGIN;
+
+typedef struct _DNS_DOH_SERVER_SETTINGS {
+  PWSTR Template;
+  ULONG64 Flags;
+} DNS_DOH_SERVER_SETTINGS;
+
+typedef struct _DNS_DOT_SERVER_SETTINGS {
+  PWSTR Hostname;
+  ULONG64 Flags;
+  USHORT Port;
+} DNS_DOT_SERVER_SETTINGS;
+
+typedef struct _DNS_INTERFACE_SETTINGS {
+  ULONG Version;
+  ULONG64 Flags;
+  PWSTR Domain;
+  PWSTR NameServer;
+  PWSTR SearchList;
+  ULONG RegistrationEnabled;
+  ULONG RegisterAdapterName;
+  ULONG EnableLLMNR;
+  ULONG QueryAdapterName;
+  PWSTR ProfileNameServer;
+} DNS_INTERFACE_SETTINGS;
+
+typedef struct _DNS_INTERFACE_SETTINGS_EX {
+  DNS_INTERFACE_SETTINGS SettingsV1;
+  ULONG DisableUnconstrainedQueries;
+  PWSTR SupplementalSearchList;
+} DNS_INTERFACE_SETTINGS_EX;
+
+typedef union _DNS_SERVER_PROPERTY_TYPES {
+  DNS_DOH_SERVER_SETTINGS * DohSettings;
+  DNS_DOT_SERVER_SETTINGS * DotSettings;
+} DNS_SERVER_PROPERTY_TYPES;
+
+typedef struct _DNS_SERVER_PROPERTY {
+  ULONG Version;
+  ULONG ServerIndex;
+  DNS_SERVER_PROPERTY_TYPE Type;
+  DNS_SERVER_PROPERTY_TYPES Property;
+} DNS_SERVER_PROPERTY;
+
+typedef struct _DNS_INTERFACE_SETTINGS3 {
+  ULONG Version;
+  ULONG64 Flags;
+  PWSTR Domain;
+  PWSTR NameServer;
+  PWSTR SearchList;
+  ULONG RegistrationEnabled;
+  ULONG RegisterAdapterName;
+  ULONG EnableLLMNR;
+  ULONG QueryAdapterName;
+  PWSTR ProfileNameServer;
+  ULONG DisableUnconstrainedQueries;
+  PWSTR SupplementalSearchList;
+  ULONG cServerProperties;
+  DNS_SERVER_PROPERTY * ServerProperties;
+  ULONG cProfileServerProperties;
+  DNS_SERVER_PROPERTY * ProfileServerProperties;
+} DNS_INTERFACE_SETTINGS3;
+
+typedef struct _DNS_INTERFACE_SETTINGS4 {
+  ULONG Version;
+  ULONG64 Flags;
+  PWSTR Domain;
+  PWSTR NameServer;
+  PWSTR SearchList;
+  ULONG RegistrationEnabled;
+  ULONG RegisterAdapterName;
+  ULONG EnableLLMNR;
+  ULONG QueryAdapterName;
+  PWSTR ProfileNameServer;
+  ULONG DisableUnconstrainedQueries;
+  PWSTR SupplementalSearchList;
+  ULONG cServerProperties;
+  DNS_SERVER_PROPERTY * ServerProperties;
+  ULONG cProfileServerProperties;
+  DNS_SERVER_PROPERTY * ProfileServerProperties;
+  ULONG EncryptedDnsAdapterFlags;
+} DNS_INTERFACE_SETTINGS4;
+
+typedef struct _DNS_SETTINGS {
+  ULONG Version;
+  ULONG64 Flags;
+  PWSTR Hostname;
+  PWSTR Domain;
+  PWSTR SearchList;
+} DNS_SETTINGS;
+
+typedef struct _DNS_SETTINGS2 {
+  ULONG Version;
+  ULONG64 Flags;
+  PWSTR Hostname;
+  PWSTR Domain;
+  PWSTR SearchList;
+  ULONG64 SettingFlags;
+} DNS_SETTINGS2;
+
+typedef struct _MIB_FL_VIRTUAL_INTERFACE_ROW {
+  ADDRESS_FAMILY Family;
+  IF_LUID IfLuid;
+  ULONG VirtualIfId;
+  GUID CompartmentGuid;
+  NET_FL_ISOLATION_MODE IsolationMode;
+  NET_FL_VIRTUAL_INTERFACE_ORIGIN Origin;
+  IF_LUID VirtualIfLuid;
+  IF_INDEX VirtualIfIndex;
+  BOOLEAN AllowLocalNd;
+  ULONG AttachedFlsnpiClients;
+  ULONG FlsnpiClientConfigErrors;
+  ULONG64 FlsnpiClientInjectErrors;
+  ULONG64 FlsnpiClientCloneErrors;
+  ULONG64 InFlsnpiIndicatedPackets;
+  ULONG64 InFlsnpiClientReturnedPackets;
+  ULONG64 InFlsnpiClientSilentlyDroppedPackets;
+  ULONG64 InFlsnpiClientDroppedPackets;
+  ULONG64 InFlsnpiClientInjectedPackets;
+  ULONG64 InFlsnpiClientClonedPackets;
+  ULONG64 OutFlsnpiIndicatedPackets;
+  ULONG64 OutFlsnpiClientReturnedPackets;
+  ULONG64 OutFlsnpiClientDroppedPackets;
+  ULONG64 OutFlsnpiClientSilentlyDroppedPackets;
+  ULONG64 OutFlsnpiClientInjectedPackets;
+  ULONG64 OutFlsnpiClientClonedPackets;
+  ULONG64 OutFlsnpiClientClonedPacketsForNbSplit;
+} MIB_FL_VIRTUAL_INTERFACE_ROW, *PMIB_FL_VIRTUAL_INTERFACE_ROW;
+
+typedef struct _MIB_FL_VIRTUAL_INTERFACE_TABLE {
+  ULONG NumEntries;
+  MIB_FL_VIRTUAL_INTERFACE_ROW Table[1];
+} MIB_FL_VIRTUAL_INTERFACE_TABLE, *PMIB_FL_VIRTUAL_INTERFACE_TABLE;
+
+typedef struct _MIB_IFSTACK_ROW {
+  NET_IFINDEX HigherLayerInterfaceIndex;
+  NET_IFINDEX LowerLayerInterfaceIndex;
+} MIB_IFSTACK_ROW, *PMIB_IFSTACK_ROW;
+
+typedef struct _MIB_IFSTACK_TABLE {
+  ULONG NumEntries;
+  MIB_IFSTACK_ROW Table[1];
+} MIB_IFSTACK_TABLE, *PMIB_IFSTACK_TABLE;
+
+typedef struct _MIB_INVERTEDIFSTACK_ROW {
+  NET_IFINDEX LowerLayerInterfaceIndex;
+  NET_IFINDEX HigherLayerInterfaceIndex;
+} MIB_INVERTEDIFSTACK_ROW, *PMIB_INVERTEDIFSTACK_ROW;
+
+typedef struct _MIB_INVERTEDIFSTACK_TABLE {
+  ULONG NumEntries;
+  MIB_INVERTEDIFSTACK_ROW Table[1];
+} MIB_INVERTEDIFSTACK_TABLE, *PMIB_INVERTEDIFSTACK_TABLE;
+
+typedef struct _MIB_MULTICASTIPADDRESS_ROW {
+  SOCKADDR_INET Address;
+  NET_IFINDEX InterfaceIndex;
+  NET_LUID InterfaceLuid;
+  SCOPE_ID ScopeId;
+} MIB_MULTICASTIPADDRESS_ROW, *PMIB_MULTICASTIPADDRESS_ROW;
+
+typedef struct _MIB_MULTICASTIPADDRESS_TABLE {
+  ULONG NumEntries;
+  MIB_MULTICASTIPADDRESS_ROW Table[1];
+} MIB_MULTICASTIPADDRESS_TABLE, *PMIB_MULTICASTIPADDRESS_TABLE;
+
+#define _NETIOAPI_SUCCESS_
+#define DNS_DDR_ADAPTER_ENABLE 1
+#define DNS_ENCRYPTION_POLICY_AUTO 0x10
+#define DNS_ENCRYPTION_POLICY_DISABLE 8
+#define DNS_ENCRYPTION_POLICY_NOT_CONFIGURED 4
+#define DNS_ENCRYPTION_POLICY_REQUIRED 0x20
+#define IF_NAMESIZE 0x100
+#define NETIO_PULONG PULONG
+
+struct _MIB_IP_NETWORK_CONNECTION_BANDWIDTH_ESTIMATES
+{
+    NL_BANDWIDTH_INFORMATION InboundBandwidthInformation;
+    NL_BANDWIDTH_INFORMATION OutboundBandwidthInformation;
+};
+
+typedef struct _MIB_IP_NETWORK_CONNECTION_BANDWIDTH_ESTIMATES MIB_IP_NETWORK_CONNECTION_BANDWIDTH_ESTIMATES;
+
+typedef struct _MIB_IP_NETWORK_CONNECTION_BANDWIDTH_ESTIMATES *PMIB_IP_NETWORK_CONNECTION_BANDWIDTH_ESTIMATES;
+
+typedef void (*PNETWORK_CONNECTIVITY_HINT_CHANGE_CALLBACK)(PVOID, NL_NETWORK_CONNECTIVITY_HINT);
+
+typedef void (*PSTABLE_UNICAST_IPADDRESS_TABLE_CALLBACK)(PVOID, PMIB_UNICASTIPADDRESS_TABLE);
+
+typedef void (*PTEREDO_PORT_CHANGE_CALLBACK)(PVOID, USHORT, MIB_NOTIFICATION_TYPE);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+NETIOAPI_API CreateSortedAddressPairs(const PSOCKADDR_IN6 SourceAddressList, ULONG SourceAddressCount, const PSOCKADDR_IN6 DestinationAddressList, ULONG DestinationAddressCount, ULONG AddressSortOptions, PSOCKADDR_IN6_PAIR *SortedAddressPairList, ULONG *SortedAddressPairCount);
+NETIOAPI_API SetInterfaceDnsSettings(GUID Interface, const DNS_INTERFACE_SETTINGS *Settings);
+
+/* TODO: LiberNT does not implement the functions below yet */
+NETIOAPI_API ConvertCompartmentGuidToId(const GUID *CompartmentGuid, PNET_IF_COMPARTMENT_ID CompartmentId);
+NETIOAPI_API ConvertCompartmentIdToGuid(NET_IF_COMPARTMENT_ID CompartmentId, GUID *CompartmentGuid);
+NETIOAPI_API ConvertIpv4MaskToLength(ULONG Mask, PUINT8 MaskLength);
+NETIOAPI_API CreateAnycastIpAddressEntry(const MIB_ANYCASTIPADDRESS_ROW *Row);
+NETIOAPI_API CreateFlVirtualInterface(const MIB_FL_VIRTUAL_INTERFACE_ROW *Row);
+NETIOAPI_API DeleteAnycastIpAddressEntry(const MIB_ANYCASTIPADDRESS_ROW *Row);
+NETIOAPI_API DeleteFlVirtualInterface(const MIB_FL_VIRTUAL_INTERFACE_ROW *Row);
+void FreeDnsSettings(DNS_SETTINGS *Settings);
+void FreeInterfaceDnsSettings(DNS_INTERFACE_SETTINGS *Settings);
+NETIOAPI_API GetAnycastIpAddressEntry(PMIB_ANYCASTIPADDRESS_ROW Row);
+void GetCurrentThreadCompartmentScope(PNET_IF_COMPARTMENT_SCOPE CompartmentScope, PNET_IF_COMPARTMENT_ID CompartmentId);
+NET_IF_COMPARTMENT_ID GetDefaultCompartmentId(void);
+NETIOAPI_API GetDnsSettings(DNS_SETTINGS *Settings);
+NETIOAPI_API GetFlVirtualInterface(PMIB_FL_VIRTUAL_INTERFACE_ROW Row);
+NETIOAPI_API GetFlVirtualInterfaceTable(ADDRESS_FAMILY Family, PMIB_FL_VIRTUAL_INTERFACE_TABLE *Table);
+NETIOAPI_API GetIfStackTable(PMIB_IFSTACK_TABLE *Table);
+NETIOAPI_API GetInterfaceDnsSettings(GUID Interface, DNS_INTERFACE_SETTINGS *Settings);
+NETIOAPI_API GetInvertedIfStackTable(PMIB_INVERTEDIFSTACK_TABLE *Table);
+NETIOAPI_API GetIpNetworkConnectionBandwidthEstimates(NET_IFINDEX InterfaceIndex, ADDRESS_FAMILY AddressFamily, PMIB_IP_NETWORK_CONNECTION_BANDWIDTH_ESTIMATES BandwidthEstimates);
+NET_IF_COMPARTMENT_ID GetJobCompartmentId(HANDLE JobHandle);
+NETIOAPI_API GetMulticastIpAddressEntry(PMIB_MULTICASTIPADDRESS_ROW Row);
+NETIOAPI_API GetMulticastIpAddressTable(ADDRESS_FAMILY Family, PMIB_MULTICASTIPADDRESS_TABLE *Table);
+NETIOAPI_API GetNetworkConnectivityHint(NL_NETWORK_CONNECTIVITY_HINT *ConnectivityHint);
+NETIOAPI_API GetNetworkConnectivityHintForInterface(NET_IFINDEX InterfaceIndex, NL_NETWORK_CONNECTIVITY_HINT *ConnectivityHint);
+NETIOAPI_API GetNetworkInformation(const NET_IF_NETWORK_GUID *NetworkGuid, PNET_IF_COMPARTMENT_ID CompartmentId, PULONG SiteId, PWCHAR NetworkName, ULONG Length);
+NET_IF_COMPARTMENT_ID GetSessionCompartmentId(ULONG SessionId);
+NETIOAPI_API GetTeredoPort(USHORT *Port);
+void InitializeFlVirtualInterfaceEntry(PMIB_FL_VIRTUAL_INTERFACE_ROW Row);
+NETIOAPI_API NotifyNetworkConnectivityHintChange(PNETWORK_CONNECTIVITY_HINT_CHANGE_CALLBACK Callback, PVOID CallerContext, BOOLEAN InitialNotification, PHANDLE NotificationHandle);
+NETIOAPI_API NotifyStableUnicastIpAddressTable(ADDRESS_FAMILY Family, PMIB_UNICASTIPADDRESS_TABLE *Table, PSTABLE_UNICAST_IPADDRESS_TABLE_CALLBACK CallerCallback, PVOID CallerContext, HANDLE *NotificationHandle);
+NETIOAPI_API NotifyTeredoPortChange(PTEREDO_PORT_CHANGE_CALLBACK Callback, PVOID CallerContext, BOOLEAN InitialNotification, HANDLE *NotificationHandle);
+NETIOAPI_API SetCurrentThreadCompartmentScope(NET_IF_COMPARTMENT_SCOPE CompartmentScope);
+NETIOAPI_API SetDnsSettings(const DNS_SETTINGS *Settings);
+NETIOAPI_API SetFlVirtualInterface(const MIB_FL_VIRTUAL_INTERFACE_ROW *Row);
+NETIOAPI_API SetJobCompartmentId(HANDLE JobHandle, NET_IF_COMPARTMENT_ID CompartmentId);
+NETIOAPI_API SetNetworkInformation(const NET_IF_NETWORK_GUID *NetworkGuid, NET_IF_COMPARTMENT_ID CompartmentId, const WCHAR *NetworkName);
+NETIOAPI_API SetSessionCompartmentId(ULONG SessionId, NET_IF_COMPARTMENT_ID CompartmentId);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+NETIOAPI_API ResolveIpNetEntry2(PMIB_IPNET_ROW2 Row, const SOCKADDR_INET *SourceAddress);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define NETIO_SUCCESS(x) NT_SUCCESS(x)
+
 #endif /* __WINE_NETIOAPI_H */

@@ -43,3 +43,9 @@ interface IObjectSafety : IUnknown
     				      [in] DWORD dwOptionSetMask,
 				      [in] DWORD dwEnabledOptions);
 }
+
+cpp_quote("#ifndef __objsafe_cpp_quote_1_DEFINED__")
+cpp_quote("#define __objsafe_cpp_quote_1_DEFINED__")
+cpp_quote("")
+cpp_quote("typedef IObjectSafety *LPOBJECTSAFETY;")
+cpp_quote("#endif")

@@ -119,6 +119,11 @@ if(NTFSLIB_BUILD_FUSE)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(ntfslib_disk_cache_test tests/disk_cache.cpp)
+    target_include_directories(ntfslib_disk_cache_test PRIVATE "${NTFSLIB_ROOT}/include/internal")
+    target_link_libraries(ntfslib_disk_cache_test PRIVATE ntfslib_linux)
+    add_test(NAME ntfslib_linux_disk_cache COMMAND ntfslib_disk_cache_test)
+
     add_executable(ntfslib_record_refresh_test tests/record_refresh.cpp)
     target_include_directories(ntfslib_record_refresh_test PRIVATE
         "${NTFSLIB_ROOT}/include/internal")
@@ -156,6 +161,11 @@ if(BUILD_TESTING)
     )
     find_package(Threads REQUIRED)
     target_link_libraries(ntfslib_posix_edge PRIVATE Threads::Threads)
+
+    add_executable(ntfslib_data_stream tests/data_stream.cpp)
+    target_compile_features(ntfslib_data_stream PRIVATE cxx_std_17)
+    target_compile_options(ntfslib_data_stream PRIVATE -Wall -Wextra)
+    target_link_libraries(ntfslib_data_stream PRIVATE Threads::Threads)
 
     add_executable(ntfslib_resident_update_test
         tests/resident_update.cpp
@@ -384,6 +394,17 @@ if(BUILD_TESTING AND NTFSLIB_BUILD_FUSE)
                 "${NTFSFIX_EXECUTABLE}"
         )
     endif()
+    if(MKNTFS_EXECUTABLE AND NTFSCAT_EXECUTABLE AND NTFSFIX_EXECUTABLE)
+        add_test(
+            NAME ntfslib_linux_large_cluster
+            COMMAND /bin/sh
+                "${CMAKE_CURRENT_LIST_DIR}/tests/large_cluster_smoke.sh"
+                "$<TARGET_FILE:ntfslib_fuse>"
+                "${MKNTFS_EXECUTABLE}"
+                "${NTFSCAT_EXECUTABLE}"
+                "${NTFSFIX_EXECUTABLE}"
+        )
+    endif()
     if(MKNTFS_EXECUTABLE AND
        NTFSLS_EXECUTABLE AND
        NTFSCAT_EXECUTABLE AND
@@ -496,6 +517,21 @@ if(BUILD_TESTING AND NTFSLIB_BUILD_FUSE)
         )
         set_tests_properties(
             ntfslib_linux_posix_edge
+            PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 900
+        )
+        add_test(
+            NAME ntfslib_linux_data_stream
+            COMMAND /bin/sh
+                "${CMAKE_CURRENT_LIST_DIR}/tests/data_stream_smoke.sh"
+                "$<TARGET_FILE:ntfslib_fuse>"
+                "$<TARGET_FILE:ntfslib_data_stream>"
+                "${MKNTFS_EXECUTABLE}"
+                "${NTFS3G_EXECUTABLE}"
+                "${FUSERMOUNT3_EXECUTABLE}"
+                "${NTFSFIX_EXECUTABLE}"
+        )
+        set_tests_properties(
+            ntfslib_linux_data_stream
             PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 900
         )
         find_program(SFDISK_EXECUTABLE NAMES sfdisk)

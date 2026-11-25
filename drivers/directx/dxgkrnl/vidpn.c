@@ -42,8 +42,8 @@
 #include "hotplug_work_core.h"
 #include "child_core.h"
 #include <ntddvdeo.h>
-#include <reactos/dwmframe.h>
-#include <reactos/rddm/rxgkioctl.h>
+#include <libernt/dwmframe.h>
+#include <libernt/rddm/rxgkioctl.h>
 
 /* ========================================================================
  * Forward declarations for all interface functions
@@ -520,6 +520,38 @@ DxgkVidPnGetCompositorGeneration(
         Generation = Owner->Generation;
     ExReleaseFastMutex(&g_SourceOwnerMutex);
     return Generation;
+}
+
+/* The output size the compositor claimed with a source, which its flips on that source cover */
+BOOLEAN
+DxgkVidPnGetCompositorOutputSize(
+    _In_ PDXGKRNL_ADAPTER Adapter,
+    _In_ D3DDDI_VIDEO_PRESENT_SOURCE_ID SourceId,
+    _Out_ PULONG Width,
+    _Out_ PULONG Height)
+{
+    PDXGKP_COMPOSITOR_SOURCE_OWNER Owner;
+    BOOLEAN Found = FALSE;
+
+    ASSERT(Adapter != NULL);
+    ASSERT(Width != NULL);
+    ASSERT(Height != NULL);
+    ASSERT(KeGetCurrentIrql() <= APC_LEVEL);
+    *Width = 0;
+    *Height = 0;
+    DxgkpEnsureSourceOwnerMutex();
+    ExAcquireFastMutex(&g_SourceOwnerMutex);
+    Owner = DxgkpFindCompositorSourceOwnerLocked(&Adapter->AdapterLuid, SourceId);
+    if (Owner != NULL)
+    {
+        ASSERT(Owner->Width != 0);
+        ASSERT(Owner->Height != 0);
+        *Width = Owner->Width;
+        *Height = Owner->Height;
+        Found = TRUE;
+    }
+    ExReleaseFastMutex(&g_SourceOwnerMutex);
+    return Found;
 }
 
 ULONG64
@@ -7849,6 +7881,11 @@ DxgkVidPnGetSourcePrimarySize(
             Live = TRUE;
         }
     }
+    else if (!DxgkIsDisplayAdapter(Adapter) && Adapter->VidPnCommitted)
+    {
+        /* The desktop source of an adapter that does not host the desktop is live in its committed source mode */
+        Live = DxgkpVidPnPinnedSourceSize(Adapter, VidPnSourceId, Width, Height);
+    }
     KeReleaseMutex(&Adapter->SharedPrimaryMutex, FALSE);
     return Live;
 }
@@ -8869,6 +8906,7 @@ DxgkpDisplayModeGdiAlias(
 NTSTATUS
 DxgkVidPnQueryVideoModes(
     _In_ PDXGKRNL_ADAPTER Adapter,
+    _In_ D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId,
     _Out_writes_opt_(Capacity) PVIDEO_MODE_INFORMATION Modes,
     _In_ ULONG Capacity,
     _Out_ PULONG Count,
@@ -8888,6 +8926,11 @@ DxgkVidPnQueryVideoModes(
     if (!NT_SUCCESS(Status))
         goto Cleanup;
     Cache = Adapter->DisplayModeCache;
+    if (VidPnSourceId != D3DDDI_ID_ALL && Cache->SourceId != VidPnSourceId)
+    {
+        Status = STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE;
+        goto Cleanup;
+    }
     if (CurrentOnly)
     {
         RtlZeroMemory(&Current, sizeof(Current));
@@ -9034,6 +9077,7 @@ Cleanup:
 NTSTATUS
 DxgkVidPnSetVideoMode(
     _In_ PDXGKRNL_ADAPTER Adapter,
+    _In_ D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId,
     _In_ ULONG ModeIndex)
 {
     DXGKP_DISPLAY_MODE_CACHE *Cache;
@@ -9068,6 +9112,11 @@ DxgkVidPnSetVideoMode(
     if (!NT_SUCCESS(Status))
         goto Cleanup;
     Cache = Adapter->DisplayModeCache;
+    if (VidPnSourceId != D3DDDI_ID_ALL && Cache->SourceId != VidPnSourceId)
+    {
+        Status = STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE;
+        goto Cleanup;
+    }
     Index = ModeIndex & DXGKP_DISPLAY_MODE_INDEX_MASK;
     if ((ModeIndex >> DXGKP_DISPLAY_MODE_INDEX_BITS) != Cache->Generation || Index >= Cache->Count)
     {

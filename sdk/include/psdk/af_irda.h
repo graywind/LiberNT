@@ -214,4 +214,34 @@ typedef SOCKADDR_IRDA *PSOCKADDR_IRDA;
 }
 #endif
 
+#ifndef LM_BAUD_16M
+#define LM_BAUD_16M 16000000
+#endif
+#ifndef WCE_AF_IRDA
+#define WCE_AF_IRDA 22
+#endif
+
+typedef WINDOWS_DEVICELIST * LPDEVICELIST;
+typedef WINDOWS_IAS_QUERY * LPIASQUERY;
+typedef WINDOWS_IAS_SET * LPIASSET;
+typedef WINDOWS_IRDA_DEVICE_INFO * LPIRDA_DEVICE_INFO;
+typedef struct _SOCKADDR_IRDA * LPSOCKADDR_IRDA;
+typedef struct _WINDOWS_DEVICELIST * LPWINDOWS_DEVICELIST;
+typedef struct _WINDOWS_IAS_QUERY * LPWINDOWS_IAS_QUERY;
+typedef struct _WINDOWS_IAS_SET * LPWINDOWS_IAS_SET;
+typedef struct _WINDOWS_IRDA_DEVICE_INFO * LPWINDOWS_IRDA_DEVICE_INFO;
+
+typedef struct _WCE_IRDA_DEVICE_INFO {
+  u_char irdaDeviceID[4];
+  char irdaDeviceName[22];
+  u_char Reserved[2];
+} WCE_IRDA_DEVICE_INFO, *PWCE_IRDA_DEVICE_INFO;
+
+typedef struct _WCE_DEVICELIST {
+  ULONG numDevice;
+  WCE_IRDA_DEVICE_INFO Device[1];
+} WCE_DEVICELIST, *PWCE_DEVICELIST;
+
+#define WCE_PF_IRDA 0x16
+
 #endif /* __AF_IRDA_H */

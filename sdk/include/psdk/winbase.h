@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 #include <minwinbase.h>
+#include <synchapi.h>
 #include <ioapiset.h>
 #include <processthreadsapi.h>
 #include <sysinfoapi.h>
@@ -723,7 +724,8 @@ typedef struct _WIN32_FILE_ATTRIBUTE_DATA {
 
 #if (_WIN32_WINNT >= 0x0501)
 typedef enum _STREAM_INFO_LEVELS {
-	FindStreamInfoStandard
+	FindStreamInfoStandard,
+	FindStreamInfoMaxInfoLevel = 1,
 } STREAM_INFO_LEVELS;
 
 typedef struct _WIN32_FIND_STREAM_DATA {
@@ -1135,6 +1137,7 @@ typedef enum _PROC_THREAD_ATTRIBUTE_NUM {
   ProcThreadAttributeEnableOptionalXStateFeatures = 27,
   ProcThreadAttributeTrustedApp = 29,
   ProcThreadAttributeSveVectorLength = 30,
+  ProcThreadAttributeContainmentConfiguration = 0x20,
 } PROC_THREAD_ATTRIBUTE_NUM;
 #endif // _USE_FULL_PROC_THREAD_ATTRIBUTE
 
@@ -1297,7 +1300,6 @@ typedef VOID (WINAPI *PFLS_CALLBACK_FUNCTION)(PVOID);
 typedef LONG(CALLBACK *PTOP_LEVEL_EXCEPTION_FILTER)(LPEXCEPTION_POINTERS);
 typedef PTOP_LEVEL_EXCEPTION_FILTER LPTOP_LEVEL_EXCEPTION_FILTER;
 typedef void(APIENTRY *PAPCFUNC)(ULONG_PTR);
-typedef void(CALLBACK *PTIMERAPCROUTINE)(PVOID,DWORD,DWORD);
 #if (_WIN32_WINNT >= 0x0600)
 typedef DWORD (WINAPI *APPLICATION_RECOVERY_CALLBACK)(PVOID);
 #endif
@@ -1578,6 +1580,7 @@ BOOL WINAPI ClearCommError(_In_ HANDLE, _Out_opt_ PDWORD, _Out_opt_ LPCOMSTAT);
 BOOL WINAPI ClearEventLogA(_In_ HANDLE, _In_opt_ LPCSTR);
 BOOL WINAPI ClearEventLogW(_In_ HANDLE, _In_opt_ LPCWSTR);
 BOOL WINAPI CloseEventLog(_In_ HANDLE);
+VOID WINAPI CloseEncryptedFileRaw(_In_ PVOID);
 BOOL WINAPI CommConfigDialogA(_In_ LPCSTR, _In_opt_ HWND, _Inout_ LPCOMMCONFIG);
 BOOL WINAPI CommConfigDialogW(_In_ LPCWSTR, _In_opt_ HWND, _Inout_ LPCOMMCONFIG);
 LONG WINAPI CompareFileTime(CONST FILETIME*,CONST FILETIME*);
@@ -1642,10 +1645,6 @@ HANDLE WINAPI CreateMailslotA(_In_ LPCSTR, _In_ DWORD, _In_ DWORD, _In_opt_ LPSE
 HANDLE WINAPI CreateMailslotW(_In_ LPCWSTR, _In_ DWORD, _In_ DWORD, _In_opt_ LPSECURITY_ATTRIBUTES);
 HANDLE WINAPI CreateMutexA(LPSECURITY_ATTRIBUTES,BOOL,LPCSTR);
 HANDLE WINAPI CreateMutexW(LPSECURITY_ATTRIBUTES,BOOL,LPCWSTR);
-#if (_WIN32_WINNT >= 0x0600)
-HANDLE WINAPI CreateMutexExA(LPSECURITY_ATTRIBUTES,LPCSTR,DWORD,DWORD);
-HANDLE WINAPI CreateMutexExW(LPSECURITY_ATTRIBUTES,LPCWSTR,DWORD,DWORD);
-#endif
 HANDLE WINAPI CreateNamedPipeA(_In_ LPCSTR, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_opt_ LPSECURITY_ATTRIBUTES);
 HANDLE WINAPI CreateNamedPipeW(_In_ LPCWSTR, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_ DWORD, _In_opt_ LPSECURITY_ATTRIBUTES);
 BOOL WINAPI CreatePipe(PHANDLE,PHANDLE,LPSECURITY_ATTRIBUTES,DWORD);
@@ -2589,6 +2588,15 @@ HLOCAL WINAPI LocalReAlloc(HLOCAL,SIZE_T,UINT);
 SIZE_T WINAPI LocalShrink(_In_ HLOCAL, _In_ UINT);  /* Obsolete: Has no effect. */
 SIZE_T WINAPI LocalSize(_In_ HLOCAL);
 BOOL WINAPI LocalUnlock(HLOCAL);
+#if defined(_AMD64_) || defined(_X86_) || defined(_ARM64_)
+WINBASEAPI
+PVOID
+WINAPI
+LocateXStateFeature(
+  _In_ PCONTEXT Context,
+  _In_ DWORD FeatureId,
+  _Out_opt_ PDWORD Length);
+#endif
 BOOL WINAPI LockFile(HANDLE,DWORD,DWORD,DWORD,DWORD);
 BOOL WINAPI LockFileEx(HANDLE,DWORD,DWORD,DWORD,DWORD,LPOVERLAPPED);
 #define LockSegment(w) GlobalFix((HANDLE)(w)) /* Obsolete: Has no effect. */
@@ -2777,6 +2785,8 @@ HFILE WINAPI OpenFile(_In_ LPCSTR, _Inout_ LPOFSTRUCT, _In_ UINT);
 #if (_WIN32_WINNT >= 0x0600)
 HANDLE WINAPI OpenFileById(_In_ HANDLE, _In_ LPFILE_ID_DESCRIPTOR, _In_ DWORD, _In_ DWORD, _In_opt_ LPSECURITY_ATTRIBUTES, _In_ DWORD);
 #endif
+DWORD WINAPI OpenEncryptedFileRawA(_In_ LPCSTR, _In_ ULONG, _Outptr_ PVOID*);
+DWORD WINAPI OpenEncryptedFileRawW(_In_ LPCWSTR, _In_ ULONG, _Outptr_ PVOID*);
 HANDLE WINAPI OpenFileMappingA(_In_ DWORD, _In_ BOOL, _In_ LPCSTR);
 _Ret_maybenull_ HANDLE WINAPI OpenMutexA(_In_ DWORD, _In_ BOOL, _In_ LPCSTR);
 HANDLE WINAPI OpenMutexW(DWORD,BOOL,LPCWSTR);
@@ -2922,6 +2932,7 @@ ReadEventLogW(
   _Out_ DWORD *pnBytesRead,
   _Out_ DWORD *pnMinNumberOfBytesNeeded);
 
+DWORD WINAPI ReadEncryptedFileRaw(_In_ PFE_EXPORT_FUNC, _In_opt_ PVOID, _In_ PVOID);
 BOOL WINAPI ReadFile(HANDLE,PVOID,DWORD,PDWORD,LPOVERLAPPED);
 BOOL WINAPI ReadFileEx(HANDLE,PVOID,DWORD,LPOVERLAPPED,LPOVERLAPPED_COMPLETION_ROUTINE);
 BOOL WINAPI ReadFileScatter(HANDLE,FILE_SEGMENT_ELEMENT*,DWORD,LPDWORD,LPOVERLAPPED);
@@ -3518,6 +3529,7 @@ typedef PCACTCTXW PCACTCTX;
 #define ObjectPrivilegeAuditAlarm ObjectPrivilegeAuditAlarmW
 #define OpenBackupEventLog OpenBackupEventLogW
 #define OpenEvent OpenEventW
+#define OpenEncryptedFileRaw OpenEncryptedFileRawW
 #define OpenEventLog OpenEventLogW
 #define OpenFileMapping OpenFileMappingW
 #define OpenMutex OpenMutexW
@@ -3698,6 +3710,11 @@ typedef ENUMRESTYPEPROCA ENUMRESTYPEPROC;
 #define ObjectPrivilegeAuditAlarm ObjectPrivilegeAuditAlarmA
 #define OpenBackupEventLog OpenBackupEventLogA
 #define OpenEvent OpenEventA
+#ifdef UNICODE
+#define OpenEncryptedFileRaw OpenEncryptedFileRawW
+#else
+#define OpenEncryptedFileRaw OpenEncryptedFileRawA
+#endif
 #define OpenEventLog OpenEventLogA
 #define OpenFileMapping OpenFileMappingA
 #define OpenMutex OpenMutexA
@@ -3793,6 +3810,8 @@ typedef enum _COPYFILE2_MESSAGE_TYPE {
   COPYFILE2_CALLBACK_POLL_CONTINUE,
   COPYFILE2_CALLBACK_ERROR,
   COPYFILE2_CALLBACK_MAX,
+  COPYFILE2_CALLBACK_SPARSE_CHUNK_STARTED = 7,
+  COPYFILE2_CALLBACK_SPARSE_CHUNK_FINISHED = 8,
 } COPYFILE2_MESSAGE_TYPE;
 
 typedef enum _COPYFILE2_MESSAGE_ACTION {
@@ -3984,7 +4003,1109 @@ WCHAR * CDECL wine_get_dos_file_name(LPCSTR str);
 }
 #endif
 
-#include <synchapi.h>
 #include <processthreadsapi.h>
+
+#ifndef COPYFILE2_IO_CYCLE_SIZE_MAX
+#define COPYFILE2_IO_CYCLE_SIZE_MAX 0x40000000
+#endif
+#ifndef COPYFILE2_IO_CYCLE_SIZE_MIN
+#define COPYFILE2_IO_CYCLE_SIZE_MIN 4096
+#endif
+#ifndef COPYFILE2_IO_RATE_MIN
+#define COPYFILE2_IO_RATE_MIN 512
+#endif
+#ifndef COPY_FILE2_V2_DISABLE_BLOCK_CLONING
+#define COPY_FILE2_V2_DISABLE_BLOCK_CLONING 0x00000002
+#endif
+#ifndef COPY_FILE2_V2_DONT_COPY_JUNCTIONS
+#define COPY_FILE2_V2_DONT_COPY_JUNCTIONS 0x00000001
+#endif
+#ifndef COPY_FILE_DIRECTORY
+#define COPY_FILE_DIRECTORY 0x00000080
+#endif
+#ifndef COPY_FILE_DISABLE_PRE_ALLOCATION
+#define COPY_FILE_DISABLE_PRE_ALLOCATION 0x04000000
+#endif
+#ifndef COPY_FILE_DISABLE_SPARSE_COPY
+#define COPY_FILE_DISABLE_SPARSE_COPY 0x80000000
+#endif
+#ifndef COPY_FILE_DONT_REQUEST_DEST_WRITE_DAC
+#define COPY_FILE_DONT_REQUEST_DEST_WRITE_DAC 0x02000000
+#endif
+#ifndef COPY_FILE_ENABLE_LOW_FREE_SPACE_MODE
+#define COPY_FILE_ENABLE_LOW_FREE_SPACE_MODE 0x08000000
+#endif
+#ifndef COPY_FILE_ENABLE_SPARSE_COPY
+#define COPY_FILE_ENABLE_SPARSE_COPY 0x20000000
+#endif
+#ifndef COPY_FILE_IGNORE_EDP_BLOCK
+#define COPY_FILE_IGNORE_EDP_BLOCK 0x00400000
+#endif
+#ifndef COPY_FILE_IGNORE_SOURCE_ENCRYPTION
+#define COPY_FILE_IGNORE_SOURCE_ENCRYPTION 0x00800000
+#endif
+#ifndef COPY_FILE_NO_OFFLOAD
+#define COPY_FILE_NO_OFFLOAD 0x00040000
+#endif
+#ifndef COPY_FILE_OPEN_AND_COPY_REPARSE_POINT
+#define COPY_FILE_OPEN_AND_COPY_REPARSE_POINT 0x00200000
+#endif
+#ifndef COPY_FILE_REQUEST_COMPRESSED_TRAFFIC
+#define COPY_FILE_REQUEST_COMPRESSED_TRAFFIC 0x10000000
+#endif
+#ifndef COPY_FILE_REQUEST_SECURITY_PRIVILEGES
+#define COPY_FILE_REQUEST_SECURITY_PRIVILEGES 0x00002000
+#endif
+#ifndef COPY_FILE_RESUME_FROM_PAUSE
+#define COPY_FILE_RESUME_FROM_PAUSE 0x00004000
+#endif
+#ifndef COPY_FILE_SKIP_ALTERNATE_STREAMS
+#define COPY_FILE_SKIP_ALTERNATE_STREAMS 0x00008000
+#endif
+#ifndef CREATE_FOR_DIR
+#define CREATE_FOR_DIR 2
+#endif
+#ifndef CREATE_FOR_IMPORT
+#define CREATE_FOR_IMPORT 1
+#endif
+#ifndef EFSRPC_SECURE_ONLY
+#define EFSRPC_SECURE_ONLY 8
+#endif
+#ifndef EFS_DROP_ALTERNATE_STREAMS
+#define EFS_DROP_ALTERNATE_STREAMS 0x10
+#endif
+#ifndef FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE
+#define FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE 0x00000010
+#endif
+#ifndef FILE_FLAG_DISALLOW_PATH_REDIRECTS
+#define FILE_FLAG_DISALLOW_PATH_REDIRECTS 0x00010000
+#endif
+#ifndef FILE_FLAG_IGNORE_IMPERSONATED_DEVICEMAP
+#define FILE_FLAG_IGNORE_IMPERSONATED_DEVICEMAP 0x00020000
+#endif
+#ifndef FILE_FLAG_OPEN_REQUIRING_OPLOCK
+#define FILE_FLAG_OPEN_REQUIRING_OPLOCK 0x00040000
+#endif
+#ifndef FILE_FLAG_SESSION_AWARE
+#define FILE_FLAG_SESSION_AWARE 0x00800000
+#endif
+#ifndef FILE_RENAME_FLAG_POSIX_SEMANTICS
+#define FILE_RENAME_FLAG_POSIX_SEMANTICS 0x00000002
+#endif
+#ifndef FILE_RENAME_FLAG_REPLACE_IF_EXISTS
+#define FILE_RENAME_FLAG_REPLACE_IF_EXISTS 0x00000001
+#endif
+#ifndef FILE_RENAME_FLAG_SUPPRESS_PIN_STATE_INHERITANCE
+#define FILE_RENAME_FLAG_SUPPRESS_PIN_STATE_INHERITANCE 0x00000004
+#endif
+#ifndef IE_BADID
+#define IE_BADID (-1)
+#endif
+#ifndef IE_BAUDRATE
+#define IE_BAUDRATE (-12)
+#endif
+#ifndef IE_BYTESIZE
+#define IE_BYTESIZE (-11)
+#endif
+#ifndef IE_DEFAULT
+#define IE_DEFAULT (-5)
+#endif
+#ifndef IE_HARDWARE
+#define IE_HARDWARE (-10)
+#endif
+#ifndef IE_MEMORY
+#define IE_MEMORY (-4)
+#endif
+#ifndef IE_NOPEN
+#define IE_NOPEN (-3)
+#endif
+#ifndef IE_OPEN
+#define IE_OPEN (-2)
+#endif
+#ifndef LOGON32_PROVIDER_VIRTUAL
+#define LOGON32_PROVIDER_VIRTUAL 4
+#endif
+#ifndef LOGON_ZERO_PASSWORD_BUFFER
+#define LOGON_ZERO_PASSWORD_BUFFER 0x80000000
+#endif
+#ifndef LPTx
+#define LPTx 0x80
+#endif
+#ifndef MICROSOFT_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS
+#if (!defined(MIDL_PASS))
+#define MICROSOFT_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS 0
+#endif
+#endif
+#ifndef OPERATION_API_VERSION
+#define OPERATION_API_VERSION 1
+#endif
+#ifndef OPERATION_END_DISCARD
+#define OPERATION_END_DISCARD 0x1
+#endif
+#ifndef OPERATION_START_TRACE_CURRENT_THREAD
+#define OPERATION_START_TRACE_CURRENT_THREAD 0x1
+#endif
+#ifndef OVERWRITE_HIDDEN
+#define OVERWRITE_HIDDEN 4
+#endif
+#ifndef PIPE_ACCEPT_REMOTE_CLIENTS
+#define PIPE_ACCEPT_REMOTE_CLIENTS 0x00000000
+#endif
+#ifndef PIPE_REJECT_REMOTE_CLIENTS
+#define PIPE_REJECT_REMOTE_CLIENTS 0x00000008
+#endif
+#ifndef PROCESS_CREATION_DESKTOP_APP_BREAKAWAY_DISABLE_PROCESS_TREE
+#define PROCESS_CREATION_DESKTOP_APP_BREAKAWAY_DISABLE_PROCESS_TREE 0x02
+#endif
+#ifndef PROCESS_CREATION_DESKTOP_APP_BREAKAWAY_ENABLE_PROCESS_TREE
+#define PROCESS_CREATION_DESKTOP_APP_BREAKAWAY_ENABLE_PROCESS_TREE 0x01
+#endif
+#ifndef PROCESS_CREATION_DESKTOP_APP_BREAKAWAY_OVERRIDE
+#define PROCESS_CREATION_DESKTOP_APP_BREAKAWAY_OVERRIDE 0x04
+#endif
+#ifndef PROCESS_CREATION_DESKTOP_APP_TRUSTED_LAUNCH_ALLOW_WINDOWS_HOST
+#define PROCESS_CREATION_DESKTOP_APP_TRUSTED_LAUNCH_ALLOW_WINDOWS_HOST 0x08
+#endif
+#ifndef PROTECTION_LEVEL_ANTIMALWARE_LIGHT
+#define PROTECTION_LEVEL_ANTIMALWARE_LIGHT 0x00000003
+#endif
+#ifndef PROTECTION_LEVEL_AUTHENTICODE
+#define PROTECTION_LEVEL_AUTHENTICODE 0x00000007
+#endif
+#ifndef PROTECTION_LEVEL_CODEGEN_LIGHT
+#define PROTECTION_LEVEL_CODEGEN_LIGHT 0x00000006
+#endif
+#ifndef PROTECTION_LEVEL_LSA_LIGHT
+#define PROTECTION_LEVEL_LSA_LIGHT 0x00000004
+#endif
+#ifndef PROTECTION_LEVEL_NONE
+#define PROTECTION_LEVEL_NONE 0xFFFFFFFE
+#endif
+#ifndef PROTECTION_LEVEL_PPL_APP
+#define PROTECTION_LEVEL_PPL_APP 0x00000008
+#endif
+#ifndef PROTECTION_LEVEL_SAME
+#define PROTECTION_LEVEL_SAME 0xFFFFFFFF
+#endif
+#ifndef PROTECTION_LEVEL_WINDOWS
+#define PROTECTION_LEVEL_WINDOWS 0x00000001
+#endif
+#ifndef PROTECTION_LEVEL_WINDOWS_LIGHT
+#define PROTECTION_LEVEL_WINDOWS_LIGHT 0x00000002
+#endif
+#ifndef PROTECTION_LEVEL_WINTCB
+#define PROTECTION_LEVEL_WINTCB 0x00000005
+#endif
+#ifndef RECOVERY_DEFAULT_PING_INTERVAL
+#define RECOVERY_DEFAULT_PING_INTERVAL 5000
+#endif
+#ifndef RECOVERY_MAX_PING_INTERVAL
+#define RECOVERY_MAX_PING_INTERVAL 300000
+#endif
+#ifndef REMOTE_PROTOCOL_INFO_FLAG_LOOPBACK
+#define REMOTE_PROTOCOL_INFO_FLAG_LOOPBACK 0x00000001
+#endif
+#ifndef REMOTE_PROTOCOL_INFO_FLAG_OFFLINE
+#define REMOTE_PROTOCOL_INFO_FLAG_OFFLINE 0x00000002
+#endif
+#ifndef REMOTE_PROTOCOL_INFO_FLAG_PERSISTENT_HANDLE
+#define REMOTE_PROTOCOL_INFO_FLAG_PERSISTENT_HANDLE 0x00000004
+#endif
+#ifndef REPLACEFILE_IGNORE_ACL_ERRORS
+#define REPLACEFILE_IGNORE_ACL_ERRORS 0x00000004
+#endif
+#ifndef RPI_FLAG_SMB2_SHARECAP_CLUSTER
+#define RPI_FLAG_SMB2_SHARECAP_CLUSTER 0x00000040
+#endif
+#ifndef RPI_FLAG_SMB2_SHARECAP_CONTINUOUS_AVAILABILITY
+#define RPI_FLAG_SMB2_SHARECAP_CONTINUOUS_AVAILABILITY 0x00000010
+#endif
+#ifndef RPI_FLAG_SMB2_SHARECAP_DFS
+#define RPI_FLAG_SMB2_SHARECAP_DFS 0x00000008
+#endif
+#ifndef RPI_FLAG_SMB2_SHARECAP_SCALEOUT
+#define RPI_FLAG_SMB2_SHARECAP_SCALEOUT 0x00000020
+#endif
+#ifndef RPI_FLAG_SMB2_SHARECAP_TIMEWARP
+#define RPI_FLAG_SMB2_SHARECAP_TIMEWARP 0x00000002
+#endif
+#ifndef RPI_SMB2_FLAG_SERVERCAP_DFS
+#define RPI_SMB2_FLAG_SERVERCAP_DFS 0x00000001
+#endif
+#ifndef RPI_SMB2_FLAG_SERVERCAP_DIRECTORY_LEASING
+#define RPI_SMB2_FLAG_SERVERCAP_DIRECTORY_LEASING 0x00000020
+#endif
+#ifndef RPI_SMB2_FLAG_SERVERCAP_LARGEMTU
+#define RPI_SMB2_FLAG_SERVERCAP_LARGEMTU 0x00000004
+#endif
+#ifndef RPI_SMB2_FLAG_SERVERCAP_LEASING
+#define RPI_SMB2_FLAG_SERVERCAP_LEASING 0x00000002
+#endif
+#ifndef RPI_SMB2_FLAG_SERVERCAP_MULTICHANNEL
+#define RPI_SMB2_FLAG_SERVERCAP_MULTICHANNEL 0x00000008
+#endif
+#ifndef RPI_SMB2_FLAG_SERVERCAP_PERSISTENT_HANDLES
+#define RPI_SMB2_FLAG_SERVERCAP_PERSISTENT_HANDLES 0x00000010
+#endif
+#ifndef STARTF_HOLOGRAPHIC
+#define STARTF_HOLOGRAPHIC 0x00040000
+#endif
+#ifndef SYSTEM_STATUS_FLAG_POWER_SAVING_ON
+#define SYSTEM_STATUS_FLAG_POWER_SAVING_ON 0x01
+#endif
+#ifndef S_ALLTHRESHOLD
+#define S_ALLTHRESHOLD 2
+#endif
+#ifndef S_LEGATO
+#define S_LEGATO 1
+#endif
+#ifndef S_NORMAL
+#define S_NORMAL 0
+#endif
+#ifndef S_PERIOD1024
+#define S_PERIOD1024 1
+#endif
+#ifndef S_PERIOD2048
+#define S_PERIOD2048 2
+#endif
+#ifndef S_PERIOD512
+#define S_PERIOD512 0
+#endif
+#ifndef S_PERIODVOICE
+#define S_PERIODVOICE 3
+#endif
+#ifndef S_QUEUEEMPTY
+#define S_QUEUEEMPTY 0
+#endif
+#ifndef S_SERBDNT
+#define S_SERBDNT (-5)
+#endif
+#ifndef S_SERDCC
+#define S_SERDCC (-7)
+#endif
+#ifndef S_SERDDR
+#define S_SERDDR (-14)
+#endif
+#ifndef S_SERDFQ
+#define S_SERDFQ (-13)
+#endif
+#ifndef S_SERDLN
+#define S_SERDLN (-6)
+#endif
+#ifndef S_SERDMD
+#define S_SERDMD (-10)
+#endif
+#ifndef S_SERDPT
+#define S_SERDPT (-12)
+#endif
+#ifndef S_SERDSH
+#define S_SERDSH (-11)
+#endif
+#ifndef S_SERDSR
+#define S_SERDSR (-15)
+#endif
+#ifndef S_SERDST
+#define S_SERDST (-16)
+#endif
+#ifndef S_SERDTP
+#define S_SERDTP (-8)
+#endif
+#ifndef S_SERDVL
+#define S_SERDVL (-9)
+#endif
+#ifndef S_SERDVNA
+#define S_SERDVNA (-1)
+#endif
+#ifndef S_SERMACT
+#define S_SERMACT (-3)
+#endif
+#ifndef S_SEROFM
+#define S_SEROFM (-2)
+#endif
+#ifndef S_SERQFUL
+#define S_SERQFUL (-4)
+#endif
+#ifndef S_STACCATO
+#define S_STACCATO 2
+#endif
+#ifndef S_THRESHOLD
+#define S_THRESHOLD 1
+#endif
+#ifndef S_WHITE1024
+#define S_WHITE1024 5
+#endif
+#ifndef S_WHITE2048
+#define S_WHITE2048 6
+#endif
+#ifndef S_WHITE512
+#define S_WHITE512 4
+#endif
+#ifndef S_WHITEVOICE
+#define S_WHITEVOICE 7
+#endif
+
+typedef enum FILE_FLUSH_MODE {
+    FILE_FLUSH_DEFAULT = 0,
+    FILE_FLUSH_DATA = 1,
+    FILE_FLUSH_MIN_METADATA = 2,
+    FILE_FLUSH_NO_SYNC = 3
+} FILE_FLUSH_MODE;
+
+typedef enum FILE_WRITE_FLAGS {
+    FILE_WRITE_FLAGS_NONE = 0,
+    FILE_WRITE_FLAGS_WRITE_THROUGH = 1
+} FILE_WRITE_FLAGS;
+
+typedef ULONG OPERATION_ID;
+typedef struct _FILE_IO_PRIORITY_HINT_INFO * PFILE_IO_PRIORITY_HINT_INFO;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+BOOL WINAPI AccessCheckByTypeAndAuditAlarmA(LPCSTR SubsystemName, LPVOID HandleId, LPCSTR ObjectTypeName, LPCSTR ObjectName, PSECURITY_DESCRIPTOR SecurityDescriptor, PSID PrincipalSelfSid, DWORD DesiredAccess, AUDIT_EVENT_TYPE AuditType, DWORD Flags, POBJECT_TYPE_LIST ObjectTypeList, DWORD ObjectTypeListLength, PGENERIC_MAPPING GenericMapping, BOOL ObjectCreation, LPDWORD GrantedAccess, LPBOOL AccessStatus, LPBOOL pfGenerateOnClose);
+BOOL WINAPI CancelTimerQueueTimer(HANDLE TimerQueue, HANDLE Timer);
+BOOL WINAPI CopyContext(PCONTEXT Destination, DWORD ContextFlags, PCONTEXT Source);
+BOOL WINAPI CreateJobSet(ULONG NumJob, PJOB_SET_ARRAY UserJobSet, ULONG Flags);
+BOOL WINAPI GetNumaNodeProcessorMask(UCHAR Node, PULONGLONG ProcessorMask);
+BOOL WINAPI GetNumaProcessorNode(UCHAR Processor, PUCHAR NodeNumber);
+BOOL WINAPI LookupAccountSidLocalA(PSID Sid, LPSTR Name, LPDWORD cchName, LPSTR ReferencedDomainName, LPDWORD cchReferencedDomainName, PSID_NAME_USE peUse);
+BOOL WINAPI LookupAccountSidLocalW(PSID Sid, LPWSTR Name, LPDWORD cchName, LPWSTR ReferencedDomainName, LPDWORD cchReferencedDomainName, PSID_NAME_USE peUse);
+HANDLE WINAPI OpenJobObjectA(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCSTR lpName);
+BOOL WINAPI RequestDeviceWakeup(HANDLE hDevice);
+BOOL WINAPI RequestWakeupLatency(LATENCY_TIME latency);
+EXECUTION_STATE WINAPI SetThreadExecutionState(EXECUTION_STATE esFlags);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _FILE_CASE_SENSITIVE_INFO {
+  ULONG Flags;
+} FILE_CASE_SENSITIVE_INFO, *PFILE_CASE_SENSITIVE_INFO;
+
+typedef struct _JIT_DEBUG_INFO {
+  DWORD dwSize;
+  DWORD dwProcessorArchitecture;
+  DWORD dwThreadID;
+  DWORD dwReserved0;
+  ULONG64 lpExceptionAddress;
+  ULONG64 lpExceptionRecord;
+  ULONG64 lpContextRecord;
+} JIT_DEBUG_INFO, *LPJIT_DEBUG_INFO;
+
+typedef struct _OPERATION_END_PARAMETERS {
+  ULONG Version;
+  OPERATION_ID OperationId;
+  ULONG Flags;
+} OPERATION_END_PARAMETERS, *POPERATION_END_PARAMETERS;
+
+typedef struct _OPERATION_START_PARAMETERS {
+  ULONG Version;
+  OPERATION_ID OperationId;
+  ULONG Flags;
+} OPERATION_START_PARAMETERS, *POPERATION_START_PARAMETERS;
+
+#define ATOM_FLAG_GLOBAL 0x2
+#define CaptureStackBackTrace RtlCaptureStackBackTrace
+#define COPY_FILE2_V2_VALID_FLAGS 3
+#define CopyDeviceMemory RtlCopyDeviceMemory
+#ifdef UNICODE
+#define CopyFileTransacted CopyFileTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CopyFileTransacted CopyFileTransactedW
+#else
+#define CopyFileTransacted CopyFileTransactedA
+#endif
+#endif
+#endif
+#define CopyVolatileMemory RtlCopyVolatileMemory
+#ifdef UNICODE
+#define CreateDirectoryTransacted CreateDirectoryTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreateDirectoryTransacted CreateDirectoryTransactedW
+#else
+#define CreateDirectoryTransacted CreateDirectoryTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define CreateFileMappingNuma CreateFileMappingNumaW
+#else
+#if (!defined(UNICODE))
+#ifdef UNICODE
+#define CreateFileMappingNuma CreateFileMappingNumaW
+#else
+#define CreateFileMappingNuma CreateFileMappingNumaA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define CreateFileTransacted CreateFileTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreateFileTransacted CreateFileTransactedW
+#else
+#define CreateFileTransacted CreateFileTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define CreateHardLinkTransacted CreateHardLinkTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreateHardLinkTransacted CreateHardLinkTransactedW
+#else
+#define CreateHardLinkTransacted CreateHardLinkTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define CreateSemaphoreEx CreateSemaphoreExW
+#else
+#if (!defined(UNICODE))
+#ifdef UNICODE
+#define CreateSemaphoreEx CreateSemaphoreExW
+#else
+#define CreateSemaphoreEx CreateSemaphoreExA
+#endif
+#endif
+#endif
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreateSymbolicLink CreateSymbolicLinkW
+#else
+#define CreateSymbolicLink CreateSymbolicLinkA
+#endif
+#endif
+#ifdef UNICODE
+#define CreateSymbolicLinkTransacted CreateSymbolicLinkTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreateSymbolicLinkTransacted CreateSymbolicLinkTransactedW
+#else
+#define CreateSymbolicLinkTransacted CreateSymbolicLinkTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define CreateWaitableTimerEx CreateWaitableTimerExW
+#else
+#if (!defined(UNICODE))
+#ifdef UNICODE
+#define CreateWaitableTimerEx CreateWaitableTimerExW
+#else
+#define CreateWaitableTimerEx CreateWaitableTimerExA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define DeleteFileTransacted DeleteFileTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define DeleteFileTransacted DeleteFileTransactedW
+#else
+#define DeleteFileTransacted DeleteFileTransactedA
+#endif
+#endif
+#endif
+#define EFS_USE_RECOVERY_KEYS (0x1)
+#define EXPAND_LOCAL_DRIVES
+#define FillDeviceMemory RtlFillDeviceMemory
+#define FillVolatileMemory RtlFillVolatileMemory
+#ifdef UNICODE
+#define FindFirstFileTransacted FindFirstFileTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define FindFirstFileTransacted FindFirstFileTransactedW
+#else
+#define FindFirstFileTransacted FindFirstFileTransactedA
+#endif
+#endif
+#endif
+#define FS_FILE_ENCRYPTION 0x20000
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_A_A "GetSystemWow64DirectoryA"
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_A_T TEXT("GetSystemWow64DirectoryA")
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_A_W L"GetSystemWow64DirectoryA"
+#if (!(defined(UNICODE)))
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_T_A GET_SYSTEM_WOW64_DIRECTORY_NAME_A_A
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_T_T GET_SYSTEM_WOW64_DIRECTORY_NAME_A_T
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_T_W GET_SYSTEM_WOW64_DIRECTORY_NAME_A_W
+#else
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_T_A GET_SYSTEM_WOW64_DIRECTORY_NAME_W_A
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_T_T GET_SYSTEM_WOW64_DIRECTORY_NAME_W_T
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_T_W GET_SYSTEM_WOW64_DIRECTORY_NAME_W_W
+#endif
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_W_A "GetSystemWow64DirectoryW"
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_W_T TEXT("GetSystemWow64DirectoryW")
+#define GET_SYSTEM_WOW64_DIRECTORY_NAME_W_W L"GetSystemWow64DirectoryW"
+#ifdef UNICODE
+#define GetCompressedFileSizeTransacted GetCompressedFileSizeTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GetCompressedFileSizeTransacted GetCompressedFileSizeTransactedW
+#else
+#define GetCompressedFileSizeTransacted GetCompressedFileSizeTransactedA
+#endif
+#endif
+#endif
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GetCurrentHwProfile GetCurrentHwProfileW
+#else
+#define GetCurrentHwProfile GetCurrentHwProfileA
+#endif
+#endif
+#ifdef UNICODE
+#define GetFileAttributesTransacted GetFileAttributesTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GetFileAttributesTransacted GetFileAttributesTransactedW
+#else
+#define GetFileAttributesTransacted GetFileAttributesTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define GetFullPathNameTransacted GetFullPathNameTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GetFullPathNameTransacted GetFullPathNameTransactedW
+#else
+#define GetFullPathNameTransacted GetFullPathNameTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define GetLongPathNameTransacted GetLongPathNameTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GetLongPathNameTransacted GetLongPathNameTransactedW
+#else
+#define GetLongPathNameTransacted GetLongPathNameTransactedA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define GlobalAddAtomEx GlobalAddAtomExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define GlobalAddAtomEx GlobalAddAtomExW
+#else
+#define GlobalAddAtomEx GlobalAddAtomExA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define LookupAccountNameLocal LookupAccountNameLocalW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define LookupAccountNameLocal LookupAccountNameLocalW
+#else
+#define LookupAccountNameLocal LookupAccountNameLocalA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define LookupAccountSidLocal LookupAccountSidLocalW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define LookupAccountSidLocal LookupAccountSidLocalW
+#else
+#define LookupAccountSidLocal LookupAccountSidLocalA
+#endif
+#endif
+#endif
+#if (!defined(MIDL_PASS))
+#define MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS 1
+#endif
+#ifdef UNICODE
+#define MoveFileTransacted MoveFileTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define MoveFileTransacted MoveFileTransactedW
+#else
+#define MoveFileTransacted MoveFileTransactedA
+#endif
+#endif
+#endif
+#define MoveVolatileMemory RtlMoveVolatileMemory
+#ifdef UNICODE
+#define OpenWaitableTimer OpenWaitableTimerW
+#else
+#if (!defined(UNICODE))
+#ifdef UNICODE
+#define OpenWaitableTimer OpenWaitableTimerW
+#else
+#define OpenWaitableTimer OpenWaitableTimerA
+#endif
+#endif
+#endif
+#define PROC_THREAD_ATTRIBUTE_CONTAINMENT_CONFIGURATION 0x20020
+#define PROC_THREAD_ATTRIBUTE_SVE_VECTOR_LENGTH 0x2001E
+#define PROC_THREAD_ATTRIBUTE_TRUSTED_APP 0x2001D
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_BLOCK_NON_CET_BINARIES_ALWAYS_OFF 0x2000000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_BLOCK_NON_CET_BINARIES_ALWAYS_ON 0x1000000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_BLOCK_NON_CET_BINARIES_DEFER 0
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_BLOCK_NON_CET_BINARIES_MASK 0x3000000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_BLOCK_NON_CET_BINARIES_RESERVED 0x3000000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_CET_USER_SHADOW_STACKS_ALWAYS_OFF 0x20000000
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_CET_USER_SHADOW_STACKS_ALWAYS_ON 0x10000000
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_CET_USER_SHADOW_STACKS_DEFER 0
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_CET_USER_SHADOW_STACKS_MASK 0x30000000
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_CET_USER_SHADOW_STACKS_RESERVED 0x30000000
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_ALWAYS_OFF 0x200000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_ALWAYS_ON 0x100000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_DEFER 0
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_MASK 0x300000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_RESERVED 0x300000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_XTENDED_CONTROL_FLOW_GUARD_ALWAYS_OFF 0x20000000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_XTENDED_CONTROL_FLOW_GUARD_ALWAYS_ON 0x10000000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_XTENDED_CONTROL_FLOW_GUARD_DEFER 0
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_XTENDED_CONTROL_FLOW_GUARD_MASK 0x30000000000ULL
+#define PROCESS_CREATION_MITIGATION_AUDIT_POLICY2_XTENDED_CONTROL_FLOW_GUARD_RESERVED 0x30000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_ALLOW_DOWNGRADE_DYNAMIC_CODE_POLICY_ALWAYS_OFF 0x200000
+#define PROCESS_CREATION_MITIGATION_POLICY2_ALLOW_DOWNGRADE_DYNAMIC_CODE_POLICY_ALWAYS_ON 0x100000
+#define PROCESS_CREATION_MITIGATION_POLICY2_ALLOW_DOWNGRADE_DYNAMIC_CODE_POLICY_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_ALLOW_DOWNGRADE_DYNAMIC_CODE_POLICY_MASK 0x300000
+#define PROCESS_CREATION_MITIGATION_POLICY2_ALLOW_DOWNGRADE_DYNAMIC_CODE_POLICY_RESERVED 0x300000
+#define PROCESS_CREATION_MITIGATION_POLICY2_BLOCK_NON_CET_BINARIES_ALWAYS_OFF 0x2000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_BLOCK_NON_CET_BINARIES_ALWAYS_ON 0x1000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_BLOCK_NON_CET_BINARIES_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_BLOCK_NON_CET_BINARIES_MASK 0x3000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_BLOCK_NON_CET_BINARIES_NON_EHCONT 0x3000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY_ALWAYS_OFF 0x2000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY_ALWAYS_ON 0x1000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY_MASK 0x3000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_DYNAMIC_APIS_OUT_OF_PROC_ONLY_RESERVED 0x3000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_ALWAYS_OFF 0x20000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_ALWAYS_ON 0x10000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_MASK 0x30000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_STRICT_MODE 0x30000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_FSCTL_SYSTEM_CALL_DISABLE_ALWAYS_OFF 0x200000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_FSCTL_SYSTEM_CALL_DISABLE_ALWAYS_ON 0x100000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_FSCTL_SYSTEM_CALL_DISABLE_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_FSCTL_SYSTEM_CALL_DISABLE_MASK 0x300000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_FSCTL_SYSTEM_CALL_DISABLE_RESERVED 0x300000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_POINTER_AUTH_USER_IP_ALWAYS_OFF 0x200000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_POINTER_AUTH_USER_IP_ALWAYS_ON 0x100000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_POINTER_AUTH_USER_IP_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_POINTER_AUTH_USER_IP_MASK 0x300000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_POINTER_AUTH_USER_IP_RESERVED 0x300000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_CORE_SHARING_ALWAYS_OFF 0x20000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_CORE_SHARING_ALWAYS_ON 0x10000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_CORE_SHARING_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_CORE_SHARING_MASK 0x30000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_CORE_SHARING_RESERVED 0x30000000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_INDIRECT_BRANCH_PREDICTION_ALWAYS_OFF 0x20000
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_INDIRECT_BRANCH_PREDICTION_ALWAYS_ON 0x10000
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_INDIRECT_BRANCH_PREDICTION_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_INDIRECT_BRANCH_PREDICTION_MASK 0x30000
+#define PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_INDIRECT_BRANCH_PREDICTION_RESERVED 0x30000
+#define PROCESS_CREATION_MITIGATION_POLICY2_SPECULATIVE_STORE_BYPASS_DISABLE_ALWAYS_OFF 0x2000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_SPECULATIVE_STORE_BYPASS_DISABLE_ALWAYS_ON 0x1000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_SPECULATIVE_STORE_BYPASS_DISABLE_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_SPECULATIVE_STORE_BYPASS_DISABLE_MASK 0x3000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_SPECULATIVE_STORE_BYPASS_DISABLE_RESERVED 0x3000000
+#define PROCESS_CREATION_MITIGATION_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_ALWAYS_OFF 0x200000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_ALWAYS_ON 0x100000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_MASK 0x300000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_USER_CET_SET_CONTEXT_IP_VALIDATION_RELAXED_MODE 0x300000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_XTENDED_CONTROL_FLOW_GUARD_ALWAYS_OFF 0x20000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_XTENDED_CONTROL_FLOW_GUARD_ALWAYS_ON 0x10000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_XTENDED_CONTROL_FLOW_GUARD_DEFER 0
+#define PROCESS_CREATION_MITIGATION_POLICY2_XTENDED_CONTROL_FLOW_GUARD_MASK 0x30000000000ULL
+#define PROCESS_CREATION_MITIGATION_POLICY2_XTENDED_CONTROL_FLOW_GUARD_RESERVED 0x30000000000ULL
+#define PROTECTION_LEVEL_WINTCB_LIGHT 0x00000000
+#ifdef UNICODE
+#define RemoveDirectoryTransacted RemoveDirectoryTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RemoveDirectoryTransacted RemoveDirectoryTransactedW
+#else
+#define RemoveDirectoryTransacted RemoveDirectoryTransactedA
+#endif
+#endif
+#endif
+#if (defined(_WIN64))
+#ifdef _WIN64
+#define SCS_THIS_PLATFORM_BINARY 6
+#else
+#ifdef _WIN64
+#define SCS_THIS_PLATFORM_BINARY 6
+#else
+#ifdef _WIN64
+#define SCS_THIS_PLATFORM_BINARY 6
+#else
+#define SCS_THIS_PLATFORM_BINARY 0
+#endif
+#endif
+#endif
+#endif
+#define SecureZeroMemory2 RtlSecureZeroMemory2
+#ifdef UNICODE
+#define SetEnvironmentStrings SetEnvironmentStringsW
+#else
+#if (!defined(UNICODE))
+#ifdef UNICODE
+#define SetEnvironmentStrings SetEnvironmentStringsW
+#else
+#define SetEnvironmentStrings SetEnvironmentStringsA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define SetFileAttributesTransacted SetFileAttributesTransactedW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define SetFileAttributesTransacted SetFileAttributesTransactedW
+#else
+#define SetFileAttributesTransacted SetFileAttributesTransactedA
+#endif
+#endif
+#endif
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+#define UMS_VERSION 0x100
+#endif
+#define ZeroDeviceMemory RtlZeroDeviceMemory
+#define ZeroVolatileMemory RtlZeroVolatileMemory
+
+struct _COMMCONFIG
+{
+    DWORD dwSize;
+    WORD wVersion;
+    WORD wReserved;
+    DCB dcb;
+    DWORD dwProviderSubType;
+    DWORD dwProviderOffset;
+    DWORD dwProviderSize;
+    WCHAR wcProviderData[1];
+};
+
+union _PROCESS_CREATION_SVE_VECTOR_LENGTH
+{
+    ULONG Data;
+    struct
+    {
+        ULONG VectorLength : 24;
+        ULONG FlagsReserved : 8;
+    };
+};
+
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+struct _UMS_SYSTEM_THREAD_INFORMATION
+{
+    ULONG UmsVersion;
+    union
+    {
+        struct
+        {
+            ULONG IsUmsSchedulerThread : 1;
+            ULONG IsUmsWorkerThread : 1;
+        };
+        ULONG ThreadUmsFlags;
+    };
+};
+#endif
+
+typedef JIT_DEBUG_INFO JIT_DEBUG_INFO32;
+
+typedef JIT_DEBUG_INFO JIT_DEBUG_INFO64;
+
+typedef JIT_DEBUG_INFO *LPJIT_DEBUG_INFO32;
+
+typedef JIT_DEBUG_INFO *LPJIT_DEBUG_INFO64;
+
+typedef LPVOID (WINAPI *PFIBER_CALLOUT_ROUTINE)(LPVOID);
+
+typedef UINT (WINAPI *PGET_SYSTEM_WOW64_DIRECTORY_A)(LPSTR, UINT);
+
+typedef UINT (WINAPI *PGET_SYSTEM_WOW64_DIRECTORY_W)(LPWSTR, UINT);
+
+typedef union _PROCESS_CREATION_SVE_VECTOR_LENGTH *PPROCESS_CREATION_SVE_VECTOR_LENGTH;
+
+typedef union _PROCESS_CREATION_SVE_VECTOR_LENGTH PROCESS_CREATION_SVE_VECTOR_LENGTH;
+
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+typedef void *PUMS_COMPLETION_LIST;
+
+typedef void *PUMS_CONTEXT;
+
+typedef PRTL_UMS_SCHEDULER_ENTRY_POINT PUMS_SCHEDULER_ENTRY_POINT;
+
+struct _UMS_SCHEDULER_STARTUP_INFO
+{
+    ULONG UmsVersion;
+    PUMS_COMPLETION_LIST CompletionList;
+    PUMS_SCHEDULER_ENTRY_POINT SchedulerProc;
+    PVOID SchedulerParam;
+};
+
+typedef struct _UMS_SCHEDULER_STARTUP_INFO *PUMS_SCHEDULER_STARTUP_INFO;
+
+typedef struct _UMS_SYSTEM_THREAD_INFORMATION *PUMS_SYSTEM_THREAD_INFORMATION;
+
+typedef struct _UMS_SCHEDULER_STARTUP_INFO UMS_SCHEDULER_STARTUP_INFO;
+
+typedef struct _UMS_SYSTEM_THREAD_INFORMATION UMS_SYSTEM_THREAD_INFORMATION;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+BOOL WINAPI AccessCheckByTypeResultListAndAuditAlarmA(LPCSTR SubsystemName, LPVOID HandleId, LPCSTR ObjectTypeName, LPCSTR ObjectName, PSECURITY_DESCRIPTOR SecurityDescriptor, PSID PrincipalSelfSid, DWORD DesiredAccess, AUDIT_EVENT_TYPE AuditType, DWORD Flags, POBJECT_TYPE_LIST ObjectTypeList, DWORD ObjectTypeListLength, PGENERIC_MAPPING GenericMapping, BOOL ObjectCreation, LPDWORD GrantedAccess, LPDWORD AccessStatusList, LPBOOL pfGenerateOnClose);
+BOOL WINAPI AccessCheckByTypeResultListAndAuditAlarmByHandleA(LPCSTR SubsystemName, LPVOID HandleId, HANDLE ClientToken, LPCSTR ObjectTypeName, LPCSTR ObjectName, PSECURITY_DESCRIPTOR SecurityDescriptor, PSID PrincipalSelfSid, DWORD DesiredAccess, AUDIT_EVENT_TYPE AuditType, DWORD Flags, POBJECT_TYPE_LIST ObjectTypeList, DWORD ObjectTypeListLength, PGENERIC_MAPPING GenericMapping, BOOL ObjectCreation, LPDWORD GrantedAccess, LPDWORD AccessStatusList, LPBOOL pfGenerateOnClose);
+BOOL WINAPI GetDevicePowerState(HANDLE hDevice, BOOL *pfOn);
+BOOL WINAPI GetNumaAvailableMemoryNode(UCHAR Node, PULONGLONG AvailableBytes);
+BOOL WINAPI InitializeContext2(PVOID Buffer, DWORD ContextFlags, PCONTEXT *Context, PDWORD ContextLength, ULONG64 XStateCompactionMask);
+HMODULE WINAPI LoadPackagedLibrary(LPCWSTR lpwLibFileName, DWORD Reserved);
+LPVOID WINAPI MapViewOfFileExNuma(HANDLE hFileMappingObject, DWORD dwDesiredAccess, DWORD dwFileOffsetHigh, DWORD dwFileOffsetLow, SIZE_T dwNumberOfBytesToMap, LPVOID lpBaseAddress, DWORD nndPreferred);
+BOOL WINAPI SetMessageWaitingIndicator(HANDLE hMsgIndicator, ULONG ulMsgCount);
+HANDLE WINAPI SetTimerQueueTimer(HANDLE TimerQueue, WAITORTIMERCALLBACK Callback, PVOID Parameter, DWORD DueTime, DWORD Period, BOOL PreferIo);
+
+/* TODO: LiberNT does not implement the functions below yet */
+WINBASEAPI void WINAPI ApplicationRecoveryFinished(BOOL bSuccess);
+WINBASEAPI HRESULT WINAPI ApplicationRecoveryInProgress(PBOOL pbCancelled);
+WINBASEAPI BOOL WINAPI CopyFileTransactedA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, LPBOOL pbCancel, DWORD dwCopyFlags, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI CopyFileTransactedW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, LPBOOL pbCancel, DWORD dwCopyFlags, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI CreateDirectoryTransactedA(LPCSTR lpTemplateDirectory, LPCSTR lpNewDirectory, LPSECURITY_ATTRIBUTES lpSecurityAttributes, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI CreateDirectoryTransactedW(LPCWSTR lpTemplateDirectory, LPCWSTR lpNewDirectory, LPSECURITY_ATTRIBUTES lpSecurityAttributes, HANDLE hTransaction);
+WINBASEAPI HANDLE WINAPI CreateFileMappingNumaA(HANDLE hFile, LPSECURITY_ATTRIBUTES lpFileMappingAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCSTR lpName, DWORD nndPreferred);
+WINBASEAPI HANDLE WINAPI CreateFileTransactedA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile, HANDLE hTransaction, PUSHORT pusMiniVersion, PVOID lpExtendedParameter);
+WINBASEAPI HANDLE WINAPI CreateFileTransactedW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile, HANDLE hTransaction, PUSHORT pusMiniVersion, PVOID lpExtendedParameter);
+WINBASEAPI BOOL WINAPI CreateHardLinkTransactedA(LPCSTR lpFileName, LPCSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI CreateHardLinkTransactedW(LPCWSTR lpFileName, LPCWSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes, HANDLE hTransaction);
+WINBASEAPI BOOLEAN APIENTRY CreateSymbolicLinkTransactedA(LPCSTR lpSymlinkFileName, LPCSTR lpTargetFileName, DWORD dwFlags, HANDLE hTransaction);
+WINBASEAPI BOOLEAN APIENTRY CreateSymbolicLinkTransactedW(LPCWSTR lpSymlinkFileName, LPCWSTR lpTargetFileName, DWORD dwFlags, HANDLE hTransaction);
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI CreateUmsCompletionList(PUMS_COMPLETION_LIST *UmsCompletionList);
+WINBASEAPI BOOL WINAPI CreateUmsThreadContext(PUMS_CONTEXT *lpUmsThread);
+#endif
+WINBASEAPI BOOL WINAPI DeleteFileTransactedA(LPCSTR lpFileName, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI DeleteFileTransactedW(LPCWSTR lpFileName, HANDLE hTransaction);
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI DeleteUmsCompletionList(PUMS_COMPLETION_LIST UmsCompletionList);
+WINBASEAPI BOOL WINAPI DeleteUmsThreadContext(PUMS_CONTEXT UmsThread);
+WINBASEAPI BOOL WINAPI DequeueUmsCompletionListItems(PUMS_COMPLETION_LIST UmsCompletionList, DWORD WaitTimeOut, PUMS_CONTEXT *UmsThreadList);
+#endif
+#if (!defined(MIDL_PASS))
+void DestroyThreadpoolEnvironment(PTP_CALLBACK_ENVIRON pcbe);
+#endif
+WINBASEAPI DWORD APIENTRY DisableThreadProfiling(HANDLE PerformanceDataHandle);
+#if (defined(_AMD64_) || defined(_X86_) || defined(_ARM64_))
+WINBASEAPI BOOL WINAPI EnableProcessOptionalXStateFeatures(DWORD64 Features);
+#endif
+WINBASEAPI DWORD APIENTRY EnableThreadProfiling(HANDLE ThreadHandle, DWORD Flags, DWORD64 HardwareCounters, HANDLE *PerformanceDataHandle);
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI EnterUmsSchedulingMode(PUMS_SCHEDULER_STARTUP_INFO SchedulerStartupInfo);
+WINBASEAPI BOOL WINAPI ExecuteUmsThread(PUMS_CONTEXT UmsThread);
+#endif
+WINBASEAPI HANDLE WINAPI FindFirstFileNameTransactedW(LPCWSTR lpFileName, DWORD dwFlags, LPDWORD StringLength, PWSTR LinkName, HANDLE hTransaction);
+WINBASEAPI HANDLE WINAPI FindFirstFileTransactedA(LPCSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags, HANDLE hTransaction);
+WINBASEAPI HANDLE WINAPI FindFirstFileTransactedW(LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags, HANDLE hTransaction);
+#if (_WIN32_WINNT >= 0x0600)
+WINBASEAPI HANDLE WINAPI FindFirstStreamTransactedW(LPCWSTR lpFileName, STREAM_INFO_LEVELS InfoLevel, LPVOID lpFindStreamData, DWORD dwFlags, HANDLE hTransaction);
+#endif
+WINBASEAPI ULONG WINAPI GetCommPorts(PULONG lpPortNumbers, ULONG uPortNumbersCount, PULONG puPortNumbersFound);
+WINBASEAPI DWORD WINAPI GetCompressedFileSizeTransactedA(LPCSTR lpFileName, LPDWORD lpFileSizeHigh, HANDLE hTransaction);
+WINBASEAPI DWORD WINAPI GetCompressedFileSizeTransactedW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh, HANDLE hTransaction);
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI PUMS_CONTEXT WINAPI GetCurrentUmsThread(void);
+#endif
+WINBASEAPI BOOL WINAPI GetFileAttributesTransactedA(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI GetFileAttributesTransactedW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation, HANDLE hTransaction);
+#if (NTDDI_VERSION >= NTDDI_WIN11_ZN)
+BOOL WINAPI GetFileInformationByName(PCWSTR FileName, FILE_INFO_BY_NAME_CLASS FileInformationClass, PVOID FileInfoBuffer, ULONG FileInfoBufferSize);
+#endif
+WINBASEAPI DWORD WINAPI GetFullPathNameTransactedA(LPCSTR lpFileName, DWORD nBufferLength, LPSTR lpBuffer, LPSTR *lpFilePart, HANDLE hTransaction);
+WINBASEAPI DWORD WINAPI GetFullPathNameTransactedW(LPCWSTR lpFileName, DWORD nBufferLength, LPWSTR lpBuffer, LPWSTR *lpFilePart, HANDLE hTransaction);
+WINBASEAPI DWORD WINAPI GetLongPathNameTransactedA(LPCSTR lpszShortPath, LPSTR lpszLongPath, DWORD cchBuffer, HANDLE hTransaction);
+WINBASEAPI DWORD WINAPI GetLongPathNameTransactedW(LPCWSTR lpszShortPath, LPWSTR lpszLongPath, DWORD cchBuffer, HANDLE hTransaction);
+WINBASEAPI DWORD WINAPI GetMaximumProcessorCount(WORD GroupNumber);
+WINBASEAPI WORD WINAPI GetMaximumProcessorGroupCount(void);
+WINBASEAPI BOOL WINAPI GetNamedPipeClientComputerNameA(HANDLE Pipe, LPSTR ClientComputerName, ULONG ClientComputerNameLength);
+WINBASEAPI BOOL WINAPI GetNamedPipeClientSessionId(HANDLE Pipe, PULONG ClientSessionId);
+WINBASEAPI BOOL WINAPI GetNamedPipeServerProcessId(HANDLE Pipe, PULONG ServerProcessId);
+WINBASEAPI BOOL WINAPI GetNamedPipeServerSessionId(HANDLE Pipe, PULONG ServerSessionId);
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI PUMS_CONTEXT WINAPI GetNextUmsListItem(PUMS_CONTEXT UmsContext);
+#endif
+WINBASEAPI BOOL WINAPI GetNumaAvailableMemoryNodeEx(USHORT Node, PULONGLONG AvailableBytes);
+WINBASEAPI BOOL WINAPI GetNumaNodeNumberFromHandle(HANDLE hFile, PUSHORT NodeNumber);
+WINBASEAPI BOOL WINAPI GetNumaProximityNode(ULONG ProximityId, PUCHAR NodeNumber);
+#if (defined(_AMD64_) || defined(_X86_) || defined(_ARM64_))
+WINBASEAPI DWORD64 WINAPI GetThreadEnabledXStateFeatures(void);
+#endif
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI GetUmsCompletionListEvent(PUMS_COMPLETION_LIST UmsCompletionList, PHANDLE UmsCompletionEvent);
+WINBASEAPI BOOL WINAPI GetUmsSystemThreadInformation(HANDLE ThreadHandle, PUMS_SYSTEM_THREAD_INFORMATION SystemThreadInfo);
+#endif
+WINBASEAPI ATOM WINAPI GlobalAddAtomExA(LPCSTR lpString, DWORD Flags);
+WINBASEAPI ATOM WINAPI GlobalAddAtomExW(LPCWSTR lpString, DWORD Flags);
+#if (!defined(MIDL_PASS))
+void InitializeThreadpoolEnvironment(PTP_CALLBACK_ENVIRON pcbe);
+#endif
+WINBASEAPI BOOL WINAPI IsNativeVhdBoot(PBOOL NativeVhdBoot);
+WINADVAPI BOOL WINAPI IsTokenUntrusted(HANDLE TokenHandle);
+WINADVAPI BOOL WINAPI LookupAccountNameLocalA(LPCSTR lpAccountName, PSID Sid, LPDWORD cbSid, LPSTR ReferencedDomainName, LPDWORD cchReferencedDomainName, PSID_NAME_USE peUse);
+WINADVAPI BOOL WINAPI LookupAccountNameLocalW(LPCWSTR lpAccountName, PSID Sid, LPDWORD cbSid, LPWSTR ReferencedDomainName, LPDWORD cchReferencedDomainName, PSID_NAME_USE peUse);
+WINBASEAPI BOOL WINAPI MoveFileTransactedA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, DWORD dwFlags, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI MoveFileTransactedW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, DWORD dwFlags, HANDLE hTransaction);
+WINBASEAPI HANDLE WINAPI OpenCommPort(ULONG uPortNumber, DWORD dwDesiredAccess, DWORD dwFlagsAndAttributes);
+WINADVAPI BOOL WINAPI OperationEnd(OPERATION_END_PARAMETERS *OperationEndParams);
+WINADVAPI BOOL WINAPI OperationStart(OPERATION_START_PARAMETERS *OperationStartParams);
+WINBASEAPI DWORD APIENTRY QueryThreadProfiling(HANDLE ThreadHandle, PBOOLEAN Enabled);
+WINBASEAPI DWORD WINAPI RaiseCustomSystemEventTrigger(PCUSTOM_SYSTEM_EVENT_TRIGGER_CONFIG CustomSystemEventTriggerConfig);
+#if (NTDDI_VERSION >= NTDDI_WIN10_RS3)
+WINBASEAPI BOOL WINAPI ReadDirectoryChangesExW(HANDLE hDirectory, LPVOID lpBuffer, DWORD nBufferLength, BOOL bWatchSubtree, DWORD dwNotifyFilter, LPDWORD lpBytesReturned, LPOVERLAPPED lpOverlapped, LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine, READ_DIRECTORY_NOTIFY_INFORMATION_CLASS ReadDirectoryNotifyInformationClass);
+#endif
+WINBASEAPI BOOL WINAPI RemoveDirectoryTransactedA(LPCSTR lpPathName, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI RemoveDirectoryTransactedW(LPCWSTR lpPathName, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI ReplacePartitionUnit(PWSTR TargetPartition, PWSTR SparePartition, ULONG Flags);
+WINBASEAPI BOOL WINAPI SetFileAttributesTransactedA(LPCSTR lpFileName, DWORD dwFileAttributes, HANDLE hTransaction);
+WINBASEAPI BOOL WINAPI SetFileAttributesTransactedW(LPCWSTR lpFileName, DWORD dwFileAttributes, HANDLE hTransaction);
+#if (!defined(MIDL_PASS))
+void SetThreadpoolCallbackCleanupGroup(PTP_CALLBACK_ENVIRON pcbe, PTP_CLEANUP_GROUP ptpcg, PTP_CLEANUP_GROUP_CANCEL_CALLBACK pfng);
+void SetThreadpoolCallbackLibrary(PTP_CALLBACK_ENVIRON pcbe, PVOID mod);
+void SetThreadpoolCallbackPersistent(PTP_CALLBACK_ENVIRON pcbe);
+void SetThreadpoolCallbackPool(PTP_CALLBACK_ENVIRON pcbe, PTP_POOL ptpp);
+void SetThreadpoolCallbackPriority(PTP_CALLBACK_ENVIRON pcbe, TP_CALLBACK_PRIORITY Priority);
+void SetThreadpoolCallbackRunsLong(PTP_CALLBACK_ENVIRON pcbe);
+#endif
+#if (defined(_AMD64_) || defined(_X86_) || defined(_ARM64_))
+WINBASEAPI BOOL WINAPI SetXStateFeaturesMask(PCONTEXT Context, DWORD64 FeatureMask);
+#endif
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI UmsThreadYield(PVOID SchedulerParam);
+#endif
+WINBASEAPI HRESULT WINAPI UnregisterApplicationRecoveryCallback(void);
+WINBASEAPI HRESULT WINAPI UnregisterApplicationRestart(void);
+#if (!defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI Wow64GetThreadSelectorEntry(HANDLE hThread, DWORD dwSelector, PWOW64_LDT_ENTRY lpSelectorEntry);
+#endif
+WINBASEAPI DWORD WINAPI WTSGetServiceSessionId(void);
+WINBASEAPI BOOLEAN WINAPI WTSIsServerContainer(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef UNICODE
+#define GetNamedPipeClientComputerName GetNamedPipeClientComputerNameW
+#else
+#define GetNamedPipeClientComputerName GetNamedPipeClientComputerNameA
+#endif
+
+#ifdef UNICODE
+#define AccessCheckByTypeAndAuditAlarm AccessCheckByTypeAndAuditAlarmW
+#else
+#define AccessCheckByTypeAndAuditAlarm AccessCheckByTypeAndAuditAlarmA
+#endif
+
+#if (_WIN32_WINNT >= 0x0601) && (NTDDI_VERSION >= NTDDI_WIN10_FE)
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+typedef struct _COPYFILE2_CREATE_OPLOCK_KEYS {
+  GUID ParentOplockKey;
+  GUID TargetOplockKey;
+} COPYFILE2_CREATE_OPLOCK_KEYS, *PCOPYFILE2_CREATE_OPLOCK_KEYS;
+#endif
+
+typedef struct COPYFILE2_EXTENDED_PARAMETERS_V2 COPYFILE2_EXTENDED_PARAMETERS_V2;
+
+struct COPYFILE2_EXTENDED_PARAMETERS_V2
+{
+    DWORD dwSize;
+    DWORD dwCopyFlags;
+    BOOL *pfCancel;
+    PCOPYFILE2_PROGRESS_ROUTINE pProgressRoutine;
+    PVOID pvCallbackContext;
+    DWORD dwCopyFlagsV2;
+    ULONG ioDesiredSize;
+    ULONG ioDesiredRate;
+#if (NTDDI_VERSION >= NTDDI_WIN11_GA)
+    LPPROGRESS_ROUTINE pProgressRoutineOld;
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+    PCOPYFILE2_CREATE_OPLOCK_KEYS SourceOplockKeys;
+    PVOID reserved[6];
+#else
+    PVOID reserved[7];
+#endif
+#else
+    PVOID reserved[8];
+#endif
+};
+#endif
+
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+typedef enum _RTL_UMS_THREAD_INFO_CLASS *PUMS_THREAD_INFO_CLASS;
+
+typedef enum _RTL_UMS_SCHEDULER_REASON UMS_SCHEDULER_REASON;
+
+typedef enum _RTL_UMS_THREAD_INFO_CLASS UMS_THREAD_INFO_CLASS;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+#if (defined(_AMD64_) || defined(_X86_) || defined(_ARM64_))
+WINBASEAPI BOOL WINAPI GetXStateFeaturesMask(PCONTEXT Context, PDWORD64 FeatureMask);
+WINBASEAPI PVOID WINAPI LocateXStateFeature(PCONTEXT Context, DWORD FeatureId, PDWORD Length);
+#endif
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI QueryUmsThreadInformation(PUMS_CONTEXT UmsThread, UMS_THREAD_INFO_CLASS UmsThreadInfoClass, PVOID UmsThreadInformation, ULONG UmsThreadInformationLength, PULONG ReturnLength);
+#endif
+WINBASEAPI DWORD APIENTRY ReadThreadProfilingData(HANDLE PerformanceDataHandle, DWORD Flags, PPERFORMANCE_DATA PerformanceData);
+#if ((_WIN32_WINNT >= 0x0601) && !defined(MIDL_PASS))
+WINBASEAPI BOOL WINAPI SetUmsThreadInformation(PUMS_CONTEXT UmsThread, UMS_THREAD_INFO_CLASS UmsThreadInfoClass, PVOID UmsThreadInformation, ULONG UmsThreadInformationLength);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef UNICODE
+#define AccessCheckByTypeResultListAndAuditAlarm AccessCheckByTypeResultListAndAuditAlarmW
+#else
+#define AccessCheckByTypeResultListAndAuditAlarm AccessCheckByTypeResultListAndAuditAlarmA
+#endif
+
+#ifdef UNICODE
+#define AccessCheckByTypeResultListAndAuditAlarmByHandle AccessCheckByTypeResultListAndAuditAlarmByHandleW
+#else
+#define AccessCheckByTypeResultListAndAuditAlarmByHandle AccessCheckByTypeResultListAndAuditAlarmByHandleA
+#endif
+#define ACTIVATION_CONTEXT_BASIC_INFORMATION_DEFINED 1
+
+#ifdef UNICODE
+#define OpenJobObject OpenJobObjectW
+#else
+#define OpenJobObject OpenJobObjectA
+#endif
+
+#define GlobalLRUNewest(h) ((HANDLE) (h))
+#define GlobalLRUOldest(h) ((HANDLE) (h))
 
 #endif /* _WINBASE_ */

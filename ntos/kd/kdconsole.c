@@ -31,6 +31,12 @@ BOOLEAN KdTermCrashMode = FALSE;
 /* How long to wait for the rest of an escape sequence already begun */
 #define KDP_ESCAPE_RETRY    50
 
+/* A key read ahead while waiting to see whether anyone types at all */
+static BOOLEAN KdpPendingKey;
+static BOOLEAN KdpTerminalAnswered;
+static CHAR KdpPendingChar;
+static ULONG KdpPendingScanCode;
+
 /* PRIVATE FUNCTIONS **********************************************************/
 
 /*
@@ -52,12 +58,18 @@ KdpTryGetChar(
     {
         Char = KdbpTryGetCharSerial(Retry);
         if (Char != (CHAR)-1)
+        {
+            KdpTerminalAnswered = TRUE;
             return Char;
+        }
     }
 
     Char = KdbpTryGetCharKeyboard(ScanCode, Retry);
     if (Char != (CHAR)-1)
+    {
+        KdpTerminalAnswered = TRUE;
         return Char;
+    }
 
     /*
      * Once the machine has stopped, the USB controller is driven by the
@@ -67,7 +79,10 @@ KdpTryGetChar(
     {
         Char = KdpUsbKeyboardTryGetChar(ScanCode);
         if (Char != (CHAR)-1)
+        {
+            KdpTerminalAnswered = TRUE;
             return Char;
+        }
     }
 
     return (CHAR)-1;
@@ -205,7 +220,16 @@ KdpReadTermKey(
 
     for (;;)
     {
-        Char = KdpTryGetChar(ScanCode, KDP_TERMINAL_RETRY);
+        if (KdpPendingKey)
+        {
+            KdpPendingKey = FALSE;
+            Char = KdpPendingChar;
+            *ScanCode = KdpPendingScanCode;
+        }
+        else
+        {
+            Char = KdpTryGetChar(ScanCode, KDP_TERMINAL_RETRY);
+        }
 
         if (Char == (CHAR)-1)
             continue;
@@ -222,6 +246,39 @@ KdpReadTermKey(
 
         /* An escape that began nothing is the Escape key */
         return KEY_ESC;
+    }
+}
+
+BOOLEAN
+KdpWaitForTermKey(
+    _In_ ULONG Milliseconds)
+{
+    LARGE_INTEGER Frequency;
+    LONGLONG Deadline;
+    ULONG ScanCode;
+    CHAR Char;
+
+    if (KdpPendingKey)
+        return TRUE;
+
+    /* Nobody has typed at this debugger since boot: no one is there to answer */
+    if (!KdpTerminalAnswered)
+        return FALSE;
+
+    Deadline = KeQueryPerformanceCounter(&Frequency).QuadPart;
+    Deadline += (Frequency.QuadPart * Milliseconds) / 1000;
+    for (;;)
+    {
+        Char = KdpTryGetChar(&ScanCode, KDP_TERMINAL_RETRY);
+        if (Char != (CHAR)-1)
+        {
+            KdpPendingChar = Char;
+            KdpPendingScanCode = ScanCode;
+            KdpPendingKey = TRUE;
+            return TRUE;
+        }
+        if (KeQueryPerformanceCounter(NULL).QuadPart >= Deadline)
+            return FALSE;
     }
 }
 
@@ -319,7 +376,10 @@ KdpTerminalPollBreakIn(VOID)
 
     /* The network terminal keeps its own count of what the host sent */
     if (KdpDebugMode.Net && KdpNetPollBreakIn())
+    {
+        KdpTerminalAnswered = TRUE;
         return TRUE;
+    }
 
     /* The PC keyboard controller belongs to its driver while the system runs: a byte read here is taken from it */
     if (!KdTermSerial && !KdpDebugMode.Net)
@@ -329,6 +389,8 @@ KdpTerminalPollBreakIn(VOID)
 
     if (Char == (CHAR)-1)
         return FALSE;
+
+    KdpTerminalAnswered = TRUE;
 
     /* Ctrl-C, and nothing else: a terminal is also where people type */
     return (Char == 0x03);

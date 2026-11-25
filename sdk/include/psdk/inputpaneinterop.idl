@@ -25,3 +25,4 @@ interface IInputPaneInterop : IInspectable
 {
     HRESULT GetForWindow([in] HWND window, [in] REFIID riid, [out, retval, iid_is(riid)] void **inputpane);
 }
+

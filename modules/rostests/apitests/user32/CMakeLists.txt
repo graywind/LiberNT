@@ -4,6 +4,7 @@ list(APPEND SOURCE
     AltTabHook.c
     AnimatedCursor.c
     AttachThreadInput.c
+    BoolReturnValues.c
     ../include/msgtrace.c
     CalculatePopupWindowPosition.c
     CallWindowProc.c
@@ -90,8 +91,10 @@ list(APPEND SOURCE
     MenuItemData.c
     MenuBarBackground.c
     MessageStateAnalyzer.c
+    MultiMonitor.c
     MinimizedPosition.c
     ModernUser32.c
+    MonitorFromRect.c
     NestedActivation.c
     NestedWindowPos.c
     NcPaintRgn.c

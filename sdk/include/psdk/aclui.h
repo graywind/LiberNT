@@ -109,6 +109,155 @@ EditSecurity(HWND hwndOwner, LPSECURITYINFO psi);
 #ifdef __cplusplus
 }
 #endif
+#ifndef DOBJ_COND_NTACLS
+#define DOBJ_COND_NTACLS 0x00000008L
+#endif
+#ifndef DOBJ_RES_CONT
+#define DOBJ_RES_CONT 0x00000001L
+#endif
+#ifndef DOBJ_RES_ROOT
+#define DOBJ_RES_ROOT 0x00000002L
+#endif
+#ifndef DOBJ_RIBBON_LAUNCH
+#define DOBJ_RIBBON_LAUNCH 0x00000010L
+#endif
+#ifndef DOBJ_VOL_NTACLS
+#define DOBJ_VOL_NTACLS 0x00000004L
+#endif
+#ifndef SECURITY_OBJECT_ID_CENTRAL_ACCESS_RULE
+#define SECURITY_OBJECT_ID_CENTRAL_ACCESS_RULE 4
+#endif
+#ifndef SECURITY_OBJECT_ID_CENTRAL_POLICY
+#define SECURITY_OBJECT_ID_CENTRAL_POLICY 3
+#endif
+#ifndef SECURITY_OBJECT_ID_SHARE
+#define SECURITY_OBJECT_ID_SHARE 2
+#endif
+#ifndef SI_AUDITS_ELEVATION_REQUIRED
+#define SI_AUDITS_ELEVATION_REQUIRED 0x02000000L
+#endif
+#ifndef SI_DISABLE_DENY_ACE
+#define SI_DISABLE_DENY_ACE 0x80000000L
+#endif
+#ifndef SI_ENABLE_CENTRAL_POLICY
+#define SI_ENABLE_CENTRAL_POLICY 0x40000000L
+#endif
+#ifndef SI_ENABLE_EDIT_ATTRIBUTE_CONDITION
+#define SI_ENABLE_EDIT_ATTRIBUTE_CONDITION 0x20000000L
+#endif
+#ifndef SI_OWNER_ELEVATION_REQUIRED
+#define SI_OWNER_ELEVATION_REQUIRED 0x04000000L
+#endif
+#ifndef SI_PERMS_ELEVATION_REQUIRED
+#define SI_PERMS_ELEVATION_REQUIRED 0x01000000L
+#endif
+#ifndef SI_SCOPE_ELEVATION_REQUIRED
+#define SI_SCOPE_ELEVATION_REQUIRED 0x08000000L
+#endif
+#ifndef SI_VIEW_ONLY
+#define SI_VIEW_ONLY 0x00400000L
+#endif
+
+typedef enum _SI_PAGE_ACTIVATED {
+    SI_SHOW_DEFAULT = 0,
+    SI_SHOW_PERM_ACTIVATED = 1,
+    SI_SHOW_AUDIT_ACTIVATED = 2,
+    SI_SHOW_OWNER_ACTIVATED = 3,
+    SI_SHOW_EFFECTIVE_ACTIVATED = 4,
+    SI_SHOW_SHARE_ACTIVATED = 5,
+    SI_SHOW_CENTRAL_POLICY_ACTIVATED = 6
+} SI_PAGE_ACTIVATED;
+
+typedef struct _EFFPERM_RESULT_LIST {
+  BOOLEAN fEvaluated;
+  ULONG cObjectTypeListLength;
+  OBJECT_TYPE_LIST * pObjectTypeList;
+  ACCESS_MASK * pGrantedAccessList;
+} EFFPERM_RESULT_LIST, *PEFFPERM_RESULT_LIST;
+
+typedef struct _SECURITY_OBJECT {
+  PWSTR pwszName;
+  PVOID pData;
+  DWORD cbData;
+  PVOID pData2;
+  DWORD cbData2;
+  DWORD Id;
+  BOOLEAN fWellKnown;
+} SECURITY_OBJECT, *PSECURITY_OBJECT;
+
+typedef struct _SID_INFO {
+  PSID pSid;
+  PWSTR pwzCommonName;
+  PWSTR pwzClass;
+  PWSTR pwzUPN;
+} SID_INFO, *PSID_INFO;
+
+typedef struct _SID_INFO_LIST {
+  ULONG cItems;
+  SID_INFO aSidInfo[1];
+} SID_INFO_LIST, *PSID_INFO_LIST;
+
+#define ACLUIAPI DECLSPEC_IMPORT WINAPI
+#define CFSTR_ACLUI_SID_INFO_LIST TEXT("CFSTR_ACLUI_SID_INFO_LIST")
+#define PSPCB_SI_INITDIALOG 0x401
+#define SECURITY_OBJECT_ID_OBJECT_SD 1
+
+typedef struct IEffectivePermission2Vtbl IEffectivePermission2Vtbl;
+
+typedef struct IEffectivePermission2 IEffectivePermission2;
+
+struct IEffectivePermission2
+{
+    struct IEffectivePermission2Vtbl *lpVtbl;
+};
+
+typedef struct IEffectivePermissionVtbl IEffectivePermissionVtbl;
+
+typedef struct ISecurityInformation2Vtbl ISecurityInformation2Vtbl;
+
+typedef struct ISecurityInformation3Vtbl ISecurityInformation3Vtbl;
+
+typedef struct ISecurityInformation3 ISecurityInformation3;
+
+struct ISecurityInformation3
+{
+    struct ISecurityInformation3Vtbl *lpVtbl;
+};
+
+typedef struct ISecurityInformation4Vtbl ISecurityInformation4Vtbl;
+
+typedef struct ISecurityInformation4 ISecurityInformation4;
+
+struct ISecurityInformation4
+{
+    struct ISecurityInformation4Vtbl *lpVtbl;
+};
+
+typedef struct ISecurityInformationVtbl ISecurityInformationVtbl;
+
+typedef struct ISecurityObjectTypeInfoVtbl ISecurityObjectTypeInfoVtbl;
+
+typedef IEffectivePermission2 *LPEFFECTIVEPERMISSION2;
+
+typedef ISecurityInformation3 *LPSECURITYINFO3;
+
+typedef ISecurityInformation4 *LPSECURITYINFO4;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+HRESULT EditSecurityAdvanced(HWND hwndOwner, LPSECURITYINFO psi, SI_PAGE_TYPE uSIPage);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define COMBINE_PAGE_ACTIVATION(X, Y) (UINT) (((Y) << 16) | X)
+#define GET_ACTIVATION_TYPE(Y) (UINT) (((Y) >> 16) & 0x0000ffff)
+#define GET_PAGE_TYPE(X) (UINT) ((X) & 0x0000ffff)
+
 #endif /* __ACLUI_H */
 
 /* EOF */

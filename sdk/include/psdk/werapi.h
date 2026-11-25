@@ -204,7 +204,8 @@ typedef enum _WER_FILE_TYPE
     WerFileTypeCustomDump = 7,
     WerFileTypeAuxiliaryDump = 8,
     WerFileTypeEtlTrace = 9,
-    WerFileTypeMax
+    WerFileTypeMax,
+    WerFileTypeAuxiliaryHeapDump = 0xA,
 } WER_FILE_TYPE;
 
 typedef enum _WER_DUMP_TYPE
@@ -213,7 +214,8 @@ typedef enum _WER_DUMP_TYPE
     WerDumpTypeMiniDump = 2,
     WerDumpTypeHeapDump = 3,
     WerDumpTypeTriageDump = 4,
-    WerDumpTypeMax = 5
+    WerDumpTypeMax = 5,
+    WerDumpTypeNone = 0,
 } WER_DUMP_TYPE;
 
 typedef struct _WER_DUMP_CUSTOM_OPTIONS
@@ -336,6 +338,157 @@ HRESULT WerStoreQueryReportMetadataV2(HREPORTSTORE, PCWSTR, PWER_REPORT_METADATA
 HRESULT WINAPI WerUnregisterFile(PCWSTR file);
 HRESULT WINAPI WerUnregisterMemoryBlock(void *block);
 HRESULT WINAPI WerUnregisterRuntimeExceptionModule(PCWSTR callbackdll, void *context);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef WER_DUMP_AUX_PROMOTE
+#define WER_DUMP_AUX_PROMOTE 4
+#endif
+#ifndef WER_MAX_APPLICATION_NAME_LENGTH
+#define WER_MAX_APPLICATION_NAME_LENGTH 128
+#endif
+#ifndef WER_MAX_DESCRIPTION_LENGTH
+#define WER_MAX_DESCRIPTION_LENGTH 512
+#endif
+#ifndef WER_MAX_FRIENDLY_EVENT_NAME_LENGTH
+#define WER_MAX_FRIENDLY_EVENT_NAME_LENGTH 128
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+HRESULT WINAPI WerRegisterCustomMetadata(PCWSTR key, PCWSTR value);
+HRESULT WINAPI WerUnregisterCustomMetadata(PCWSTR key);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _WER_DUMP_CUSTOM_OPTIONS_V2 {
+  DWORD dwSize;
+  DWORD dwMask;
+  DWORD dwDumpFlags;
+  BOOL bOnlyThisThread;
+  DWORD dwExceptionThreadFlags;
+  DWORD dwOtherThreadFlags;
+  DWORD dwExceptionThreadExFlags;
+  DWORD dwOtherThreadExFlags;
+  DWORD dwPreferredModuleFlags;
+  DWORD dwOtherModuleFlags;
+  WCHAR wzPreferredModuleList[256];
+  DWORD dwPreferredModuleResetFlags;
+  DWORD dwOtherModuleResetFlags;
+} WER_DUMP_CUSTOM_OPTIONS_V2, *PWER_DUMP_CUSTOM_OPTIONS_V2;
+
+typedef struct _WER_DUMP_CUSTOM_OPTIONS_V3 {
+  DWORD dwSize;
+  DWORD dwMask;
+  DWORD dwDumpFlags;
+  BOOL bOnlyThisThread;
+  DWORD dwExceptionThreadFlags;
+  DWORD dwOtherThreadFlags;
+  DWORD dwExceptionThreadExFlags;
+  DWORD dwOtherThreadExFlags;
+  DWORD dwPreferredModuleFlags;
+  DWORD dwOtherModuleFlags;
+  WCHAR wzPreferredModuleList[256];
+  DWORD dwPreferredModuleResetFlags;
+  DWORD dwOtherModuleResetFlags;
+  PVOID pvDumpKey;
+  HANDLE hSnapshot;
+  DWORD dwThreadID;
+} WER_DUMP_CUSTOM_OPTIONS_V3, *PWER_DUMP_CUSTOM_OPTIONS_V3;
+
+typedef struct _WER_REPORT_INFORMATION_V3 {
+  DWORD dwSize;
+  HANDLE hProcess;
+  WCHAR wzConsentKey[64];
+  WCHAR wzFriendlyEventName[128];
+  WCHAR wzApplicationName[128];
+  WCHAR wzApplicationPath[260];
+  WCHAR wzDescription[512];
+  HWND hwndParent;
+  WCHAR wzNamespacePartner[64];
+  WCHAR wzNamespaceGroup[64];
+} WER_REPORT_INFORMATION_V3, *PWER_REPORT_INFORMATION_V3;
+
+typedef struct _WER_REPORT_INFORMATION_V4 {
+  DWORD dwSize;
+  HANDLE hProcess;
+  WCHAR wzConsentKey[64];
+  WCHAR wzFriendlyEventName[128];
+  WCHAR wzApplicationName[128];
+  WCHAR wzApplicationPath[260];
+  WCHAR wzDescription[512];
+  HWND hwndParent;
+  WCHAR wzNamespacePartner[64];
+  WCHAR wzNamespaceGroup[64];
+  BYTE rgbApplicationIdentity[16];
+  HANDLE hSnapshot;
+  HANDLE hDeleteFilesImpersonationToken;
+} WER_REPORT_INFORMATION_V4, *PWER_REPORT_INFORMATION_V4;
+
+typedef struct _WER_REPORT_INFORMATION_V5 {
+  DWORD dwSize;
+  HANDLE hProcess;
+  WCHAR wzConsentKey[64];
+  WCHAR wzFriendlyEventName[128];
+  WCHAR wzApplicationName[128];
+  WCHAR wzApplicationPath[260];
+  WCHAR wzDescription[512];
+  HWND hwndParent;
+  WCHAR wzNamespacePartner[64];
+  WCHAR wzNamespaceGroup[64];
+  BYTE rgbApplicationIdentity[16];
+  HANDLE hSnapshot;
+  HANDLE hDeleteFilesImpersonationToken;
+  WER_SUBMIT_RESULT submitResultMax;
+} WER_REPORT_INFORMATION_V5, *PWER_REPORT_INFORMATION_V5;
+
+typedef struct _WER_REPORT_METADATA_V3 {
+  WER_REPORT_SIGNATURE Signature;
+  GUID BucketId;
+  GUID ReportId;
+  FILETIME CreationTime;
+  ULONGLONG SizeInBytes;
+  WCHAR CabId[260];
+  DWORD ReportStatus;
+  GUID ReportIntegratorId;
+  DWORD NumberOfFiles;
+  DWORD SizeOfFileNames;
+  WCHAR * FileNames;
+  WCHAR FriendlyEventName[128];
+  WCHAR ApplicationName[128];
+  WCHAR ApplicationPath[260];
+  WCHAR Description[512];
+  WCHAR BucketIdString[260];
+  ULONGLONG LegacyBucketId;
+} WER_REPORT_METADATA_V3, *PWER_REPORT_METADATA_V3;
+
+#define WER_MAX_BUCKET_ID_STRING_LENGTH 0x104
+
+typedef const WER_DUMP_CUSTOM_OPTIONS_V3 *PCWER_DUMP_CUSTOM_OPTIONS_V3;
+
+typedef const WER_REPORT_INFORMATION_V4 *PCWER_REPORT_INFORMATION_V4;
+
+typedef const WER_REPORT_INFORMATION_V5 *PCWER_REPORT_INFORMATION_V5;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+HRESULT STDAPICALLTYPE WerRegisterAdditionalProcess(DWORD processId, DWORD captureExtraInfoForThreadId);
+HRESULT STDAPICALLTYPE WerRegisterAppLocalDump(PCWSTR localAppDataRelativePath);
+HRESULT STDAPICALLTYPE WerRegisterExcludedMemoryBlock(const void *address, DWORD size);
+HRESULT STDAPICALLTYPE WerSetMaxProcessHoldMilliseconds(DWORD dwMilliseconds);
+HRESULT WerStorePurge(void);
+HRESULT WerStoreQueryReportMetadataV3(HREPORTSTORE hReportStore, PCWSTR pszReportKey, PWER_REPORT_METADATA_V3 pReportMetadata);
+HRESULT WerStoreUploadReport(HREPORTSTORE hReportStore, PCWSTR pszReportKey, DWORD dwFlags, PWER_SUBMIT_RESULT pSubmitResult);
+HRESULT STDAPICALLTYPE WerUnregisterAdditionalProcess(DWORD processId);
+HRESULT STDAPICALLTYPE WerUnregisterAppLocalDump(void);
+HRESULT STDAPICALLTYPE WerUnregisterExcludedMemoryBlock(const void *address);
 
 #ifdef __cplusplus
 }

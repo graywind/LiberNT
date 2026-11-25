@@ -2,9 +2,9 @@
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../lib
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/zlib
+    ${REACTOS_SOURCE_DIR}/sdk/include/libernt/libs/zlib
 #    ${REACTOS_SOURCE_DIR}/base/setup/lib
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/drivers
+    ${REACTOS_SOURCE_DIR}/sdk/include/libernt/drivers
     ${REACTOS_SOURCE_DIR}/sdk/lib/tzlib)
 
 list(APPEND SOURCE
@@ -30,13 +30,13 @@ file(GLOB libernt_rc_deps res/*.*)
 list(APPEND libernt_rc_deps
     ${REACTOS_SOURCE_DIR}/base/system/userinit/res/rosbitmap.bmp
     ${REACTOS_SOURCE_DIR}/base/system/userinit/res/rosbitmap_mask.bmp
-    ${REACTOS_SOURCE_DIR}/boot/bootdata/filesecurity.txt)
+    ${REACTOS_SOURCE_DIR}/image/data/filesecurity.txt)
 add_rc_deps(libernt.rc ${libernt_rc_deps})
 add_executable(libernt ${SOURCE} libernt.rc)
 
 add_pch(libernt libernt.h SOURCE)
 set_module_type(libernt win32gui UNICODE)
-target_link_libraries(libernt uuid tzlib volresize)
+target_link_libraries(libernt uuid tzlib volresize libwimcore)
 add_delay_importlibs(libernt setuplib)
 add_importlibs(libernt advapi32 gdi32 user32 comctl32 dwmapi shlwapi setupapi ole32 oleaut32 version bcrypt msvcrt kernel32 ntdll)
 add_cd_file(TARGET libernt DESTINATION reactos NO_CAB FOR bootcd livecd)
@@ -71,7 +71,7 @@ add_rc_deps(lntupdate.rc ${libernt_rc_deps})
 add_executable(lntupdate ${UPDATE_SOURCE} lntupdate.rc)
 add_pch(lntupdate libernt.h UPDATE_SOURCE)
 set_module_type(lntupdate win32gui UNICODE)
-target_link_libraries(lntupdate uuid zlib)
+target_link_libraries(lntupdate uuid zlib libwimcore)
 add_importlibs(lntupdate advapi32 gdi32 user32 comctl32 dwmapi shell32 shlwapi setupapi ole32 oleaut32 bcrypt msvcrt kernel32 ntdll)
 add_cd_file(TARGET lntupdate DESTINATION reactos/system32 FOR all)
 add_registry_inf(lntupdate.inf)

@@ -170,4 +170,37 @@ HRESULT     WINAPI OleSetAutoConvert( REFCLSID clsidOld, REFCLSID clsidNew );
 } /* extern "C" */
 #endif /* defined(__cplusplus) */
 
+#ifndef OLECREATE_LEAVERUNNING
+#define OLECREATE_LEAVERUNNING 0x00000001
+#endif
+#ifndef OLESTREAM_CONVERSION_DEFAULT
+#define OLESTREAM_CONVERSION_DEFAULT 0x00000000L
+#endif
+#ifndef OLESTREAM_CONVERSION_DISABLEOLELINK
+#define OLESTREAM_CONVERSION_DISABLEOLELINK 0x00000001L
+#endif
+
+typedef HRESULT (WINAPI *OLESTREAMQUERYCONVERTOLELINKCALLBACK)(LPCLSID, LPOLESTR, LPOLESTR, LPOLESTR, LPOLESTR, ULONG, PVOID);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+HRESULT WINAPI OleConvertIStorageToOLESTREAMEx(LPSTORAGE pstg, CLIPFORMAT cfFormat, LONG lWidth, LONG lHeight, DWORD dwSize, LPSTGMEDIUM pmedium, LPOLESTREAM polestm);
+HRESULT WINAPI OleCreateFromFileEx(const IID *const rclsid, LPCOLESTR lpszFileName, const IID *const riid, DWORD dwFlags, DWORD renderopt, ULONG cFormats, DWORD *rgAdvf, LPFORMATETC rgFormatEtc, IAdviseSink *lpAdviseSink, DWORD *rgdwConnection, LPOLECLIENTSITE pClientSite, LPSTORAGE pStg, LPVOID *ppvObj);
+
+/* TODO: LiberNT does not implement the functions below yet */
+HRESULT STDAPICALLTYPE OleConvertOLESTREAMToIStorage2(LPOLESTREAM lpolestream, LPSTORAGE pstg, const DVTARGETDEVICE *ptd, DWORD opt, PVOID pvCallbackContext, OLESTREAMQUERYCONVERTOLELINKCALLBACK pQueryConvertOLELinkCallback);
+HRESULT STDAPICALLTYPE OleConvertOLESTREAMToIStorageEx(LPOLESTREAM polestm, LPSTORAGE pstg, CLIPFORMAT *pcfFormat, LONG *plwWidth, LONG *plHeight, DWORD *pdwSize, LPSTGMEDIUM pmedium);
+HRESULT STDAPICALLTYPE OleConvertOLESTREAMToIStorageEx2(LPOLESTREAM polestm, LPSTORAGE pstg, CLIPFORMAT *pcfFormat, LONG *plwWidth, LONG *plHeight, DWORD *pdwSize, LPSTGMEDIUM pmedium, DWORD opt, PVOID pvCallbackContext, OLESTREAMQUERYCONVERTOLELINKCALLBACK pQueryConvertOLELinkCallback);
+HRESULT STDAPICALLTYPE OleCreateEx(const IID *const rclsid, const IID *const riid, DWORD dwFlags, DWORD renderopt, ULONG cFormats, DWORD *rgAdvf, LPFORMATETC rgFormatEtc, IAdviseSink *lpAdviseSink, DWORD *rgdwConnection, LPOLECLIENTSITE pClientSite, LPSTORAGE pStg, LPVOID *ppvObj);
+HRESULT STDAPICALLTYPE OleCreateLinkEx(LPMONIKER pmkLinkSrc, const IID *const riid, DWORD dwFlags, DWORD renderopt, ULONG cFormats, DWORD *rgAdvf, LPFORMATETC rgFormatEtc, IAdviseSink *lpAdviseSink, DWORD *rgdwConnection, LPOLECLIENTSITE pClientSite, LPSTORAGE pStg, LPVOID *ppvObj);
+HRESULT STDAPICALLTYPE OleCreateLinkFromDataEx(LPDATAOBJECT pSrcDataObj, const IID *const riid, DWORD dwFlags, DWORD renderopt, ULONG cFormats, DWORD *rgAdvf, LPFORMATETC rgFormatEtc, IAdviseSink *lpAdviseSink, DWORD *rgdwConnection, LPOLECLIENTSITE pClientSite, LPSTORAGE pStg, LPVOID *ppvObj);
+HRESULT STDAPICALLTYPE OleCreateLinkToFileEx(LPCOLESTR lpszFileName, const IID *const riid, DWORD dwFlags, DWORD renderopt, ULONG cFormats, DWORD *rgAdvf, LPFORMATETC rgFormatEtc, IAdviseSink *lpAdviseSink, DWORD *rgdwConnection, LPOLECLIENTSITE pClientSite, LPSTORAGE pStg, LPVOID *ppvObj);
+HRESULT STDAPICALLTYPE OleGetClipboardWithEnterpriseInfo(IDataObject **dataObject, PWSTR *dataEnterpriseId, PWSTR *sourceDescription, PWSTR *targetDescription, PWSTR *dataDescription);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* __WINE_OLE2_H */

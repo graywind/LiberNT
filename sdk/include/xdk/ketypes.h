@@ -50,7 +50,8 @@ typedef enum _PROCESSOR_CACHE_TYPE {
   CacheUnified,
   CacheInstruction,
   CacheData,
-  CacheTrace
+  CacheTrace,
+  CacheUnknown = 4,
 } PROCESSOR_CACHE_TYPE;
 
 typedef struct _CACHE_DESCRIPTOR {
@@ -101,7 +102,8 @@ typedef enum _LOGICAL_PROCESSOR_RELATIONSHIP {
   RelationProcessorDie,
   RelationNumaNodeEx,
   RelationProcessorModule,
-  RelationAll = 0xffff
+  RelationAll = 0xffff,
+  RelationProcessorSharedComputeUnit = 8,
 } LOGICAL_PROCESSOR_RELATIONSHIP;
 
 typedef struct _PROCESSOR_RELATIONSHIP {
@@ -344,7 +346,12 @@ typedef enum _KBUGCHECK_CALLBACK_REASON {
   KbCallbackReserved1,
   KbCallbackSecondaryDumpData,
   KbCallbackDumpIo,
-  KbCallbackAddPages
+  KbCallbackAddPages,
+  KbCallbackSecondaryMultiPartDumpData = 5,
+  KbCallbackRemovePages = 6,
+  KbCallbackTriageDumpData = 7,
+  KbCallbackReserved2 = 8,
+  KbCallbackReserved3 = 9,
 } KBUGCHECK_CALLBACK_REASON;
 
 struct _KBUGCHECK_REASON_CALLBACK_RECORD;
@@ -472,7 +479,9 @@ typedef enum _KINTERRUPT_POLARITY {
   InterruptRisingEdge = InterruptActiveHigh,
   InterruptActiveLow,
   InterruptFallingEdge = InterruptActiveLow,
-  InterruptActiveBoth
+  InterruptActiveBoth,
+  InterruptActiveBothTriggerLow = 3,
+  InterruptActiveBothTriggerHigh = 4,
 } KINTERRUPT_POLARITY, *PKINTERRUPT_POLARITY;
 
 typedef enum _KPROFILE_SOURCE {
@@ -761,8 +770,7 @@ typedef ULONG64 KSPIN_LOCK_QUEUE_NUMBER;
 #define LockQueueBcbLock 14
 #define LockQueueMmNonPagedPoolLock 15
 #define LockQueueUnusedSpare16 16
-#define LockQueueTimerTableLock 17
-#define LockQueueMaximumLock (LockQueueTimerTableLock + LOCK_QUEUE_TIMER_TABLE_LOCKS)
+#define LockQueueMaximumLock 17
 
 #elif defined(_ARM64_) || defined(_RISCV64_) || defined(_ARM_)
 
@@ -807,8 +815,7 @@ typedef enum _KSPIN_LOCK_QUEUE_NUMBER {
   LockQueueBcbLock,
   LockQueueMmNonPagedPoolLock,
   LockQueueUnusedSpare16,
-  LockQueueTimerTableLock,
-  LockQueueMaximumLock = LockQueueTimerTableLock + LOCK_QUEUE_TIMER_TABLE_LOCKS
+  LockQueueMaximumLock
 } KSPIN_LOCK_QUEUE_NUMBER, *PKSPIN_LOCK_QUEUE_NUMBER;
 
 #endif /* defined(_AMD64_) */
@@ -1120,6 +1127,13 @@ typedef struct DECLSPEC_ALIGN(16) _XSAVE_FORMAT {
 } XSAVE_FORMAT, *PXSAVE_FORMAT;
 typedef XSAVE_FORMAT XMM_SAVE_AREA32, *PXMM_SAVE_AREA32;
 
+typedef struct _XSAVE_ARM64_SVE_HEADER {
+  ULONG VectorLength;
+  ULONG VectorRegisterOffset;
+  ULONG PredicateRegisterOffset;
+  ULONG Reserved[5];
+} XSAVE_ARM64_SVE_HEADER, *PXSAVE_ARM64_SVE_HEADER;
+
 typedef struct DECLSPEC_ALIGN(8) _XSAVE_AREA_HEADER {
   ULONG64 Mask;
   ULONG64 CompactionMask;
@@ -1389,7 +1403,9 @@ typedef struct DECLSPEC_ALIGN(16) DECLSPEC_NOINITALL _ARM64_NT_CONTEXT
 
 #define XSTATE_MASK_LEGACY_FLOATING_POINT   (1LL << (XSTATE_LEGACY_FLOATING_POINT))
 #define XSTATE_MASK_LEGACY_SSE              (1LL << (XSTATE_LEGACY_SSE))
-#define XSTATE_MASK_LEGACY                  (XSTATE_MASK_LEGACY_FLOATING_POINT | XSTATE_MASK_LEGACY_SSE)
+#define XSTATE_MASK_AMD64_LEGACY            (XSTATE_MASK_LEGACY_FLOATING_POINT | XSTATE_MASK_LEGACY_SSE)
+#define XSTATE_ARM64_SVE                    2
+#define XSTATE_MASK_ARM64_SVE               (1ULL << XSTATE_ARM64_SVE)
 #define XSTATE_MASK_GSSE                    (1LL << (XSTATE_GSSE))
 #define XSTATE_MASK_AVX                     XSTATE_MASK_GSSE
 #define XSTATE_MASK_MPX                     ((1LL << (XSTATE_MPX_BNDREGS)) | (1LL << (XSTATE_MPX_BNDCSR)))
@@ -1402,7 +1418,15 @@ typedef struct DECLSPEC_ALIGN(16) DECLSPEC_NOINITALL _ARM64_NT_CONTEXT
 #define XSTATE_MASK_AMX_TILE_DATA           (1LL << (XSTATE_AMX_TILE_DATA))
 #define XSTATE_MASK_LWP                     (1LL << (XSTATE_LWP))
 
+#if defined(_X86_) || defined(_AMD64_)
+#define XSTATE_FIRST_NON_LEGACY_FEATURE     XSTATE_AVX
+#define XSTATE_MASK_LEGACY                  XSTATE_MASK_AMD64_LEGACY
+#define XSTATE_MASK_PERSISTENT              ((1LL << XSTATE_MPX_BNDCSR) | XSTATE_MASK_LWP)
+#define XSTATE_MASK_USER_VISIBLE_SUPERVISOR XSTATE_MASK_CET_U
+#endif
+
 #if defined(_AMD64_)
+#define XSTATE_MASK_LARGE_FEATURES          XSTATE_MASK_AMX_TILE_DATA
 #define XSTATE_MASK_ALLOWED \
     (XSTATE_MASK_LEGACY | \
      XSTATE_MASK_AVX | \
@@ -1415,6 +1439,7 @@ typedef struct DECLSPEC_ALIGN(16) DECLSPEC_NOINITALL _ARM64_NT_CONTEXT
      XSTATE_MASK_AMX_TILE_DATA | \
      XSTATE_MASK_LWP)
 #elif defined(_X86_)
+#define XSTATE_MASK_LARGE_FEATURES          0ULL
 #define XSTATE_MASK_ALLOWED \
     (XSTATE_MASK_LEGACY | \
      XSTATE_MASK_AVX | \
@@ -1423,11 +1448,16 @@ typedef struct DECLSPEC_ALIGN(16) DECLSPEC_NOINITALL _ARM64_NT_CONTEXT
      XSTATE_MASK_IPT | \
      XSTATE_MASK_CET_U | \
      XSTATE_MASK_LWP)
+#elif defined(_ARM64_)
+#define XSTATE_FIRST_NON_LEGACY_FEATURE     XSTATE_ARM64_SVE
+#define XSTATE_MASK_ALLOWED                 XSTATE_MASK_ARM64_SVE
+#define XSTATE_MASK_LEGACY                  0ULL
+#define XSTATE_MASK_PERSISTENT              0ULL
+#define XSTATE_MASK_USER_VISIBLE_SUPERVISOR 0ULL
+#define XSTATE_MASK_LARGE_FEATURES          0ULL
+#elif defined(_RISCV64_)
+#define XSTATE_MASK_LEGACY                  XSTATE_MASK_AMD64_LEGACY
 #endif
-
-#define XSTATE_MASK_PERSISTENT              ((1LL << (XSTATE_MPX_BNDCSR)) | XSTATE_MASK_LWP)
-#define XSTATE_MASK_USER_VISIBLE_SUPERVISOR (XSTATE_MASK_CET_U)
-#define XSTATE_MASK_LARGE_FEATURES          (XSTATE_MASK_AMX_TILE_DATA)
 
 #if defined(_X86_)
 #if !defined(__midl) && !defined(MIDL_PASS)
@@ -1488,7 +1518,8 @@ typedef struct _XSTATE_CONFIGURATION
 #if (NTDDI_VERSION >= NTDDI_WIN11) || defined(__REACTOS__)
     ULONG64 ExtendedFeatureDisableFeatures;
     ULONG AllNonLargeFeatureSize;
-    ULONG Spare;
+    USHORT MaxSveVectorLength;
+    USHORT Spare1;
 #endif
 } XSTATE_CONFIGURATION, *PXSTATE_CONFIGURATION;
 
@@ -1649,19 +1680,17 @@ typedef struct _KUSER_SHARED_DATA
 
     ULONG DataFlagsPad[1];                                  // 0x2f4
     ULONGLONG TestRetInstruction;                           // 0x2f8
-#if defined(_M_IX86)
-    ULONG SystemCall;                                       // 0x300
-    ULONG SystemCallReturn;                                 // 0x304
-#elif (NTDDI_VERSION >= NTDDI_WIN8)
+#if (NTDDI_VERSION >= NTDDI_WIN8)
     ULONGLONG QpcFrequency;                                 // 0x300
 #else
     ULONG SystemCall;                                       // 0x300
     ULONG SystemCallReturn;                                 // 0x304
 #endif
-#if (NTDDI_VERSION >= NTDDI_WIN10_TH2) && !defined(_M_IX86)
+#if (NTDDI_VERSION >= NTDDI_WIN10_TH2)
     ULONG SystemCall;                                       // 0x308
-    ULONG SystemCallPad0;                                   // 0x30c Renamed to Reserved2 in Vibranium R3
-    ULONGLONG SystemCallPad[2];                             // 0x310
+    ULONG Reserved2;                                        // 0x30c
+    ULONGLONG FullNumberOfPhysicalPages;                    // 0x310
+    ULONGLONG SystemCallPad[1];                             // 0x318
 #else
     ULONGLONG SystemCallPad[3];                             // 0x308
 #endif
@@ -1765,7 +1794,7 @@ typedef struct _KUSER_SHARED_DATA
         struct
         {
             volatile UCHAR QpcBypassEnabled;                // 0x3c6
-            UCHAR QpcShift;                                 // 0x3c7
+            UCHAR QpcReserved;                              // 0x3c7
         };
     };
     LARGE_INTEGER TimeZoneBiasEffectiveStart;               // 0x3c8
@@ -1796,6 +1825,11 @@ typedef struct _KUSER_SHARED_DATA
 //
 #if (NTDDI_VERSION >= NTDDI_WIN11_NI)
     ULONG64 UserPointerAuthMask;                            // 0x730
+#if defined(_ARM64_)
+    XSTATE_CONFIGURATION XStateArm64;                       // 0x738
+#else
+    ULONG Reserved10[210];                                  // 0x738
+#endif
 #endif // NTDDI_VERSION >= NTDDI_WIN11_NI
 
 #if (NTDDI_VERSION < NTDDI_WIN7) && defined(__REACTOS__)

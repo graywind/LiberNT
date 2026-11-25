@@ -2920,4 +2920,294 @@ LRESULT WINAPI CallCPLEntry16(HINSTANCE hMod, FARPROC16 pFunc, HWND dw3, UINT dw
 } /* extern "C" */
 #endif /* defined(__cplusplus) */
 
+#ifndef CLOSEPROPS_DISCARD
+#define CLOSEPROPS_DISCARD 0x0001
+#endif
+#ifndef CLOSEPROPS_NONE
+#define CLOSEPROPS_NONE 0x0000
+#endif
+#ifndef DWFAF_AUTOHIDE
+#define DWFAF_AUTOHIDE 0x0010
+#endif
+#ifndef DWFAF_GROUP1
+#define DWFAF_GROUP1 0x0002
+#endif
+#ifndef DWFAF_GROUP2
+#define DWFAF_GROUP2 0x0004
+#endif
+#ifndef GETPROPS_NONE
+#define GETPROPS_NONE 0x0000
+#endif
+#ifndef IDC_OFFLINE_HAND
+#define IDC_OFFLINE_HAND 103
+#endif
+#ifndef IDC_PANTOOL_HAND_CLOSED
+#define IDC_PANTOOL_HAND_CLOSED 105
+#endif
+#ifndef IDC_PANTOOL_HAND_OPEN
+#define IDC_PANTOOL_HAND_OPEN 104
+#endif
+#ifndef ISFBVIEWMODE_LARGEICONS
+#define ISFBVIEWMODE_LARGEICONS 0x0002
+#endif
+#ifndef ISFBVIEWMODE_SMALLICONS
+#define ISFBVIEWMODE_SMALLICONS 0x0001
+#endif
+#ifndef ISFB_MASK_BKCOLOR
+#define ISFB_MASK_BKCOLOR 0x00000002
+#endif
+#ifndef ISFB_MASK_COLORS
+#define ISFB_MASK_COLORS 0x00000020
+#endif
+#ifndef ISFB_MASK_SHELLFOLDER
+#define ISFB_MASK_SHELLFOLDER 0x00000008
+#endif
+#ifndef ISFB_MASK_VIEWMODE
+#define ISFB_MASK_VIEWMODE 0x00000004
+#endif
+#ifndef ISFB_STATE_ALLOWRENAME
+#define ISFB_STATE_ALLOWRENAME 0x00000002
+#endif
+#ifndef ISFB_STATE_BTNMINSIZE
+#define ISFB_STATE_BTNMINSIZE 0x00000100
+#endif
+#ifndef ISFB_STATE_CHANNELBAR
+#define ISFB_STATE_CHANNELBAR 0x00000010
+#endif
+#ifndef ISFB_STATE_DEBOSSED
+#define ISFB_STATE_DEBOSSED 0x00000001
+#endif
+#ifndef ISFB_STATE_DEFAULT
+#define ISFB_STATE_DEFAULT 0x00000000
+#endif
+#ifndef ISFB_STATE_FULLOPEN
+#define ISFB_STATE_FULLOPEN 0x00000040
+#endif
+#ifndef ISFB_STATE_NONAMESORT
+#define ISFB_STATE_NONAMESORT 0x00000080
+#endif
+#ifndef OPENPROPS_INHIBITPIF
+#define OPENPROPS_INHIBITPIF 0x8000
+#endif
+#ifndef SETPROPS_NONE
+#define SETPROPS_NONE 0x0000
+#endif
+#ifndef SHCDF_UPDATEITEM
+#define SHCDF_UPDATEITEM 0x00000001
+#endif
+
+enum {
+    DBCID_EMPTY = 0,
+    DBCID_ONDRAG = 1,
+    DBCID_CLSIDOFBAR = 2,
+    DBCID_RESIZE = 3,
+    DBCID_GETBAR = 4,
+    DBCID_UPDATESIZE = 5
+};
+
+enum {
+    SFBID_PIDLCHANGED = 0
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void WINAPI PathQualify(PWSTR psz);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _SFV_SETITEMPOS {
+  LPCITEMIDLIST pidl;
+  POINT pt;
+} SFV_SETITEMPOS;
+
+typedef struct SHCOLUMNDATA {
+  ULONG dwFlags;
+  DWORD dwFileAttributes;
+  ULONG dwReserved;
+  WCHAR * pwszExt;
+  WCHAR wszFile[260];
+} SHCOLUMNDATA, *LPSHCOLUMNDATA;
+
+#pragma pack(push, 1)
+typedef struct SHCOLUMNINFO {
+  SHCOLUMNID scid;
+  VARTYPE vt;
+  DWORD fmt;
+  UINT cChars;
+  DWORD csFlags;
+  WCHAR wszTitle[80];
+  WCHAR wszDescription[128];
+} SHCOLUMNINFO, *LPSHCOLUMNINFO;
+#pragma pack(pop)
+
+typedef struct SHCOLUMNINIT {
+  ULONG dwFlags;
+  ULONG dwReserved;
+  WCHAR wszFolder[260];
+} SHCOLUMNINIT, *LPSHCOLUMNINIT;
+
+typedef struct tagAAMENUFILENAME {
+  SHORT cbTotal;
+  BYTE rgbReserved[12];
+  WCHAR szFileName[1];
+} AASHELLMENUFILENAME, *LPAASHELLMENUFILENAME;
+
+typedef struct tagAASHELLMENUITEM {
+  void * lpReserved1;
+  int iReserved;
+  UINT uiReserved;
+  LPAASHELLMENUFILENAME lpName;
+  LPWSTR psz;
+} AASHELLMENUITEM, *LPAASHELLMENUITEM;
+
+#define BROWSEUIAPI EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
+#ifdef UNICODE
+#define ICopyHook ICopyHookW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define ICopyHook ICopyHookW
+#else
+#define ICopyHook ICopyHookA
+#endif
+#endif
+#endif
+#if (!(defined(UNICODE)))
+#define ICopyHookVtbl ICopyHookAVtbl
+#define INewShortcutHookVtbl INewShortcutHookAVtbl
+#else
+#define ICopyHookVtbl ICopyHookWVtbl
+#define INewShortcutHookVtbl INewShortcutHookWVtbl
+#endif
+#ifdef UNICODE
+#define LPCOPYHOOK LPCOPYHOOKW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define LPCOPYHOOK LPCOPYHOOKW
+#else
+#define LPCOPYHOOK LPCOPYHOOKA
+#endif
+#endif
+#endif
+#define OPENPROPS_NONE 0x0000
+#define SHFOLDERAPI EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
+#define SHSTDDOCAPI EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
+
+typedef struct IActiveDesktopPVtbl IActiveDesktopPVtbl;
+
+typedef struct IADesktopP2Vtbl IADesktopP2Vtbl;
+
+typedef struct IBanneredBarVtbl IBanneredBarVtbl;
+
+typedef struct IColumnProviderVtbl IColumnProviderVtbl;
+
+#pragma pack(push, 1)
+struct IColumnProvider
+{
+    struct IColumnProviderVtbl *lpVtbl;
+};
+#pragma pack(pop)
+
+typedef struct ICopyHookAVtbl ICopyHookAVtbl;
+
+#pragma pack(push, 1)
+typedef struct ICopyHookA ICopyHookA;
+
+struct ICopyHookA
+{
+    struct ICopyHookAVtbl *lpVtbl;
+};
+#pragma pack(pop)
+
+typedef struct ICopyHookWVtbl ICopyHookWVtbl;
+
+#pragma pack(push, 1)
+typedef struct ICopyHookW ICopyHookW;
+
+struct ICopyHookW
+{
+    struct ICopyHookWVtbl *lpVtbl;
+};
+#pragma pack(pop)
+
+typedef struct ICurrentWorkingDirectoryVtbl ICurrentWorkingDirectoryVtbl;
+
+typedef struct IDeskBarClientVtbl IDeskBarClientVtbl;
+
+typedef struct IDockingWindowFrameVtbl IDockingWindowFrameVtbl;
+
+typedef struct IDocViewSiteVtbl IDocViewSiteVtbl;
+
+#pragma pack(push, 1)
+struct IDocViewSite
+{
+    struct IDocViewSiteVtbl *lpVtbl;
+};
+#pragma pack(pop)
+
+typedef struct IInitializeObjectVtbl IInitializeObjectVtbl;
+
+typedef struct INewShortcutHookAVtbl INewShortcutHookAVtbl;
+
+typedef struct INewShortcutHookWVtbl INewShortcutHookWVtbl;
+
+typedef struct IShellFolderBandVtbl IShellFolderBandVtbl;
+
+typedef struct IThumbnailCaptureVtbl IThumbnailCaptureVtbl;
+
+#pragma pack(push, 1)
+typedef struct IThumbnailCapture IThumbnailCapture;
+
+struct IThumbnailCapture
+{
+    struct IThumbnailCaptureVtbl *lpVtbl;
+};
+#pragma pack(pop)
+
+typedef ICopyHookA *LPCOPYHOOKA;
+
+typedef ICopyHookW *LPCOPYHOOKW;
+
+typedef const SHCOLUMNDATA *LPCSHCOLUMNDATA;
+
+typedef const SHCOLUMNINFO *LPCSHCOLUMNINFO;
+
+typedef const SHCOLUMNINIT *LPCSHCOLUMNINIT;
+
+typedef SFV_SETITEMPOS *LPSFV_SETITEMPOS;
+
+typedef IThumbnailCapture *LPTHUMBNAILCAPTURE;
+
+typedef const SFV_SETITEMPOS *PCSFV_SETITEMPOS;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+BOOL WINAPI ImportPrivacySettings(PCWSTR pszFilename, BOOL *pfParsePrivacyPreferences, BOOL *pfParsePerSiteRules);
+
+/* TODO: LiberNT does not implement the functions below yet */
+typedef struct IEnumPrivacyRecords IEnumPrivacyRecords;
+
+HRESULT STDAPICALLTYPE DoPrivacyDlg(HWND hwndOwner, PCWSTR pszUrl, IEnumPrivacyRecords *pPrivacyEnum, BOOL fReportAllSites);
+void STDAPICALLTYPE PerUserInit(void);
+DWORD STDAPICALLTYPE SoftwareUpdateMessageBox(HWND hWnd, PCWSTR pszDistUnit, DWORD dwFlags, LPSOFTDISTINFO psdi);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define BROWSEUIAPI_(type) EXTERN_C DECLSPEC_IMPORT type STDAPICALLTYPE
+#define ShellFolderView_AddObject(_hwnd, _pidl) (LPARAM) SHShellFolderView_Message(_hwnd, SFVM_ADDOBJECT, (LPARAM) (_pidl))
+#define ShellFolderView_GetSelectedObjects(_hwnd, ppidl) (LPARAM) SHShellFolderView_Message(_hwnd, SFVM_GETSELECTEDOBJECTS, (LPARAM) (ppidl))
+#define ShellFolderView_ReArrange(_hwnd, _lparam) (BOOL) SHShellFolderView_Message(_hwnd, SFVM_REARRANGE, _lparam)
+#define ShellFolderView_RemoveObject(_hwnd, _pidl) (LPARAM) SHShellFolderView_Message(_hwnd, SFVM_REMOVEOBJECT, (LPARAM) (_pidl))
+#define ShellFolderView_SetClipboard(_hwnd, _dwEffect) (void) SHShellFolderView_Message(_hwnd, SFVM_SETCLIPBOARD, (LPARAM) (DWORD) (_dwEffect))
+#define ShellFolderView_SetPoints(_hwnd, _pdtobj) (void) SHShellFolderView_Message(_hwnd, SFVM_SETPOINTS, (LPARAM) (_pdtobj))
+#define ShellFolderView_UpdateObject(_hwnd, _ppidl) (LPARAM) SHShellFolderView_Message(_hwnd, SFVM_UPDATEOBJECT, (LPARAM) (_ppidl))
+#define SHSTDDOCAPI_(type) EXTERN_C DECLSPEC_IMPORT type STDAPICALLTYPE
+
 #endif /* __WINE_SHLOBJ_H */

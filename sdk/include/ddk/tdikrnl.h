@@ -37,7 +37,7 @@ extern "C" {
 
 
 typedef struct _TDI_REQUEST_KERNEL {
-  ULONG RequestFlags;
+  ULONG_PTR RequestFlags;
   PTDI_CONNECTION_INFORMATION RequestConnectionInformation;
   PTDI_CONNECTION_INFORMATION ReturnConnectionInformation;
   PVOID RequestSpecific;
@@ -862,11 +862,25 @@ typedef enum _TDI_PNP_OPCODE {
 #define TDI_PNP_CONTEXT_TYPE_PDO                0x3
 #define TDI_PNP_CONTEXT_TYPE_FIRST_OR_LAST_IF   0x4
 
-typedef struct _TDI_PNP_CONTEXT {
-  USHORT  ContextSize;
-  USHORT  ContextType;
-  UCHAR  ContextData[1];
-} TDI_PNP_CONTEXT, *PTDI_PNP_CONTEXT;
+typedef struct _TDI_PNP_CONTEXT_WIN2K {
+  USHORT ContextSize;
+  USHORT ContextType;
+  UCHAR POINTER_ALIGNMENT ContextData[1];
+} TDI_PNP_CONTEXT_WIN2K, *PTDI_PNP_CONTEXT_WIN2K;
+
+typedef struct _TDI_PNP_CONTEXT_XP {
+  USHORT ContextSize;
+  USHORT ContextType;
+  UCHAR POINTER_ALIGNMENT ContextData[1];
+} TDI_PNP_CONTEXT_XP, *PTDI_PNP_CONTEXT_XP;
+
+#if (NTDDI_VERSION >= NTDDI_WINXP)
+typedef TDI_PNP_CONTEXT_XP TDI_PNP_CONTEXT;
+#else
+typedef TDI_PNP_CONTEXT_WIN2K TDI_PNP_CONTEXT;
+#endif
+
+typedef TDI_PNP_CONTEXT *PTDI_PNP_CONTEXT;
 
 typedef VOID
 (NTAPI *TDI_ADD_ADDRESS_HANDLER)(
@@ -1200,6 +1214,63 @@ typedef TDI_CMSGHDR *PTDI_CMSGHDR;
   ((TDI_CMSGHDR *)(cmsg))->cmsg_type = type; \
   ((TDI_CMSGHDR *)(cmsg))->cmsg_len = TDI_CMSG_LEN(length); \
 }
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef TDI_DIRECT_ACCEPT
+#define TDI_DIRECT_ACCEPT 0x2A
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+NTSTATUS NTAPI TdiDeregisterNotificationHandler(HANDLE BindingHandle);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _TDI_NCPA_BINDING_INFO {
+  PUNICODE_STRING TdiClientName;
+  PUNICODE_STRING TdiProviderName;
+  PUNICODE_STRING BindList;
+  PVOID ReconfigBuffer;
+  unsigned int ReconfigBufferSize;
+  TDI_PNP_OPCODE PnpOpcode;
+} TDI_NCPA_BINDING_INFO, *PTDI_NCPA_BINDING_INFO;
+
+#define _TDI_KRNL_
+#define TDI20
+
+struct _TDI_VERSION_
+{
+    union
+    {
+        struct
+        {
+            UCHAR MajorTdiVersion;
+            UCHAR MinorTdiVersion;
+        };
+        USHORT TdiVersion;
+    };
+};
+
+typedef struct _TDI_VERSION_ *PTDI_VERSION;
+
+typedef void (NTAPI *TDI_NET_READY_HANDLER)(NTSTATUS);
+
+typedef struct _TDI_VERSION_ TDI_VERSION;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+void TdiCopyBufferToMdlWithReservedMapping(PVOID SourceBuffer, PMDL DestinationMdl, ULONG DestinationOffset, ULONG BytesToCopy);
+void NTAPI TdiCopyBufferToMdlWithReservedMappingAtDpcLevel(PVOID SourceBuffer, PMDL DestinationMdl, ULONG DestinationOffset, ULONG BytesToCopy);
+void NTAPI TdiGet9FTriageBlock(PVOID *TriageBlockAddress);
+NTSTATUS NTAPI TdiMakeNCPAChanges(TDI_NCPA_BINDING_INFO NcpaBindingInfo);
 
 #ifdef __cplusplus
 }

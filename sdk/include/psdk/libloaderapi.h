@@ -120,4 +120,106 @@ BOOL WINAPI GetModuleHandleExW(DWORD,LPCWSTR,HMODULE*);
 }
 #endif
 
+#ifndef FIND_RESOURCE_DIRECTORY_LANGUAGES
+#define FIND_RESOURCE_DIRECTORY_LANGUAGES 0x0400
+#endif
+#ifndef FIND_RESOURCE_DIRECTORY_NAMES
+#define FIND_RESOURCE_DIRECTORY_NAMES 0x0200
+#endif
+#ifndef FIND_RESOURCE_DIRECTORY_TYPES
+#define FIND_RESOURCE_DIRECTORY_TYPES 0x0100
+#endif
+#ifndef RESOURCE_ENUM_MODULE_EXACT
+#define RESOURCE_ENUM_MODULE_EXACT 0x0010
+#endif
+#ifndef SUPPORT_LANG_NUMBER
+#define SUPPORT_LANG_NUMBER 32
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+BOOL WINAPI EnumResourceLanguagesExA(HMODULE hModule, LPCSTR lpType, LPCSTR lpName, ENUMRESLANGPROCA lpEnumFunc, LONG_PTR lParam, DWORD dwFlags, LANGID LangId);
+BOOL WINAPI EnumResourceLanguagesExW(HMODULE hModule, LPCWSTR lpType, LPCWSTR lpName, ENUMRESLANGPROCW lpEnumFunc, LONG_PTR lParam, DWORD dwFlags, LANGID LangId);
+BOOL WINAPI EnumResourceNamesExA(HMODULE hModule, LPCSTR lpType, ENUMRESNAMEPROCA lpEnumFunc, LONG_PTR lParam, DWORD dwFlags, LANGID LangId);
+BOOL WINAPI EnumResourceNamesExW(HMODULE hModule, LPCWSTR lpType, ENUMRESNAMEPROCW lpEnumFunc, LONG_PTR lParam, DWORD dwFlags, LANGID LangId);
+BOOL WINAPI EnumResourceTypesExA(HMODULE hModule, ENUMRESTYPEPROCA lpEnumFunc, LONG_PTR lParam, DWORD dwFlags, LANGID LangId);
+BOOL WINAPI EnumResourceTypesExW(HMODULE hModule, ENUMRESTYPEPROCW lpEnumFunc, LONG_PTR lParam, DWORD dwFlags, LANGID LangId);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _REDIRECTION_FUNCTION_DESCRIPTOR {
+  PCSTR DllName;
+  PCSTR FunctionName;
+  PVOID RedirectionTarget;
+} REDIRECTION_FUNCTION_DESCRIPTOR, *PREDIRECTION_FUNCTION_DESCRIPTOR;
+
+typedef struct tagENUMUILANG {
+  ULONG NumOfEnumUILang;
+  ULONG SizeOfEnumUIBuffer;
+  LANGID * pEnumUIBuffer;
+} ENUMUILANG, *PENUMUILANG;
+
+#define CURRENT_IMPORT_REDIRECTION_VERSION 1
+#ifdef UNICODE
+#define EnumResourceLanguagesEx EnumResourceLanguagesExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define EnumResourceLanguagesEx EnumResourceLanguagesExW
+#else
+#define EnumResourceLanguagesEx EnumResourceLanguagesExA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define EnumResourceNamesEx EnumResourceNamesExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define EnumResourceNamesEx EnumResourceNamesExW
+#else
+#define EnumResourceNamesEx EnumResourceNamesExA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define EnumResourceTypesEx EnumResourceTypesExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define EnumResourceTypesEx EnumResourceTypesExW
+#else
+#define EnumResourceTypesEx EnumResourceTypesExA
+#endif
+#endif
+#endif
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define PGET_MODULE_HANDLE_EX PGET_MODULE_HANDLE_EXW
+#else
+#define PGET_MODULE_HANDLE_EX PGET_MODULE_HANDLE_EXA
+#endif
+#endif
+
+typedef const REDIRECTION_FUNCTION_DESCRIPTOR *PCREDIRECTION_FUNCTION_DESCRIPTOR;
+
+struct _REDIRECTION_DESCRIPTOR
+{
+    ULONG Version;
+    ULONG FunctionCount;
+    PCREDIRECTION_FUNCTION_DESCRIPTOR Redirections;
+};
+
+typedef BOOL (WINAPI *PGET_MODULE_HANDLE_EXA)(DWORD, LPCSTR, HMODULE *);
+
+typedef BOOL (WINAPI *PGET_MODULE_HANDLE_EXW)(DWORD, LPCWSTR, HMODULE *);
+
+typedef struct _REDIRECTION_DESCRIPTOR *PREDIRECTION_DESCRIPTOR;
+
+typedef struct _REDIRECTION_DESCRIPTOR REDIRECTION_DESCRIPTOR;
+
+typedef const REDIRECTION_DESCRIPTOR *PCREDIRECTION_DESCRIPTOR;
+
 #endif  /* _APISETLIBLOADER_ */

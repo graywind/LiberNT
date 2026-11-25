@@ -35,24 +35,27 @@ Author:
 //
 // Loader Data Table Entry Flags
 //
-#define LDRP_STATIC_LINK                        0x00000002
+#define LDRP_MARKED_FOR_REMOVAL                 0x00000002
 #define LDRP_IMAGE_DLL                          0x00000004
-#if (NTDDI_VERSION < NTDDI_WIN8)
-#define LDRP_SHIMENG_SUPPRESSED_ENTRY           0x00000008
-#else
 #define LDRP_LOAD_NOTIFICATIONS_SENT            0x00000008
-#endif
+#define LDRP_PROCESS_STATIC_IMPORT              0x00000020
 #define LDRP_IMAGE_INTEGRITY_FORCED             0x00000020
+#define LDRP_IN_LEGACY_LISTS                    0x00000040
+#define LDRP_IN_INDEXES                         0x00000080
+#define LDRP_IN_EXCEPTION_TABLE                 0x00000200
+#define LDRP_SHIM_ENGINE_CALLOUT_SENT           0x00000800
 #define LDRP_LOAD_IN_PROGRESS                   0x00001000
-#define LDRP_UNLOAD_IN_PROGRESS                 0x00002000
+#define LDRP_LOAD_CONFIG_PROCESSED              0x00002000
 #define LDRP_ENTRY_PROCESSED                    0x00004000
+#define LDRP_PROTECT_DELAY_LOAD                 0x00008000
 #define LDRP_ENTRY_INSERTED                     0x00008000
 #define LDRP_CURRENT_LOAD                       0x00010000
 #define LDRP_FAILED_BUILTIN_LOAD                0x00020000
 #define LDRP_DONT_CALL_FOR_THREADS              0x00040000
 #define LDRP_PROCESS_ATTACH_CALLED              0x00080000
+#define LDRP_PROCESS_ATTACH_FAILED              0x00100000
 #define LDRP_DEBUG_SYMBOLS_LOADED               0x00100000
-#define LDRP_IMAGE_NOT_AT_BASE                  0x00200000
+#define LDRP_SCP_IN_EXCEPTION_TABLE             0x00200000
 #define LDRP_COR_IMAGE                          0x00400000
 #define LDR_COR_OWNS_UNMAP                      0x00800000
 #define LDRP_SYSTEM_MAPPED                      0x01000000
@@ -125,10 +128,8 @@ typedef struct _PEB_LDR_DATA
     LIST_ENTRY InMemoryOrderModuleList;
     LIST_ENTRY InInitializationOrderModuleList;
     PVOID EntryInProgress;
-#if (NTDDI_VERSION >= NTDDI_WIN7)
     UCHAR ShutdownInProgress;
     PVOID ShutdownThreadId;
-#endif
 } PEB_LDR_DATA, *PPEB_LDR_DATA;
 
 typedef enum _LDR_DLL_LOAD_REASON
@@ -149,6 +150,62 @@ typedef enum _LDR_DLL_LOAD_REASON
 // NOTE: The field 'InMemoryOrderLinks' MUST have that name.
 // It's hard-coded into WinDbg for PEB dumping!
 //
+typedef enum _LDR_DDAG_STATE
+{
+    LdrModulesMerged = -5,
+    LdrModulesInitError = -4,
+    LdrModulesSnapError = -3,
+    LdrModulesUnloaded = -2,
+    LdrModulesUnloading = -1,
+    LdrModulesPlaceHolder = 0,
+    LdrModulesMapping = 1,
+    LdrModulesMapped = 2,
+    LdrModulesWaitingForDependencies = 3,
+    LdrModulesSnapping = 4,
+    LdrModulesSnapped = 5,
+    LdrModulesCondensed = 6,
+    LdrModulesReadyToInit = 7,
+    LdrModulesInitializing = 8,
+    LdrModulesReadyToRun = 9,
+} LDR_DDAG_STATE;
+
+typedef struct _LDRP_CSLIST
+{
+    PSINGLE_LIST_ENTRY Tail;
+} LDRP_CSLIST;
+
+typedef struct _LDR_DDAG_NODE
+{
+    LIST_ENTRY Modules;
+    struct _LDR_SERVICE_TAG_RECORD *ServiceTagList;
+    ULONG LoadCount;
+    ULONG LoadWhileUnloadingCount;
+    ULONG LowestLink;
+    LDRP_CSLIST Dependencies;
+    LDRP_CSLIST IncomingDependencies;
+    LDR_DDAG_STATE State;
+    SINGLE_LIST_ENTRY CondenseLink;
+    ULONG PreorderNumber;
+} LDR_DDAG_NODE, *PLDR_DDAG_NODE;
+
+typedef struct _LDR_DEPENDENCY_RECORD
+{
+    SINGLE_LIST_ENTRY DependencyLink;
+    PLDR_DDAG_NODE DependencyNode;
+    SINGLE_LIST_ENTRY IncomingDependencyLink;
+    PLDR_DDAG_NODE IncomingDependencyNode;
+} LDR_DEPENDENCY_RECORD, *PLDR_DEPENDENCY_RECORD;
+
+typedef enum _LDR_HOT_PATCH_STATE
+{
+    LdrHotPatchBaseImage = 0,
+    LdrHotPatchNotApplied = 1,
+    LdrHotPatchAppliedReverse = 2,
+    LdrHotPatchAppliedForward = 3,
+    LdrHotPatchFailedToPatch = 4,
+    LdrHotPatchStateMax = 5
+} LDR_HOT_PATCH_STATE, *PLDR_HOT_PATCH_STATE;
+
 typedef struct _LDR_DATA_TABLE_ENTRY
 {
     LIST_ENTRY InLoadOrderLinks;
@@ -159,25 +216,51 @@ typedef struct _LDR_DATA_TABLE_ENTRY
     ULONG SizeOfImage;
     UNICODE_STRING FullDllName;
     UNICODE_STRING BaseDllName;
-    ULONG Flags;
-    USHORT LoadCount;
-    USHORT TlsIndex;
     union
     {
-        LIST_ENTRY HashLinks;
+        UCHAR FlagGroup[4];
+        ULONG Flags;
         struct
         {
-            PVOID SectionPointer;
-            ULONG CheckSum;
+            ULONG PackagedBinary : 1;
+            ULONG MarkedForRemoval : 1;
+            ULONG ImageDll : 1;
+            ULONG LoadNotificationsSent : 1;
+            ULONG TelemetryEntryProcessed : 1;
+            ULONG ProcessStaticImport : 1;
+            ULONG InLegacyLists : 1;
+            ULONG InIndexes : 1;
+            ULONG ShimDll : 1;
+            ULONG InExceptionTable : 1;
+            ULONG VerifierProvider : 1;
+            ULONG ShimEngineCalloutSent : 1;
+            ULONG LoadInProgress : 1;
+            ULONG LoadConfigProcessed : 1;
+            ULONG EntryProcessed : 1;
+            ULONG ProtectDelayLoad : 1;
+            ULONG AuxIatCopyPrivate : 1;
+            ULONG ReservedFlags3 : 1;
+            ULONG DontCallForThreads : 1;
+            ULONG ProcessAttachCalled : 1;
+            ULONG ProcessAttachFailed : 1;
+            ULONG ScpInExceptionTable : 1;
+            ULONG CorImage : 1;
+            ULONG DontRelocate : 1;
+            ULONG CorILOnly : 1;
+            ULONG ChpeImage : 1;
+            ULONG ChpeEmulatorImage : 1;
+            ULONG ReservedFlags5 : 1;
+            ULONG Redirected : 1;
+            ULONG ReservedFlags6 : 2;
+            ULONG CompatDatabaseProcessed : 1;
         };
     };
-    union
-    {
-        ULONG TimeDateStamp;
-        PVOID LoadedImports;
-    };
+    USHORT ObsoleteLoadCount;
+    USHORT TlsIndex;
+    LIST_ENTRY HashLinks;
+    ULONG TimeDateStamp;
     PACTIVATION_CONTEXT EntryPointActivationContext;
-    PVOID PatchInformation;
+    PVOID Lock;
     struct _LDR_DDAG_NODE *DdagNode;
     LIST_ENTRY NodeModuleLink;
     struct _LDRP_LOAD_CONTEXT *LoadContext;
@@ -191,7 +274,55 @@ typedef struct _LDR_DATA_TABLE_ENTRY
     LDR_DLL_LOAD_REASON LoadReason;
     ULONG ImplicitPathOptions;
     ULONG ReferenceCount;
+    ULONG DependentLoadFlags;
+    UCHAR SigningLevel;
+    ULONG CheckSum;
+    PVOID ActivePatchImageBase;
+    LDR_HOT_PATCH_STATE HotPatchState;
 } LDR_DATA_TABLE_ENTRY, *PLDR_DATA_TABLE_ENTRY;
+
+//
+// Kernel Loader Data Table Entry
+//
+typedef struct _KLDR_DATA_TABLE_ENTRY
+{
+    LIST_ENTRY InLoadOrderLinks;
+    PVOID ExceptionTable;
+    ULONG ExceptionTableSize;
+    PVOID GpValue;
+    struct _NON_PAGED_DEBUG_INFO *NonPagedDebugInfo;
+    PVOID DllBase;
+    PVOID EntryPoint;
+    ULONG SizeOfImage;
+    UNICODE_STRING FullDllName;
+    UNICODE_STRING BaseDllName;
+    ULONG Flags;
+    USHORT LoadCount;
+    union
+    {
+        struct
+        {
+            USHORT SignatureLevel : 4;
+            USHORT SignatureType : 3;
+            USHORT Frozen : 2;
+            USHORT HotPatch : 1;
+            USHORT Unused : 6;
+        };
+        USHORT EntireField;
+    } u1;
+    PVOID SectionPointer;
+    ULONG CheckSum;
+    ULONG CoverageSectionSize;
+    PVOID CoverageSection;
+    PVOID LoadedImports;
+    union
+    {
+        PVOID Spare;
+        struct _KLDR_DATA_TABLE_ENTRY *NtDataTableEntry;
+    };
+    ULONG SizeOfImageNotRounded;
+    ULONG TimeDateStamp;
+} KLDR_DATA_TABLE_ENTRY, *PKLDR_DATA_TABLE_ENTRY;
 
 //
 // Loaded Imports Reference Counting in Kernel
@@ -199,7 +330,7 @@ typedef struct _LDR_DATA_TABLE_ENTRY
 typedef struct _LOAD_IMPORTS
 {
     SIZE_T Count;
-    PLDR_DATA_TABLE_ENTRY Entry[1];
+    PKLDR_DATA_TABLE_ENTRY Entry[1];
 } LOAD_IMPORTS, *PLOAD_IMPORTS;
 
 //
@@ -266,15 +397,11 @@ typedef struct _ALT_RESOURCE_MODULE
 {
     LANGID LangId;
     PVOID ModuleBase;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     PVOID ModuleManifest;
-#endif
     PVOID AlternateModule;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     HANDLE AlternateFileHandle;
     ULONG ModuleCheckSum;
     ULONG ErrorCode;
-#endif
 } ALT_RESOURCE_MODULE, *PALT_RESOURCE_MODULE;
 
 //

@@ -22,6 +22,7 @@ extern void func_BackupReadWrite(void);
 extern void func_CalendarDateTime(void);
 extern void func_CallbackCallingConventions(void);
 extern void func_CallbackMayRunLong(void);
+extern void func_CheckElevationEnabled(void);
 extern void func_CdfsVolume(void);
 extern void func_CreateSymbolicLink(void);
 extern void func_SataDiskAddress(void);
@@ -127,9 +128,11 @@ extern void func_TzSpecificLocalTimeEx(void);
 extern void func_TebSegmentAfterWait(void);
 extern void func_SharedMemorySecurity(void);
 extern void func_SharedMemoryTransfer(void);
+extern void func_MapFlush(void);
 extern void func_StarvationBoost(void);
 extern void func_StdHandleInheritance(void);
 extern void func_StreamRename(void);
+extern void func_StrippedImageLayout(void);
 extern void func_PosixRename(void);
 extern void func_LocaleNameToLCID(void);
 extern void func_lstrcpynW(void);
@@ -257,6 +260,7 @@ const struct test winetest_testlist[] =
     { "CalendarDateTime",            func_CalendarDateTime },
     { "CallbackCallingConventions", func_CallbackCallingConventions },
     { "CallbackMayRunLong",          func_CallbackMayRunLong },
+    { "CheckElevationEnabled",       func_CheckElevationEnabled },
     { "CdfsVolume", func_CdfsVolume },
     { "CreateSymbolicLink", func_CreateSymbolicLink },
     { "SataDiskAddress", func_SataDiskAddress },
@@ -362,9 +366,11 @@ const struct test winetest_testlist[] =
     { "SecurityBaseApis",            func_SecurityBaseApis },
     { "SharedMemorySecurity",        func_SharedMemorySecurity },
     { "SharedMemoryTransfer",        func_SharedMemoryTransfer },
+    { "MapFlush",                    func_MapFlush },
     { "StarvationBoost",             func_StarvationBoost },
     { "StdHandleInheritance",        func_StdHandleInheritance },
     { "StreamRename",                func_StreamRename },
+    { "StrippedImageLayout",         func_StrippedImageLayout },
     { "PosixRename",                 func_PosixRename },
     { "LocaleNameToLCID",            func_LocaleNameToLCID },
     { "lstrcpynW",                   func_lstrcpynW },

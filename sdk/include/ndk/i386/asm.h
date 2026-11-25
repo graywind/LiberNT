@@ -86,51 +86,6 @@ Author:
 #define KTSS_IO_MAPS                            0x68
 
 //
-// KTHREAD Offsets
-//
-#define KTHREAD_DEBUG_ACTIVE                    0x03
-#define KTHREAD_INITIAL_STACK                   0x18
-#define KTHREAD_STACK_LIMIT                     0x1C
-#define KTHREAD_TEB                             0x74
-#define KTHREAD_KERNEL_STACK                    0x20
-#define KTHREAD_ALERTED                         0x5E
-#define KTHREAD_APCSTATE_PROCESS                0x28 + 0x10
-#define KTHREAD_PENDING_USER_APC                0x28 + 0x16
-#define KTHREAD_PENDING_KERNEL_APC              0x28 + 0x15
-#define KTHREAD_CONTEXT_SWITCHES                0x48
-#define KTHREAD_STATE_                          0x4C
-#define KTHREAD_NPX_STATE                       0x4D
-#define KTHREAD_WAIT_IRQL                       0x4E
-#define KTHREAD_NEXT_PROCESSOR                  0x40
-#define KTHREAD_WAIT_REASON                     0x5A
-#define KTHREAD_PRIORITY                        0x5B
-#define KTHREAD_SWAP_BUSY                       0x5D
-#define KTHREAD_SERVICE_TABLE                   0x118
-#define KTHREAD_PREVIOUS_MODE                   0xD7
-#define KTHREAD_COMBINED_APC_DISABLE            0x70
-#define KTHREAD_SPECIAL_APC_DISABLE             0x72
-#define KTHREAD_LARGE_STACK                     0x107
-#define KTHREAD_TRAP_FRAME                      0x110
-#define KTHREAD_CALLBACK_STACK                  0x114
-#define KTHREAD_APC_STATE_INDEX                 0x11C
-#define KTHREAD_STACK_BASE                      0x158
-#define KTHREAD_QUANTUM                         0x15D
-#define KTHREAD_KERNEL_TIME                     0x160
-#define KTHREAD_USER_TIME                       0x18C
-
-//
-// KPROCESS Offsets
-//
-#define KPROCESS_DIRECTORY_TABLE_BASE           0x18
-#define KPROCESS_LDT_DESCRIPTOR0                0x20
-#define KPROCESS_LDT_DESCRIPTOR1                0x24
-#define KPROCESS_INT21_DESCRIPTOR0              0x28
-#define KPROCESS_INT21_DESCRIPTOR1              0x2C
-#define KPROCESS_IOPM_OFFSET                    0x30
-#define KPROCESS_ACTIVE_PROCESSORS              0x34
-#define EPROCESS_VDM_OBJECTS                    0x144
-
-//
 // KTIMER_TABLE Offsets
 //
 #ifdef __ASM__
@@ -139,76 +94,6 @@ Author:
 #define TIMER_ENTRY_SIZE                        0x10
 #define TIMER_TABLE_SIZE                        0x200
 #endif
-
-//
-// KPRCB Offsets
-//
-#define KPRCB_DR0                               0x2F8
-#define KPRCB_DR1                               0x2FC
-#define KPRCB_DR2                               0x300
-#define KPRCB_DR3                               0x304
-#define KPRCB_DR6                               0x308
-#define KPRCB_DR7                               0x30C
-#define KPRCB_TIMER_HAND                        0x964
-#define KPRCB_TIMER_REQUEST                     0x968
-
-//
-// KPCR Offsets
-//
-#define KPCR_EXCEPTION_LIST                     0x0
-#define KPCR_INITIAL_STACK                      0x4
-#define KPCR_STACK_LIMIT                        0x8
-#define KPCR_PERF_GLOBAL_GROUP_MASK             0x8
-#define KPCR_CONTEXT_SWITCHES                   0x10
-#define KPCR_SET_MEMBER_COPY                    0x14
-#define KPCR_TEB                                0x18
-#define KPCR_SELF                               0x1C
-#define KPCR_PRCB                               0x20
-#define KPCR_IRQL                               0x24
-#define KPCR_IRR                                0x28
-#define KPCR_IRR_ACTIVE                         0x2C
-#define KPCR_IDR                                0x30
-#define KPCR_KD_VERSION_BLOCK                   0x34
-#define KPCR_IDT                                0x38
-#define KPCR_GDT                                0x3C
-#define KPCR_TSS                                0x40
-#define KPCR_STALL_SCALE_FACTOR                 0x4C
-#define KPCR_SET_MEMBER                         0x48
-#define KPCR_NUMBER                             0x51
-#define KPCR_VDM_ALERT                          0x54
-#define KPCR_PRCB_DATA                          0x120
-#define KPCR_CURRENT_THREAD                     0x124
-#define KPCR_PRCB_NEXT_THREAD                   0x128
-#define KPCR_PRCB_IDLE_THREAD                   0x12C
-#define KPCR_PROCESSOR_NUMBER                   0x130
-#define KPCR_PRCB_SET_MEMBER                    0x134
-#define KPCR_PRCB_CPU_TYPE                      0x138
-#define KPCR_PRCB_PRCB_LOCK                     0xA7C
-#define KPCR_NPX_THREAD                         0x640
-#define KPCR_DR6                                0x428
-#define KPCR_DR7                                0x42C
-#define KPCR_PRCB_INTERRUPT_COUNT               0x644
-#define KPCR_PRCB_KERNEL_TIME                   0x648
-#define KPCR_PRCB_USER_TIME                     0x64C
-#define KPCR_PRCB_DPC_TIME                      0x650
-#define KPCR_PRCB_DEBUG_DPC_TIME                0x654
-#define KPCR_PRCB_INTERRUPT_TIME                0x658
-#define KPCR_PRCB_ADJUST_DPC_THRESHOLD          0x65C
-#define KPCR_PRCB_SKIP_TICK                     0x664
-#define KPCR_SYSTEM_CALLS                       0x6B8
-#define KPCR_PRCB_DPC_QUEUE_DEPTH               0xA4C
-#define KPCR_PRCB_DPC_COUNT                     0xA50
-#define KPCR_PRCB_DPC_STACK                     0xA68
-#define KPCR_PRCB_MAXIMUM_DPC_QUEUE_DEPTH       0xA6C
-#define KPCR_PRCB_DPC_REQUEST_RATE              0xA70
-#define KPCR_PRCB_DPC_INTERRUPT_REQUESTED       0xA78
-#define KPCR_PRCB_DPC_ROUTINE_ACTIVE            0xA7A
-#define KPCR_PRCB_DPC_LAST_COUNT                0xA80
-#define KPCR_PRCB_TIMER_REQUEST                 0xA88
-#define KPCR_PRCB_QUANTUM_END                   0xAA1
-#define KPCR_PRCB_IDLE_SCHEDULE                 0xAA3
-#define KPCR_PRCB_DEFERRED_READY_LIST_HEAD      0xC10
-#define KPCR_PRCB_POWER_STATE_IDLE_FUNCTION     0xEC0
 
 //
 // KINTERRUPT Offsets
@@ -335,8 +220,7 @@ Author:
 //
 #define KERNEL_USER_SHARED_DATA                 0x7FFE0000
 #define KUSER_SHARED_PROCESSOR_FEATURES         KERNEL_USER_SHARED_DATA + 0x274
-#define KUSER_SHARED_SYSCALL                    KERNEL_USER_SHARED_DATA + 0x300
-#define KUSER_SHARED_SYSCALL_RET                KERNEL_USER_SHARED_DATA + 0x304
+#define KUSER_SHARED_SYSCALL                    KERNEL_USER_SHARED_DATA + 0x308
 #define PROCESSOR_FEATURE_FXSR                  KUSER_SHARED_PROCESSOR_FEATURES + 0x4
 
 //
@@ -592,11 +476,7 @@ Author:
 #ifndef CONFIG_SMP
 #define SYNCH_LEVEL                             DISPATCH_LEVEL
 #else
-#if (NTDDI_VERSION < NTDDI_WS03)
-#define SYNCH_LEVEL                             (IPI_LEVEL - 1)
-#else
 #define SYNCH_LEVEL                             (IPI_LEVEL - 2)
-#endif
 #endif
 
 //

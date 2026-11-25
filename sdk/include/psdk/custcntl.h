@@ -65,9 +65,9 @@ typedef struct tagCCINFOW {
 	DWORD flStyleDefault;
 	DWORD flExtStyleDefault;
 	DWORD flCtrlTypeMask;
-	WCHAR szTextDefault[CCHCCTEXT];
 	INT cStyleFlags;
 	LPCCSTYLEFLAGW aStyleFlags;
+	WCHAR szTextDefault[CCHCCTEXT];
 	LPFNCCSTYLEW lpfnStyle;
 	LPFNCCSIZETOTEXTW lpfnSizeToText;
 	DWORD dwReserved1;
@@ -96,4 +96,7 @@ typedef CCINFOA CCINFO,*LPCCINFO;
 #ifdef __cplusplus
 }
 #endif
+
+#define _INC_CUSTCNTL
+
 #endif

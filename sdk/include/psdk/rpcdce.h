@@ -232,6 +232,9 @@ typedef struct _SEC_WINNT_AUTH_IDENTITY_W
 } SEC_WINNT_AUTH_IDENTITY_W, *PSEC_WINNT_AUTH_IDENTITY_W;
 #endif
 
+/* FIXME: Windows leaves the ANSI record undefined after ntifs.h has defined _AUTH_IDENTITY_DEFINED; LiberNT always provides it once */
+#ifndef _AUTH_IDENTITY_A_DEFINED
+#define _AUTH_IDENTITY_A_DEFINED
 typedef struct _SEC_WINNT_AUTH_IDENTITY_A
 {
     unsigned char* User;
@@ -242,6 +245,7 @@ typedef struct _SEC_WINNT_AUTH_IDENTITY_A
     ULONG PasswordLength;
     ULONG Flags;
 } SEC_WINNT_AUTH_IDENTITY_A, *PSEC_WINNT_AUTH_IDENTITY_A;
+#endif
 
 typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_W
 {
@@ -630,6 +634,854 @@ RPCRTAPI RPC_STATUS RPC_ENTRY
 RPCRTAPI RPC_STATUS RPC_ENTRY
   RpcServerInqDefaultPrincNameW( ULONG AuthnSvc, RPC_WSTR *PrincName );
 #define RpcServerInqDefaultPrincName WINELIB_NAME_AW(RpcServerInqDefaultPrincName)
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef RPC_BHO_DONTLINGER
+#define RPC_BHO_DONTLINGER 0x2
+#endif
+#ifndef RPC_BHO_EXCLUSIVE_AND_GUARANTEED
+#define RPC_BHO_EXCLUSIVE_AND_GUARANTEED 0x4
+#endif
+#ifndef RPC_BHO_NONCAUSAL
+#define RPC_BHO_NONCAUSAL 0x1
+#endif
+#ifndef RPC_BHT_OBJECT_UUID_VALID
+#define RPC_BHT_OBJECT_UUID_VALID 0x1
+#endif
+#ifndef RPC_C_AUTHN_CLOUD_AP
+#define RPC_C_AUTHN_CLOUD_AP 36
+#endif
+#ifndef RPC_C_AUTHN_KERNEL
+#define RPC_C_AUTHN_KERNEL 20
+#endif
+#ifndef RPC_C_AUTHN_LIVEXP_SSP
+#define RPC_C_AUTHN_LIVEXP_SSP 35
+#endif
+#ifndef RPC_C_AUTHN_LIVE_SSP
+#define RPC_C_AUTHN_LIVE_SSP 32
+#endif
+#ifndef RPC_C_AUTHN_MSONLINE
+#define RPC_C_AUTHN_MSONLINE 82
+#endif
+#ifndef RPC_C_AUTHN_NEGO_EXTENDER
+#define RPC_C_AUTHN_NEGO_EXTENDER 30
+#endif
+#ifndef RPC_C_AUTHN_PKU2U
+#define RPC_C_AUTHN_PKU2U 31
+#endif
+#ifndef RPC_C_FULL_CERT_CHAIN
+#define RPC_C_FULL_CERT_CHAIN 0x0001
+#endif
+#ifndef RPC_C_HTTP_AUTHN_SCHEME_CERT
+#define RPC_C_HTTP_AUTHN_SCHEME_CERT 0x00010000
+#endif
+#ifndef RPC_C_HTTP_FLAG_ENABLE_CERT_REVOCATION_CHECK
+#define RPC_C_HTTP_FLAG_ENABLE_CERT_REVOCATION_CHECK 16
+#endif
+#ifndef RPC_C_HTTP_FLAG_IGNORE_CERT_CN_INVALID
+#define RPC_C_HTTP_FLAG_IGNORE_CERT_CN_INVALID 8
+#endif
+#ifndef RPC_C_OPT_ASYNC_BLOCK
+#define RPC_C_OPT_ASYNC_BLOCK 15
+#endif
+#ifndef RPC_C_OPT_BINDING_NONCAUSAL
+#define RPC_C_OPT_BINDING_NONCAUSAL 9
+#endif
+#ifndef RPC_C_OPT_CALL_TIMEOUT
+#define RPC_C_OPT_CALL_TIMEOUT 12
+#endif
+#ifndef RPC_C_OPT_DONT_LINGER
+#define RPC_C_OPT_DONT_LINGER 13
+#endif
+#ifndef RPC_C_OPT_MAX_OPTIONS
+#define RPC_C_OPT_MAX_OPTIONS 17
+#endif
+#ifndef RPC_C_OPT_OPTIMIZE_TIME
+#define RPC_C_OPT_OPTIMIZE_TIME 16
+#endif
+#ifndef RPC_C_OPT_SECURITY_CALLBACK
+#define RPC_C_OPT_SECURITY_CALLBACK 10
+#endif
+#ifndef RPC_C_OPT_TRANS_SEND_BUFFER_SIZE
+#define RPC_C_OPT_TRANS_SEND_BUFFER_SIZE 5
+#endif
+#ifndef RPC_C_OPT_TRUST_PEER
+#define RPC_C_OPT_TRUST_PEER 14
+#endif
+#ifndef RPC_C_OPT_UNIQUE_BINDING
+#define RPC_C_OPT_UNIQUE_BINDING 11
+#endif
+#ifndef RPC_C_PARM_BUFFER_LENGTH
+#define RPC_C_PARM_BUFFER_LENGTH 2
+#endif
+#ifndef RPC_C_PARM_MAX_PACKET_LENGTH
+#define RPC_C_PARM_MAX_PACKET_LENGTH 1
+#endif
+#ifndef RPC_C_QOS_CAPABILITIES_IGNORE_DELEGATE_FAILURE
+#define RPC_C_QOS_CAPABILITIES_IGNORE_DELEGATE_FAILURE 0x8
+#endif
+#ifndef RPC_C_QOS_CAPABILITIES_LOCAL_MA_HINT
+#define RPC_C_QOS_CAPABILITIES_LOCAL_MA_HINT 0x10
+#endif
+#ifndef RPC_C_QOS_CAPABILITIES_SCHANNEL_FULL_AUTH_IDENTITY
+#define RPC_C_QOS_CAPABILITIES_SCHANNEL_FULL_AUTH_IDENTITY 0x20
+#endif
+#ifndef RPC_C_RPCHTTP_USE_LOAD_BALANCE
+#define RPC_C_RPCHTTP_USE_LOAD_BALANCE 0x8
+#endif
+#ifndef RPC_C_SECURITY_QOS_VERSION_3
+#define RPC_C_SECURITY_QOS_VERSION_3 3L
+#endif
+#ifndef RPC_C_SECURITY_QOS_VERSION_4
+#define RPC_C_SECURITY_QOS_VERSION_4 4L
+#endif
+#ifndef RPC_C_SECURITY_QOS_VERSION_5
+#define RPC_C_SECURITY_QOS_VERSION_5 5L
+#endif
+#ifndef RPC_C_STATS_CALLS_OUT
+#define RPC_C_STATS_CALLS_OUT 1
+#endif
+#ifndef RPC_C_STATS_PKTS_IN
+#define RPC_C_STATS_PKTS_IN 2
+#endif
+#ifndef RPC_C_STATS_PKTS_OUT
+#define RPC_C_STATS_PKTS_OUT 3
+#endif
+#ifndef RPC_FW_IF_FLAG_DCOM
+#define RPC_FW_IF_FLAG_DCOM 0x0001
+#endif
+#ifndef RPC_IF_ASYNC_CALLBACK
+#define RPC_IF_ASYNC_CALLBACK 0x0100
+#endif
+#ifndef RPC_IF_SEC_CACHE_PER_PROC
+#define RPC_IF_SEC_CACHE_PER_PROC 0x0080
+#endif
+
+typedef enum _RPC_HTTP_REDIRECTOR_STAGE {
+    RPCHTTP_RS_REDIRECT = 1,
+    RPCHTTP_RS_ACCESS_1 = 2,
+    RPCHTTP_RS_SESSION = 3,
+    RPCHTTP_RS_ACCESS_2 = 4,
+    RPCHTTP_RS_INTERFACE = 5
+} RPC_HTTP_REDIRECTOR_STAGE;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+RPC_STATUS WINAPI RpcMgmtInqServerPrincNameA(RPC_BINDING_HANDLE Binding, unsigned long AuthnSvc, RPC_CSTR * ServerPrincName);
+RPC_STATUS WINAPI RpcMgmtInqServerPrincNameW(RPC_BINDING_HANDLE Binding, unsigned long AuthnSvc, RPC_WSTR * ServerPrincName);
+void WINAPI RpcSsDontSerializeContext(void);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _RPC_BINDING_HANDLE_OPTIONS_V1 {
+  unsigned long Version;
+  unsigned long Flags;
+  unsigned long ComTimeout;
+  unsigned long CallTimeout;
+} RPC_BINDING_HANDLE_OPTIONS_V1, *PRPC_BINDING_HANDLE_OPTIONS_V1;
+
+typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V3_A {
+  RPC_AUTH_IDENTITY_HANDLE TransportCredentials;
+  unsigned long Flags;
+  unsigned long AuthenticationTarget;
+  unsigned long NumberOfAuthnSchemes;
+  unsigned long * AuthnSchemes;
+  unsigned char * ServerCertificateSubject;
+  RPC_AUTH_IDENTITY_HANDLE ProxyCredentials;
+  unsigned long NumberOfProxyAuthnSchemes;
+  unsigned long * ProxyAuthnSchemes;
+} RPC_HTTP_TRANSPORT_CREDENTIALS_V3_A, *PRPC_HTTP_TRANSPORT_CREDENTIALS_V3_A;
+
+typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V3_W {
+  RPC_AUTH_IDENTITY_HANDLE TransportCredentials;
+  unsigned long Flags;
+  unsigned long AuthenticationTarget;
+  unsigned long NumberOfAuthnSchemes;
+  unsigned long * AuthnSchemes;
+  unsigned short * ServerCertificateSubject;
+  RPC_AUTH_IDENTITY_HANDLE ProxyCredentials;
+  unsigned long NumberOfProxyAuthnSchemes;
+  unsigned long * ProxyAuthnSchemes;
+} RPC_HTTP_TRANSPORT_CREDENTIALS_V3_W, *PRPC_HTTP_TRANSPORT_CREDENTIALS_V3_W;
+
+typedef struct RPC_CLIENT_INFORMATION1 {
+  unsigned char * UserName;
+  unsigned char * ComputerName;
+  unsigned short Privilege;
+  unsigned long AuthFlags;
+} RPC_CLIENT_INFORMATION1, *PRPC_CLIENT_INFORMATION1;
+
+typedef struct RPC_ENDPOINT_TEMPLATEA {
+  unsigned long Version;
+  RPC_CSTR ProtSeq;
+  RPC_CSTR Endpoint;
+  void * SecurityDescriptor;
+  unsigned long Backlog;
+} RPC_ENDPOINT_TEMPLATEA, *PRPC_ENDPOINT_TEMPLATEA;
+
+typedef struct RPC_ENDPOINT_TEMPLATEW {
+  unsigned long Version;
+  RPC_WSTR ProtSeq;
+  RPC_WSTR Endpoint;
+  void * SecurityDescriptor;
+  unsigned long Backlog;
+} RPC_ENDPOINT_TEMPLATEW, *PRPC_ENDPOINT_TEMPLATEW;
+
+#ifdef UNICODE
+#define _RPC_BINDING_HANDLE_TEMPLATE_V1 _RPC_BINDING_HANDLE_TEMPLATE_V1_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_BINDING_HANDLE_TEMPLATE_V1 _RPC_BINDING_HANDLE_TEMPLATE_V1_A
+#else
+#define _RPC_BINDING_HANDLE_TEMPLATE_V1 _RPC_BINDING_HANDLE_TEMPLATE_V1_W
+#endif
+#endif
+#ifdef UNICODE
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS _RPC_HTTP_TRANSPORT_CREDENTIALS_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS _RPC_HTTP_TRANSPORT_CREDENTIALS_A
+#else
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS _RPC_HTTP_TRANSPORT_CREDENTIALS_W
+#endif
+#endif
+#ifdef UNICODE
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS_V3 _RPC_HTTP_TRANSPORT_CREDENTIALS_V3_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS_V3 _RPC_HTTP_TRANSPORT_CREDENTIALS_V3_A
+#else
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS_V3 _RPC_HTTP_TRANSPORT_CREDENTIALS_V3_W
+#endif
+#endif
+#ifdef UNICODE
+#define _RPC_SECURITY_QOS_V3 _RPC_SECURITY_QOS_V3_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_SECURITY_QOS_V3 _RPC_SECURITY_QOS_V3_A
+#else
+#define _RPC_SECURITY_QOS_V3 _RPC_SECURITY_QOS_V3_W
+#endif
+#endif
+#ifdef UNICODE
+#define _RPC_SECURITY_QOS_V4 _RPC_SECURITY_QOS_V4_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_SECURITY_QOS_V4 _RPC_SECURITY_QOS_V4_A
+#else
+#define _RPC_SECURITY_QOS_V4 _RPC_SECURITY_QOS_V4_W
+#endif
+#endif
+#ifdef UNICODE
+#define _RPC_SECURITY_QOS_V5 _RPC_SECURITY_QOS_V5_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_SECURITY_QOS_V5 _RPC_SECURITY_QOS_V5_A
+#else
+#define _RPC_SECURITY_QOS_V5 _RPC_SECURITY_QOS_V5_W
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_BINDING_HANDLE_TEMPLATE_V1 PRPC_BINDING_HANDLE_TEMPLATE_V1_W
+#else
+#if (!(defined(UNICODE)))
+#define PRPC_BINDING_HANDLE_TEMPLATE_V1 PRPC_BINDING_HANDLE_TEMPLATE_V1_A
+#else
+#define PRPC_BINDING_HANDLE_TEMPLATE_V1 PRPC_BINDING_HANDLE_TEMPLATE_V1_W
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_ENDPOINT_TEMPLATE PRPC_ENDPOINT_TEMPLATEW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define PRPC_ENDPOINT_TEMPLATE PRPC_ENDPOINT_TEMPLATEW
+#else
+#define PRPC_ENDPOINT_TEMPLATE PRPC_ENDPOINT_TEMPLATEA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_HTTP_TRANSPORT_CREDENTIALS PRPC_HTTP_TRANSPORT_CREDENTIALS_W
+#else
+#if (!(defined(UNICODE)))
+#define PRPC_HTTP_TRANSPORT_CREDENTIALS PRPC_HTTP_TRANSPORT_CREDENTIALS_A
+#else
+#define PRPC_HTTP_TRANSPORT_CREDENTIALS PRPC_HTTP_TRANSPORT_CREDENTIALS_W
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_HTTP_TRANSPORT_CREDENTIALS_V3 PRPC_HTTP_TRANSPORT_CREDENTIALS_V3_W
+#else
+#if (!(defined(UNICODE)))
+#define PRPC_HTTP_TRANSPORT_CREDENTIALS_V3 PRPC_HTTP_TRANSPORT_CREDENTIALS_V3_A
+#else
+#define PRPC_HTTP_TRANSPORT_CREDENTIALS_V3 PRPC_HTTP_TRANSPORT_CREDENTIALS_V3_W
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_SECURITY_QOS_V3 PRPC_SECURITY_QOS_V3_W
+#else
+#if (!(defined(UNICODE)))
+#define PRPC_SECURITY_QOS_V3 PRPC_SECURITY_QOS_V3_A
+#else
+#define PRPC_SECURITY_QOS_V3 PRPC_SECURITY_QOS_V3_W
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_SECURITY_QOS_V4 PRPC_SECURITY_QOS_V4_W
+#else
+#if (!(defined(UNICODE)))
+#define PRPC_SECURITY_QOS_V4 PRPC_SECURITY_QOS_V4_A
+#else
+#define PRPC_SECURITY_QOS_V4 PRPC_SECURITY_QOS_V4_W
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_SECURITY_QOS_V5 PRPC_SECURITY_QOS_V5_W
+#else
+#if (!(defined(UNICODE)))
+#define PRPC_SECURITY_QOS_V5 PRPC_SECURITY_QOS_V5_A
+#else
+#define PRPC_SECURITY_QOS_V5 PRPC_SECURITY_QOS_V5_W
+#endif
+#endif
+#if (!(defined(UNICODE)))
+#define RPC_BINDING_HANDLE_TEMPLATE_V1 RPC_BINDING_HANDLE_TEMPLATE_V1_A
+#else
+#define RPC_BINDING_HANDLE_TEMPLATE_V1 RPC_BINDING_HANDLE_TEMPLATE_V1_W
+#endif
+#ifdef _WIN64
+#define RPC_C_NO_CREDENTIALS (-1)
+#else
+#define RPC_C_NO_CREDENTIALS 0xFFFFFFFF
+#endif
+#define RPC_C_PROTECT_LEVEL_CALL 3
+#define RPC_C_PROTECT_LEVEL_CONNECT 2
+#define RPC_C_PROTECT_LEVEL_DEFAULT 0
+#define RPC_C_PROTECT_LEVEL_NONE 1
+#define RPC_C_PROTECT_LEVEL_PKT 4
+#define RPC_C_PROTECT_LEVEL_PKT_INTEGRITY 5
+#define RPC_C_PROTECT_LEVEL_PKT_PRIVACY 6
+#define RPC_C_STATS_CALLS_IN 0
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RPC_ENDPOINT_TEMPLATE RPC_ENDPOINT_TEMPLATEW
+#else
+#define RPC_ENDPOINT_TEMPLATE RPC_ENDPOINT_TEMPLATEA
+#endif
+#endif
+#ifdef UNICODE
+#define RPC_HTTP_TRANSPORT_CREDENTIALS RPC_HTTP_TRANSPORT_CREDENTIALS_W
+#else
+#if (!(defined(UNICODE)))
+#define RPC_HTTP_TRANSPORT_CREDENTIALS RPC_HTTP_TRANSPORT_CREDENTIALS_A
+#else
+#define RPC_HTTP_TRANSPORT_CREDENTIALS RPC_HTTP_TRANSPORT_CREDENTIALS_W
+#endif
+#endif
+#ifdef UNICODE
+#define RPC_HTTP_TRANSPORT_CREDENTIALS_V3 RPC_HTTP_TRANSPORT_CREDENTIALS_V3_W
+#else
+#if (!(defined(UNICODE)))
+#define RPC_HTTP_TRANSPORT_CREDENTIALS_V3 RPC_HTTP_TRANSPORT_CREDENTIALS_V3_A
+#else
+#define RPC_HTTP_TRANSPORT_CREDENTIALS_V3 RPC_HTTP_TRANSPORT_CREDENTIALS_V3_W
+#endif
+#endif
+#ifdef UNICODE
+#define RPC_SECURITY_QOS_V3 RPC_SECURITY_QOS_V3_W
+#else
+#if (!(defined(UNICODE)))
+#define RPC_SECURITY_QOS_V3 RPC_SECURITY_QOS_V3_A
+#else
+#define RPC_SECURITY_QOS_V3 RPC_SECURITY_QOS_V3_W
+#endif
+#endif
+#ifdef UNICODE
+#define RPC_SECURITY_QOS_V4 RPC_SECURITY_QOS_V4_W
+#else
+#if (!(defined(UNICODE)))
+#define RPC_SECURITY_QOS_V4 RPC_SECURITY_QOS_V4_A
+#else
+#define RPC_SECURITY_QOS_V4 RPC_SECURITY_QOS_V4_W
+#endif
+#endif
+#ifdef UNICODE
+#define RPC_SECURITY_QOS_V5 RPC_SECURITY_QOS_V5_W
+#else
+#if (!(defined(UNICODE)))
+#define RPC_SECURITY_QOS_V5 RPC_SECURITY_QOS_V5_A
+#else
+#define RPC_SECURITY_QOS_V5 RPC_SECURITY_QOS_V5_W
+#endif
+#endif
+#ifdef UNICODE
+#define RpcMgmtInqServerPrincName RpcMgmtInqServerPrincNameW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RpcMgmtInqServerPrincName RpcMgmtInqServerPrincNameW
+#else
+#define RpcMgmtInqServerPrincName RpcMgmtInqServerPrincNameA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RpcNsBindingInqEntryName RpcNsBindingInqEntryNameW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RpcNsBindingInqEntryName RpcNsBindingInqEntryNameW
+#else
+#define RpcNsBindingInqEntryName RpcNsBindingInqEntryNameA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RpcServerUseProtseqEx RpcServerUseProtseqExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RpcServerUseProtseqEx RpcServerUseProtseqExW
+#else
+#define RpcServerUseProtseqEx RpcServerUseProtseqExA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RpcServerUseProtseqIf RpcServerUseProtseqIfW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RpcServerUseProtseqIf RpcServerUseProtseqIfW
+#else
+#define RpcServerUseProtseqIf RpcServerUseProtseqIfA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RpcServerUseProtseqIfEx RpcServerUseProtseqIfExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RpcServerUseProtseqIfEx RpcServerUseProtseqIfExW
+#else
+#define RpcServerUseProtseqIfEx RpcServerUseProtseqIfExA
+#endif
+#endif
+#endif
+#define uuid_t UUID
+
+struct _RPC_BINDING_HANDLE_TEMPLATE_V1_A
+{
+    unsigned long Version;
+    unsigned long Flags;
+    unsigned long ProtocolSequence;
+    unsigned char *NetworkAddress;
+    unsigned char *StringEndpoint;
+    union
+    {
+        unsigned char *Reserved;
+    } u1;
+    UUID ObjectUuid;
+};
+
+struct _RPC_BINDING_HANDLE_TEMPLATE_V1_W
+{
+    unsigned long Version;
+    unsigned long Flags;
+    unsigned long ProtocolSequence;
+    unsigned short *NetworkAddress;
+    unsigned short *StringEndpoint;
+    union
+    {
+        unsigned short *Reserved;
+    } u1;
+    UUID ObjectUuid;
+};
+
+struct _RPC_SECURITY_QOS_V3_A
+{
+    unsigned long Version;
+    unsigned long Capabilities;
+    unsigned long IdentityTracking;
+    unsigned long ImpersonationType;
+    unsigned long AdditionalSecurityInfoType;
+    union
+    {
+        RPC_HTTP_TRANSPORT_CREDENTIALS_A *HttpCredentials;
+    } u;
+    void *Sid;
+};
+
+struct _RPC_SECURITY_QOS_V3_W
+{
+    unsigned long Version;
+    unsigned long Capabilities;
+    unsigned long IdentityTracking;
+    unsigned long ImpersonationType;
+    unsigned long AdditionalSecurityInfoType;
+    union
+    {
+        RPC_HTTP_TRANSPORT_CREDENTIALS_W *HttpCredentials;
+    } u;
+    void *Sid;
+};
+
+struct _RPC_SECURITY_QOS_V4_A
+{
+    unsigned long Version;
+    unsigned long Capabilities;
+    unsigned long IdentityTracking;
+    unsigned long ImpersonationType;
+    unsigned long AdditionalSecurityInfoType;
+    union
+    {
+        RPC_HTTP_TRANSPORT_CREDENTIALS_A *HttpCredentials;
+    } u;
+    void *Sid;
+    unsigned int EffectiveOnly;
+};
+
+struct _RPC_SECURITY_QOS_V4_W
+{
+    unsigned long Version;
+    unsigned long Capabilities;
+    unsigned long IdentityTracking;
+    unsigned long ImpersonationType;
+    unsigned long AdditionalSecurityInfoType;
+    union
+    {
+        RPC_HTTP_TRANSPORT_CREDENTIALS_W *HttpCredentials;
+    } u;
+    void *Sid;
+    unsigned int EffectiveOnly;
+};
+
+struct _RPC_SECURITY_QOS_V5_A
+{
+    unsigned long Version;
+    unsigned long Capabilities;
+    unsigned long IdentityTracking;
+    unsigned long ImpersonationType;
+    unsigned long AdditionalSecurityInfoType;
+    union
+    {
+        RPC_HTTP_TRANSPORT_CREDENTIALS_A *HttpCredentials;
+    } u;
+    void *Sid;
+    unsigned int EffectiveOnly;
+    void *ServerSecurityDescriptor;
+};
+
+struct _RPC_SECURITY_QOS_V5_W
+{
+    unsigned long Version;
+    unsigned long Capabilities;
+    unsigned long IdentityTracking;
+    unsigned long ImpersonationType;
+    unsigned long AdditionalSecurityInfoType;
+    union
+    {
+        RPC_HTTP_TRANSPORT_CREDENTIALS_W *HttpCredentials;
+    } u;
+    void *Sid;
+    unsigned int EffectiveOnly;
+    void *ServerSecurityDescriptor;
+};
+
+typedef struct _RPC_BINDING_HANDLE_TEMPLATE_V1_A *PRPC_BINDING_HANDLE_TEMPLATE_V1_A;
+
+typedef struct _RPC_BINDING_HANDLE_TEMPLATE_V1_W *PRPC_BINDING_HANDLE_TEMPLATE_V1_W;
+
+typedef void **PRPC_INTERFACE_GROUP;
+
+typedef struct _RPC_SECURITY_QOS_V3_A *PRPC_SECURITY_QOS_V3_A;
+
+typedef struct _RPC_SECURITY_QOS_V3_W *PRPC_SECURITY_QOS_V3_W;
+
+typedef struct _RPC_SECURITY_QOS_V4_A *PRPC_SECURITY_QOS_V4_A;
+
+typedef struct _RPC_SECURITY_QOS_V4_W *PRPC_SECURITY_QOS_V4_W;
+
+typedef struct _RPC_SECURITY_QOS_V5_A *PRPC_SECURITY_QOS_V5_A;
+
+typedef struct _RPC_SECURITY_QOS_V5_W *PRPC_SECURITY_QOS_V5_W;
+
+typedef struct _RPC_BINDING_HANDLE_TEMPLATE_V1_A RPC_BINDING_HANDLE_TEMPLATE_V1_A;
+
+typedef struct _RPC_BINDING_HANDLE_TEMPLATE_V1_W RPC_BINDING_HANDLE_TEMPLATE_V1_W;
+
+typedef const unsigned short *RPC_CWSTR;
+
+typedef void (__RPC_USER *RPC_HTTP_PROXY_FREE_STRING)(RPC_WSTR);
+
+typedef void *RPC_INTERFACE_GROUP;
+
+typedef void WINAPI RPC_INTERFACE_GROUP_IDLE_CALLBACK_FN(RPC_INTERFACE_GROUP, void *, unsigned long);
+
+typedef RPC_STATUS (__RPC_USER *RPC_NEW_HTTP_PROXY_CHANNEL)(RPC_HTTP_REDIRECTOR_STAGE, RPC_WSTR, RPC_WSTR, RPC_WSTR, RPC_WSTR, void *, void *, void *, void *, unsigned long, RPC_WSTR *, RPC_WSTR *);
+
+typedef void __RPC_USER RPC_OBJECT_INQ_FN(UUID *, UUID *, RPC_STATUS *);
+
+typedef void WINAPI RPC_SECURITY_CALLBACK_FN(void *);
+
+typedef struct _RPC_SECURITY_QOS_V3_A RPC_SECURITY_QOS_V3_A;
+
+typedef struct _RPC_SECURITY_QOS_V3_W RPC_SECURITY_QOS_V3_W;
+
+typedef struct _RPC_SECURITY_QOS_V4_A RPC_SECURITY_QOS_V4_A;
+
+typedef struct _RPC_SECURITY_QOS_V4_W RPC_SECURITY_QOS_V4_W;
+
+typedef struct _RPC_SECURITY_QOS_V5_A RPC_SECURITY_QOS_V5_A;
+
+typedef struct _RPC_SECURITY_QOS_V5_W RPC_SECURITY_QOS_V5_W;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+RPC_STATUS WINAPI RpcIfInqId(RPC_IF_HANDLE RpcIfHandle, RPC_IF_ID *RpcIfId);
+
+/* TODO: LiberNT does not implement the functions below yet */
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcBindingGetTrainingContextHandle(RPC_BINDING_HANDLE Binding, void **ContextHandle);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcIfIdVectorFree(RPC_IF_ID_VECTOR **IfIdVector);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcImpersonateClient2(RPC_BINDING_HANDLE BindingHandle);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcImpersonateClientContainer(RPC_BINDING_HANDLE BindingHandle);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcMgmtInqComTimeout(RPC_BINDING_HANDLE Binding, unsigned int *Timeout);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcMgmtInqDefaultProtectLevel(unsigned long AuthnSvc, unsigned long *AuthnLevel);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcNsBindingInqEntryNameA(RPC_BINDING_HANDLE Binding, unsigned long EntryNameSyntax, RPC_CSTR *EntryName);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcNsBindingInqEntryNameW(RPC_BINDING_HANDLE Binding, unsigned long EntryNameSyntax, RPC_WSTR *EntryName);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcObjectInqType(UUID *ObjUuid, UUID *TypeUuid);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcObjectSetInqFn(RPC_OBJECT_INQ_FN *InquiryFn);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcRevertContainerImpersonation(void);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerCompleteSecurityCallback(RPC_BINDING_HANDLE BindingHandle, RPC_STATUS Status);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInqBindingHandle(RPC_BINDING_HANDLE *Binding);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInqBindingsEx(void *SecurityDescriptor, RPC_BINDING_VECTOR **BindingVector);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInqIf(RPC_IF_HANDLE IfSpec, UUID *MgrTypeUuid, void **MgrEpv);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInterfaceGroupActivate(RPC_INTERFACE_GROUP IfGroup);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInterfaceGroupClose(RPC_INTERFACE_GROUP IfGroup);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInterfaceGroupDeactivate(RPC_INTERFACE_GROUP IfGroup, unsigned long ForceDeactivation);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInterfaceGroupInqBindings(RPC_INTERFACE_GROUP IfGroup, RPC_BINDING_VECTOR **BindingVector);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerTestCancel(RPC_BINDING_HANDLE BindingHandle);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseAllProtseqs(unsigned int MaxCalls, void *SecurityDescriptor);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseAllProtseqsEx(unsigned int MaxCalls, void *SecurityDescriptor, PRPC_POLICY Policy);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseAllProtseqsIf(unsigned int MaxCalls, RPC_IF_HANDLE IfSpec, void *SecurityDescriptor);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseAllProtseqsIfEx(unsigned int MaxCalls, RPC_IF_HANDLE IfSpec, void *SecurityDescriptor, PRPC_POLICY Policy);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseProtseqExA(RPC_CSTR Protseq, unsigned int MaxCalls, void *SecurityDescriptor, PRPC_POLICY Policy);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseProtseqExW(RPC_WSTR Protseq, unsigned int MaxCalls, void *SecurityDescriptor, PRPC_POLICY Policy);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseProtseqIfA(RPC_CSTR Protseq, unsigned int MaxCalls, RPC_IF_HANDLE IfSpec, void *SecurityDescriptor);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseProtseqIfExA(RPC_CSTR Protseq, unsigned int MaxCalls, RPC_IF_HANDLE IfSpec, void *SecurityDescriptor, PRPC_POLICY Policy);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseProtseqIfExW(RPC_WSTR Protseq, unsigned int MaxCalls, RPC_IF_HANDLE IfSpec, void *SecurityDescriptor, PRPC_POLICY Policy);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerUseProtseqIfW(RPC_WSTR Protseq, unsigned int MaxCalls, RPC_IF_HANDLE IfSpec, void *SecurityDescriptor);
+RPCRTAPI void RPC_ENTRY RpcServerYield(void);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcSsGetContextBinding(void *ContextHandle, RPC_BINDING_HANDLE *Binding);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcTestCancel(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define RPC_HTTP_TRANSPORT_CREDENTIALS_V2 RPC_HTTP_TRANSPORT_CREDENTIALS_V2_A
+
+#ifdef UNICODE
+#define _RPC_BINDING_HANDLE_SECURITY_V1 _RPC_BINDING_HANDLE_SECURITY_V1_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_BINDING_HANDLE_SECURITY_V1 _RPC_BINDING_HANDLE_SECURITY_V1_A
+#else
+#define _RPC_BINDING_HANDLE_SECURITY_V1 _RPC_BINDING_HANDLE_SECURITY_V1_W
+#endif
+#endif
+#ifdef UNICODE
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS_V2 _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_W
+#else
+#if (!(defined(UNICODE)))
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS_V2 _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_A
+#else
+#define _RPC_HTTP_TRANSPORT_CREDENTIALS_V2 _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_W
+#endif
+#endif
+#ifdef UNICODE
+#define PRPC_BINDING_HANDLE_SECURITY_V1 PRPC_BINDING_HANDLE_SECURITY_V1_W
+#else
+#if (!(defined(UNICODE)))
+#define PRPC_BINDING_HANDLE_SECURITY_V1 PRPC_BINDING_HANDLE_SECURITY_V1_A
+#else
+#define PRPC_BINDING_HANDLE_SECURITY_V1 PRPC_BINDING_HANDLE_SECURITY_V1_W
+#endif
+#endif
+#define PRPC_HTTP_TRANSPORT_CREDENTIALS_V2 PRPC_HTTP_TRANSPORT_CREDENTIALS_V2_A
+#ifdef UNICODE
+#define PRPC_INTERFACE_TEMPLATE PRPC_INTERFACE_TEMPLATEW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define PRPC_INTERFACE_TEMPLATE PRPC_INTERFACE_TEMPLATEW
+#else
+#define PRPC_INTERFACE_TEMPLATE PRPC_INTERFACE_TEMPLATEA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RPC_BINDING_HANDLE_SECURITY_V1 RPC_BINDING_HANDLE_SECURITY_V1_W
+#else
+#if (!(defined(UNICODE)))
+#define RPC_BINDING_HANDLE_SECURITY_V1 RPC_BINDING_HANDLE_SECURITY_V1_A
+#else
+#define RPC_BINDING_HANDLE_SECURITY_V1 RPC_BINDING_HANDLE_SECURITY_V1_W
+#endif
+#endif
+#ifdef UNICODE
+#define RPC_INTERFACE_TEMPLATE RPC_INTERFACE_TEMPLATEW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RPC_INTERFACE_TEMPLATE RPC_INTERFACE_TEMPLATEW
+#else
+#define RPC_INTERFACE_TEMPLATE RPC_INTERFACE_TEMPLATEA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RpcBindingCreate RpcBindingCreateW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RpcBindingCreate RpcBindingCreateW
+#else
+#define RpcBindingCreate RpcBindingCreateA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define RpcServerInterfaceGroupCreate RpcServerInterfaceGroupCreateW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define RpcServerInterfaceGroupCreate RpcServerInterfaceGroupCreateW
+#else
+#define RpcServerInterfaceGroupCreate RpcServerInterfaceGroupCreateA
+#endif
+#endif
+#endif
+
+struct _RPC_BINDING_HANDLE_SECURITY_V1_A
+{
+    unsigned long Version;
+    unsigned char *ServerPrincName;
+    unsigned long AuthnLevel;
+    unsigned long AuthnSvc;
+    SEC_WINNT_AUTH_IDENTITY_A *AuthIdentity;
+    RPC_SECURITY_QOS *SecurityQos;
+};
+
+struct _RPC_BINDING_HANDLE_SECURITY_V1_W
+{
+    unsigned long Version;
+    unsigned short *ServerPrincName;
+    unsigned long AuthnLevel;
+    unsigned long AuthnSvc;
+    SEC_WINNT_AUTH_IDENTITY_W *AuthIdentity;
+    RPC_SECURITY_QOS *SecurityQos;
+};
+
+struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_A
+{
+    SEC_WINNT_AUTH_IDENTITY_A *TransportCredentials;
+    unsigned long Flags;
+    unsigned long AuthenticationTarget;
+    unsigned long NumberOfAuthnSchemes;
+    unsigned long *AuthnSchemes;
+    unsigned char *ServerCertificateSubject;
+    SEC_WINNT_AUTH_IDENTITY_A *ProxyCredentials;
+    unsigned long NumberOfProxyAuthnSchemes;
+    unsigned long *ProxyAuthnSchemes;
+};
+
+struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_W
+{
+    SEC_WINNT_AUTH_IDENTITY_W *TransportCredentials;
+    unsigned long Flags;
+    unsigned long AuthenticationTarget;
+    unsigned long NumberOfAuthnSchemes;
+    unsigned long *AuthnSchemes;
+    unsigned short *ServerCertificateSubject;
+    SEC_WINNT_AUTH_IDENTITY_W *ProxyCredentials;
+    unsigned long NumberOfProxyAuthnSchemes;
+    unsigned long *ProxyAuthnSchemes;
+};
+
+typedef struct _RPC_BINDING_HANDLE_SECURITY_V1_A *PRPC_BINDING_HANDLE_SECURITY_V1_A;
+
+typedef struct _RPC_BINDING_HANDLE_SECURITY_V1_W *PRPC_BINDING_HANDLE_SECURITY_V1_W;
+
+typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_A *PRPC_HTTP_TRANSPORT_CREDENTIALS_V2_A;
+
+typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_W *PRPC_HTTP_TRANSPORT_CREDENTIALS_V2_W;
+
+typedef struct RPC_INTERFACE_TEMPLATEA RPC_INTERFACE_TEMPLATEA;
+
+typedef struct RPC_INTERFACE_TEMPLATEA *PRPC_INTERFACE_TEMPLATEA;
+
+typedef struct RPC_INTERFACE_TEMPLATEW RPC_INTERFACE_TEMPLATEW;
+
+typedef struct RPC_INTERFACE_TEMPLATEW *PRPC_INTERFACE_TEMPLATEW;
+
+typedef struct _RPC_BINDING_HANDLE_SECURITY_V1_A RPC_BINDING_HANDLE_SECURITY_V1_A;
+
+typedef struct _RPC_BINDING_HANDLE_SECURITY_V1_W RPC_BINDING_HANDLE_SECURITY_V1_W;
+
+typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_A RPC_HTTP_TRANSPORT_CREDENTIALS_V2_A;
+
+typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_V2_W RPC_HTTP_TRANSPORT_CREDENTIALS_V2_W;
+
+struct RPC_INTERFACE_TEMPLATEA
+{
+    unsigned long Version;
+    RPC_IF_HANDLE IfSpec;
+    UUID *MgrTypeUuid;
+    void *MgrEpv;
+    unsigned int Flags;
+    unsigned int MaxCalls;
+    unsigned int MaxRpcSize;
+    RPC_IF_CALLBACK_FN *IfCallback;
+    UUID_VECTOR *UuidVector;
+    RPC_CSTR Annotation;
+    void *SecurityDescriptor;
+};
+
+struct RPC_INTERFACE_TEMPLATEW
+{
+    unsigned long Version;
+    RPC_IF_HANDLE IfSpec;
+    UUID *MgrTypeUuid;
+    void *MgrEpv;
+    unsigned int Flags;
+    unsigned int MaxCalls;
+    unsigned int MaxRpcSize;
+    RPC_IF_CALLBACK_FN *IfCallback;
+    UUID_VECTOR *UuidVector;
+    RPC_WSTR Annotation;
+    void *SecurityDescriptor;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcBindingCreateA(RPC_BINDING_HANDLE_TEMPLATE_V1_A *Template, RPC_BINDING_HANDLE_SECURITY_V1_A *Security, RPC_BINDING_HANDLE_OPTIONS_V1 *Options, RPC_BINDING_HANDLE *Binding);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcBindingCreateW(RPC_BINDING_HANDLE_TEMPLATE_V1_W *Template, RPC_BINDING_HANDLE_SECURITY_V1_W *Security, RPC_BINDING_HANDLE_OPTIONS_V1 *Options, RPC_BINDING_HANDLE *Binding);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInterfaceGroupCreateA(RPC_INTERFACE_TEMPLATEA *Interfaces, unsigned long NumIfs, RPC_ENDPOINT_TEMPLATEA *Endpoints, unsigned long NumEndpoints, unsigned long IdlePeriod, RPC_INTERFACE_GROUP_IDLE_CALLBACK_FN IdleCallbackFn, void *IdleCallbackContext, PRPC_INTERFACE_GROUP IfGroup);
+RPCRTAPI RPC_STATUS RPC_ENTRY RpcServerInterfaceGroupCreateW(RPC_INTERFACE_TEMPLATEW *Interfaces, unsigned long NumIfs, RPC_ENDPOINT_TEMPLATEW *Endpoints, unsigned long NumEndpoints, unsigned long IdlePeriod, RPC_INTERFACE_GROUP_IDLE_CALLBACK_FN IdleCallbackFn, void *IdleCallbackContext, PRPC_INTERFACE_GROUP IfGroup);
 
 #ifdef __cplusplus
 }

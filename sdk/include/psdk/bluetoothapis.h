@@ -56,7 +56,7 @@ typedef BLUETOOTH_LOCAL_SERVICE_INFO *PBLUETOOTH_LOCAL_SERVICE_INFO;
 
 #define BLUETOOTH_SERVICE_DISABLE 0x00
 #define BLUETOOTH_SERVICE_ENABLE  0x01
-#define BLUETOOTH_SERVICE_MASK    (BLUETOOTH_ENABLE_SERVICE | BLUETOOTH_DISABLE_SERVICE)
+#define BLUETOOTH_SERVICE_MASK    (BLUETOOTH_SERVICE_DISABLE | BLUETOOTH_SERVICE_ENABLE)
 
 typedef struct _BLUETOOTH_FIND_RADIO_PARAMS {
     DWORD dwSize;
@@ -292,6 +292,17 @@ DWORD WINAPI BluetoothSendAuthenticationResponseEx(HANDLE, BLUETOOTH_AUTHENTICAT
 DWORD WINAPI BluetoothSetServiceState(HANDLE, BLUETOOTH_DEVICE_INFO *, GUID *, DWORD);
 BOOL  WINAPI BluetoothUnregisterAuthentication(HBLUETOOTH_AUTHENTICATION_REGISTRATION);
 DWORD WINAPI BluetoothUpdateDeviceRecord(BLUETOOTH_DEVICE_INFO *);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL WINAPI BluetoothIsVersionAvailable(UCHAR MajorVersion, UCHAR MinorVersion);
 
 #ifdef __cplusplus
 }

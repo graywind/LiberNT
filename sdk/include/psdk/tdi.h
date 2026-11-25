@@ -36,6 +36,8 @@ extern "C" {
 typedef LONG TDI_STATUS;
 typedef PVOID CONNECTION_CONTEXT;
 
+typedef struct _TDI_CONNECTION_INFORMATION TDI_CONNECTION_INFORMATION;
+
 typedef struct _TDI_CONNECTION_INFORMATION {
   LONG  UserDataLength;
   PVOID  UserData;
@@ -372,6 +374,8 @@ typedef struct _TA_ADDRESS {
 #define TDI_TRANSPORT_ADDRESS_LENGTH      (sizeof(TdiTransportAddress) - 1)
 #define TDI_CONNECTION_CONTEXT_LENGTH     (sizeof(TdiConnectionContext) - 1)
 
+typedef struct _TRANSPORT_ADDRESS *PTRANSPORT_ADDRESS;
+
 typedef struct _TRANSPORT_ADDRESS {
   LONG  TAAddressCount;
   TA_ADDRESS  Address[1];
@@ -485,12 +489,23 @@ typedef struct _TDI_ADDRESS_VNS {
 
 #define TDI_ADDRESS_LENGTH_VNS            sizeof(TDI_ADDRESS_VNS)
 
-typedef struct _TDI_ADDRESS_IP6 {
-  USHORT  sin6_port;
-  ULONG  sin6_flowinfo;
-  USHORT  sin6_addr[8];
-  ULONG  sin6_scope_id;
-} TDI_ADDRESS_IP6, *PTDI_ADDRESS_IP6;
+typedef struct _TDI_ADDRESS_IP6_WIN2K {
+  USHORT sin6_port;
+  ULONG sin6_flowinfo;
+  UCHAR sin6_addr[16];
+} TDI_ADDRESS_IP6_WIN2K, *PTDI_ADDRESS_IP6_WIN2K;
+typedef struct _TDI_ADDRESS_IP6_XP {
+  USHORT sin6_port;
+  ULONG sin6_flowinfo;
+  USHORT sin6_addr[8];
+  ULONG sin6_scope_id;
+} TDI_ADDRESS_IP6_XP, *PTDI_ADDRESS_IP6_XP;
+#if (NTDDI_VERSION >= NTDDI_WINXP)
+typedef TDI_ADDRESS_IP6_XP TDI_ADDRESS_IP6;
+#else
+typedef TDI_ADDRESS_IP6_WIN2K TDI_ADDRESS_IP6;
+#endif
+typedef TDI_ADDRESS_IP6 *PTDI_ADDRESS_IP6;
 
 #define TDI_ADDRESS_LENGTH_IP6            sizeof(TDI_ADDRESS_IP6)
 
@@ -501,14 +516,17 @@ enum eNameBufferType {
 	NBT_WRITTEN
 };
 
-typedef struct _TDI_ADDRESS_NETBIOS_UNICODE_EX {
+typedef UNALIGNED struct _TDI_ADDRESS_NETBIOS_UNICODE_EX_XP {
   USHORT  NetbiosNameType;
   enum eNameBufferType  NameBufferType;
   UNICODE_STRING  EndpointName;
   UNICODE_STRING  RemoteName;
   WCHAR  EndpointBuffer[17];
   WCHAR  RemoteNameBuffer[1];
-} TDI_ADDRESS_NETBIOS_UNICODE_EX, *PTDI_ADDRESS_NETBIOS_UNICODE_EX;
+} TDI_ADDRESS_NETBIOS_UNICODE_EX_XP, *PTDI_ADDRESS_NETBIOS_UNICODE_EX_XP;
+#if (NTDDI_VERSION >= NTDDI_WINXP)
+typedef TDI_ADDRESS_NETBIOS_UNICODE_EX_XP TDI_ADDRESS_NETBIOS_UNICODE_EX, *PTDI_ADDRESS_NETBIOS_UNICODE_EX;
+#endif
 
 typedef struct _TA_APPLETALK_ADDR {
   LONG  TAAddressCount;
@@ -537,7 +555,7 @@ typedef struct _TA_ADDRESS_IPX {
   } Address[1];
 } TA_IPX_ADDRESS, *PTA_IPX_ADDRESS;
 
-typedef struct _TA_NETBIOS_ADDRESS {
+typedef struct _TA_ADDRESS_NETBIOS {
   LONG  TAAddressCount;
   struct _Addr{
     USHORT  AddressLength;
@@ -573,16 +591,87 @@ typedef struct _TA_ADDRESS_IP6 {
   } Address [1];
 } TA_IP6_ADDRESS, *PTA_IP6_ADDRESS;
 
-typedef struct _TA_ADDRESS_NETBIOS_UNICODE_EX {
+typedef UNALIGNED struct _TA_ADDRESS_NETBIOS_UNICODE_EX_XP {
   LONG  TAAddressCount;
   struct _AddrNetbiosWCharEx {
     USHORT  AddressLength;
     USHORT  AddressType;
-    TDI_ADDRESS_NETBIOS_UNICODE_EX  Address[1];
+    TDI_ADDRESS_NETBIOS_UNICODE_EX_XP Address[1];
   } Address [1];
-} TA_NETBIOS_UNICODE_EX_ADDRESS, *PTA_NETBIOS_UNICODE_EX_ADDRESS;
+} TA_NETBIOS_UNICODE_EX_ADDRESS_XP, *PTA_NETBIOS_UNICODE_EX_ADDRESS_XP;
+#if (NTDDI_VERSION >= NTDDI_WINXP)
+typedef TA_NETBIOS_UNICODE_EX_ADDRESS_XP TA_NETBIOS_UNICODE_EX_ADDRESS, *PTA_NETBIOS_UNICODE_EX_ADDRESS;
+#endif
 
 #pragma pack(pop)
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef TDI_QUERY_PROVIDER_INFORMATION
+#define TDI_QUERY_PROVIDER_INFORMATION 0x00000002
+#endif
+#ifndef TDI_QUERY_ROUTING_INFO
+#define TDI_QUERY_ROUTING_INFO 0x0000000a
+#endif
+#ifndef TDI_RECEIVE_FORCE_INDICATION
+#define TDI_RECEIVE_FORCE_INDICATION 0x00002000
+#endif
+#ifndef TDI_RECEIVE_NO_PUSH
+#define TDI_RECEIVE_NO_PUSH 0x00004000
+#endif
+
+typedef TDI_REQUEST_ASSOCIATE_ADDRESS * PTDI_REQUEST_USER_ASSOCIATE;
+typedef TDI_REQUEST_CONNECT * PTDI_REQUEST_USER_CONNECT;
+typedef TDI_REQUEST_QUERY_INFORMATION * PTDI_REQUEST_USER_QUERY_INFO;
+typedef TDI_REQUEST_ASSOCIATE_ADDRESS TDI_REQUEST_USER_ASSOCIATE;
+typedef TDI_REQUEST_CONNECT TDI_REQUEST_USER_CONNECT;
+typedef TDI_REQUEST_QUERY_INFORMATION TDI_REQUEST_USER_QUERY_INFO;
+
+typedef struct _STREAMS_TDI_ACTION {
+  TDI_ACTION_HEADER Header;
+  BOOLEAN DatagramOption;
+  ULONG BufferLength;
+  CHAR Buffer[1];
+} STREAMS_TDI_ACTION, *PSTREAMS_TDI_ACTION;
+
+typedef struct _TDI_ROUTING_INFO_WS03 {
+  ULONG Protocol;
+  ULONG InterfaceId;
+  ULONG LinkId;
+  TRANSPORT_ADDRESS Address;
+} TDI_ROUTING_INFO_WS03, *PTDI_ROUTING_INFO_WS03;
+
+#define _TDI_USER_
+#define IOCTL_TDI_MAGIC_BULLET 0x2101FF
+
+typedef TDI_ROUTING_INFO_WS03 TDI_ROUTING_INFO;
+
+typedef TDI_ROUTING_INFO *PTDI_ROUTING_INFO;
+
+#pragma pack(push, 1)
+struct _TA_ADDRESS_NETBIOS_EX
+{
+    LONG TAAddressCount;
+    struct _AddrNetbiosEx
+    {
+        USHORT AddressLength;
+        USHORT AddressType;
+        TDI_ADDRESS_NETBIOS_EX Address[1];
+    } Address[1];
+};
+#pragma pack(pop)
+
+typedef struct _TA_ADDRESS_NETBIOS_EX *PTA_NETBIOS_EX_ADDRESS;
+
+typedef struct _TA_ADDRESS_NETBIOS_EX TA_NETBIOS_EX_ADDRESS;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+NTSTATUS NTAPI TdiOpenNetbiosAddress(PHANDLE FileHandle, PUCHAR Buffer, PVOID DeviceName, PVOID Name);
 
 #ifdef __cplusplus
 }
