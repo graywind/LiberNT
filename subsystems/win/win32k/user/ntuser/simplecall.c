@@ -8,9 +8,9 @@
  */
 
 #include <win32k.h>
-#include <reactos/dwmframe.h>
-#include <reactos/usertouch.h>
-#include <reactos/wtssession.h>
+#include <libernt/dwmframe.h>
+#include <libernt/usertouch.h>
+#include <libernt/wtssession.h>
 
 DBG_DEFAULT_CHANNEL(UserMisc);
 
@@ -313,6 +313,12 @@ NtUserCallOneParam(
 
             /* Windows allows zero count, in which case it allocates context for 8 moves */
             if (count == 0) count = 8;
+
+            if ((ULONG_PTR)count > MAXULONG_PTR / sizeof(CVR))
+            {
+                Result = 0;
+                break;
+            }
 
             psmwp = (PSMWP)UserCreateObject(gHandleTable,
                                             NULL,
@@ -1536,7 +1542,8 @@ NtUserCallHwndParam(
 
             if (Index >= 0)
             {
-                if ((ULONG)Index > Window->cbwndExtra || Window->cbwndExtra - (ULONG)Index < Size)
+                if (FNID_HAS_PRIVATE_EXTRA(Window->fnid) ||
+                    (ULONG)Index > Window->cbwndExtra || Window->cbwndExtra - (ULONG)Index < Size)
                 {
                     EngSetLastError(ERROR_INVALID_INDEX);
                     goto GetWindowLongExit;

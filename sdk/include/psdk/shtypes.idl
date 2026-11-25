@@ -22,7 +22,7 @@
 import "wtypes.idl";
 
 cpp_quote("#pragma pack(push, 1)")
-typedef struct
+typedef struct _SHITEMID
 {
     WORD cb;      /* nr of bytes in this item */
     BYTE abID[1]; /* first byte in this item */
@@ -37,6 +37,13 @@ typedef struct _ITEMIDLIST
 #ifndef UNALIGNED
 #define UNALIGNED
 #endif
+
+cpp_quote("#define REFELEMENTID const ELEMENTID * __MIDL_CONST")
+cpp_quote("#define REFTASKOWNERID const TASKOWNERID * __MIDL_CONST")
+cpp_quote("")
+cpp_quote("typedef GUID ELEMENTID;")
+cpp_quote("")
+cpp_quote("typedef GUID TASKOWNERID;")
 
 typedef [unique] BYTE_BLOB *wirePIDL;
 typedef [wire_marshal(wirePIDL)] ITEMIDLIST UNALIGNED *LPITEMIDLIST;
@@ -102,7 +109,7 @@ typedef struct _STRRET
 cpp_quote("#pragma pack(pop)")
 
 cpp_quote("#pragma pack(push, 1)")
-typedef struct
+typedef struct _SHELLDETAILS
 {
     int fmt;
     int cxChar;
@@ -180,7 +187,9 @@ typedef  [v1_enum] enum tagPERCEIVED {
   PERCEIVED_TYPE_SYSTEM      = 7,
   PERCEIVED_TYPE_APPLICATION = 8,
   PERCEIVED_TYPE_GAMEMEDIA   = 9,
-  PERCEIVED_TYPE_CONTACTS    = 10
+  PERCEIVED_TYPE_CONTACTS    = 10,
+  PERCEIVED_TYPE_FIRST = (-3),
+  PERCEIVED_TYPE_LAST = 0xA,
 } PERCEIVED;
 
 cpp_quote("#define PERCEIVEDFLAG_UNDEFINED     0x0000")
@@ -253,3 +262,10 @@ typedef struct tagLOGFONTW
 
 typedef LOGFONTW LOGFONT;
 cpp_quote("#endif")
+
+cpp_quote("#define REFELEMENTID const ELEMENTID * __MIDL_CONST")
+cpp_quote("#define REFTASKOWNERID const TASKOWNERID * __MIDL_CONST")
+cpp_quote("")
+cpp_quote("typedef GUID ELEMENTID;")
+cpp_quote("")
+cpp_quote("typedef GUID TASKOWNERID;")

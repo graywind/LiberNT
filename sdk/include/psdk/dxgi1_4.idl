@@ -138,3 +138,7 @@ interface IDXGIAdapter3 : IDXGIAdapter2
         [in] DWORD cookie
     );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

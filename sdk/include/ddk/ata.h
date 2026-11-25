@@ -1278,4 +1278,619 @@ typedef struct _ATA_GET_PHYSICAL_ELEMENT_STATUS_PARAMETER_DATA {
 } ATA_GET_PHYSICAL_ELEMENT_STATUS_PARAMETER_DATA, *PATA_GET_PHYSICAL_ELEMENT_STATUS_PARAMETER_DATA;
 #pragma pack(pop)
 
+#ifndef ATAPI_LS120_FORMAT_UNIT
+#define ATAPI_LS120_FORMAT_UNIT 0x24
+#endif
+#ifndef ATAPI_MODE_SELECT
+#define ATAPI_MODE_SELECT 0x55
+#endif
+#ifndef ATAPI_MODE_SENSE
+#define ATAPI_MODE_SENSE 0x5A
+#endif
+#ifndef ATA_DEVICE_SET_PASSWORD_MASTER
+#define ATA_DEVICE_SET_PASSWORD_MASTER 0x01
+#endif
+#ifndef ATA_DEVICE_SET_PASSWORD_USER
+#define ATA_DEVICE_SET_PASSWORD_USER 0x00
+#endif
+#ifndef ATA_DEVICE_SIGNATURE_ENCLOSURE
+#define ATA_DEVICE_SIGNATURE_ENCLOSURE 0xC33C0101
+#endif
+#ifndef ATA_DEVICE_SIGNATURE_HOST_ZONED
+#define ATA_DEVICE_SIGNATURE_HOST_ZONED 0xABCD0101
+#endif
+#ifndef ATA_DEVICE_SIGNATURE_PORT_MULTIPLIER
+#define ATA_DEVICE_SIGNATURE_PORT_MULTIPLIER 0x96690101
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_ALL_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_ALL_ZONES 0x00
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_CLOSED_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_CLOSED_ZONES 0x04
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_EMPTY_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_EMPTY_ZONES 0x01
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_EXPLICITLY_OPENED_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_EXPLICITLY_OPENED_ZONES 0x03
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_FULL_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_FULL_ZONES 0x05
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_IMPLICITLY_OPENED_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_IMPLICITLY_OPENED_ZONES 0x02
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_NON_SEQUENTIAL_WRITE_RESOURCES_ACTIVE_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_NON_SEQUENTIAL_WRITE_RESOURCES_ACTIVE_ZONES 0x11
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_NOT_WRITE_POINTER_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_NOT_WRITE_POINTER_ZONES 0x3F
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_OFFLINE_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_OFFLINE_ZONES 0x07
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_READ_ONLY_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_READ_ONLY_ZONES 0x06
+#endif
+#ifndef ATA_REPORT_ZONES_OPTION_LIST_RWP_ZONES
+#define ATA_REPORT_ZONES_OPTION_LIST_RWP_ZONES 0x10
+#endif
+#ifndef ATA_ZONED_CAPABILITIES_DEVICE_MANAGED
+#define ATA_ZONED_CAPABILITIES_DEVICE_MANAGED 0x2
+#endif
+#ifndef ATA_ZONED_CAPABILITIES_HOST_AWARE
+#define ATA_ZONED_CAPABILITIES_HOST_AWARE 0x1
+#endif
+#ifndef ATA_ZONED_CAPABILITIES_NOT_REPORTED
+#define ATA_ZONED_CAPABILITIES_NOT_REPORTED 0x0
+#endif
+#ifndef ATA_ZONES_TYPE_AND_LENGTH_MAY_DIFFERENT
+#define ATA_ZONES_TYPE_AND_LENGTH_MAY_DIFFERENT 0x0
+#endif
+#ifndef ATA_ZONES_TYPE_MAY_DIFFERENT_LENGTH_SAME
+#define ATA_ZONES_TYPE_MAY_DIFFERENT_LENGTH_SAME 0x3
+#endif
+#ifndef ATA_ZONES_TYPE_SAME_LAST_ZONE_LENGTH_DIFFERENT
+#define ATA_ZONES_TYPE_SAME_LAST_ZONE_LENGTH_DIFFERENT 0x2
+#endif
+#ifndef ATA_ZONES_TYPE_SAME_LENGTH_SAME
+#define ATA_ZONES_TYPE_SAME_LENGTH_SAME 0x1
+#endif
+#ifndef ATA_ZONE_CONDITION_CLOSED
+#define ATA_ZONE_CONDITION_CLOSED 0x4
+#endif
+#ifndef ATA_ZONE_CONDITION_EMPTY
+#define ATA_ZONE_CONDITION_EMPTY 0x1
+#endif
+#ifndef ATA_ZONE_CONDITION_EXPLICITLY_OPENED
+#define ATA_ZONE_CONDITION_EXPLICITLY_OPENED 0x3
+#endif
+#ifndef ATA_ZONE_CONDITION_FULL
+#define ATA_ZONE_CONDITION_FULL 0xE
+#endif
+#ifndef ATA_ZONE_CONDITION_IMPLICITLY_OPENED
+#define ATA_ZONE_CONDITION_IMPLICITLY_OPENED 0x2
+#endif
+#ifndef ATA_ZONE_CONDITION_NOT_WRITE_POINTER
+#define ATA_ZONE_CONDITION_NOT_WRITE_POINTER 0x0
+#endif
+#ifndef ATA_ZONE_CONDITION_OFFLINE
+#define ATA_ZONE_CONDITION_OFFLINE 0xF
+#endif
+#ifndef ATA_ZONE_CONDITION_READ_ONLY
+#define ATA_ZONE_CONDITION_READ_ONLY 0xD
+#endif
+#ifndef ATA_ZONE_TYPE_CONVENTIONAL
+#define ATA_ZONE_TYPE_CONVENTIONAL 0x1
+#endif
+#ifndef ATA_ZONE_TYPE_SEQUENTIAL_WRITE_PREFERRED
+#define ATA_ZONE_TYPE_SEQUENTIAL_WRITE_PREFERRED 0x3
+#endif
+#ifndef ATA_ZONE_TYPE_SEQUENTIAL_WRITE_REQUIRED
+#define ATA_ZONE_TYPE_SEQUENTIAL_WRITE_REQUIRED 0x2
+#endif
+#ifndef HYBRID_HEALTH_DATA_LOSS
+#define HYBRID_HEALTH_DATA_LOSS 0x08
+#endif
+#ifndef HYBRID_HEALTH_NVM_SIZE_CHANGED
+#define HYBRID_HEALTH_NVM_SIZE_CHANGED 0x02
+#endif
+#ifndef HYBRID_HEALTH_READ_ONLY
+#define HYBRID_HEALTH_READ_ONLY 0x04
+#endif
+#ifndef HYBRID_HEALTH_UNUSEABLE
+#define HYBRID_HEALTH_UNUSEABLE 0x01
+#endif
+#ifndef IDE_GP_LOG_DEVICE_STATISTICS_FREE_FALL_PAGE
+#define IDE_GP_LOG_DEVICE_STATISTICS_FREE_FALL_PAGE 0x02
+#endif
+#ifndef IDE_GP_LOG_DEVICE_STATISTICS_GENERAL_ERROR_PAGE
+#define IDE_GP_LOG_DEVICE_STATISTICS_GENERAL_ERROR_PAGE 0x04
+#endif
+#ifndef IDE_GP_LOG_DEVICE_STATISTICS_ROTATING_MEDIA_PAGE
+#define IDE_GP_LOG_DEVICE_STATISTICS_ROTATING_MEDIA_PAGE 0x03
+#endif
+#ifndef IDE_GP_LOG_DEVICE_STATISTICS_SSD_PAGE
+#define IDE_GP_LOG_DEVICE_STATISTICS_SSD_PAGE 0x07
+#endif
+#ifndef IDE_GP_LOG_DEVICE_STATISTICS_TRANSPORT_PAGE
+#define IDE_GP_LOG_DEVICE_STATISTICS_TRANSPORT_PAGE 0x06
+#endif
+#ifndef IDE_GP_LOG_IDENTIFY_DEVICE_DATA_ZONED_DEVICE_INFORMATION_PAGE
+#define IDE_GP_LOG_IDENTIFY_DEVICE_DATA_ZONED_DEVICE_INFORMATION_PAGE 0x09
+#endif
+#ifndef IDE_GP_LOG_LBA_STATUS
+#define IDE_GP_LOG_LBA_STATUS 0x19
+#endif
+#ifndef IDE_GP_LOG_PHY_EVENT_COUNTER_ADDRESS
+#define IDE_GP_LOG_PHY_EVENT_COUNTER_ADDRESS 0x11
+#endif
+#ifndef IDE_GP_LOG_REBUILD_ASSIST
+#define IDE_GP_LOG_REBUILD_ASSIST 0x15
+#endif
+#ifndef IDE_GP_PENDING_DEFECTS
+#define IDE_GP_PENDING_DEFECTS 0x0C
+#endif
+#ifndef IDE_NCQ_NON_DATA_ABORT_NCQ_QUEUE
+#define IDE_NCQ_NON_DATA_ABORT_NCQ_QUEUE 0x00
+#endif
+#ifndef IDE_NCQ_NON_DATA_DEADLINE_HANDLING
+#define IDE_NCQ_NON_DATA_DEADLINE_HANDLING 0x01
+#endif
+#ifndef IDE_NCQ_NON_DATA_HYBRID_CHANGE_BY_SIZE
+#define IDE_NCQ_NON_DATA_HYBRID_CHANGE_BY_SIZE 0x02
+#endif
+#ifndef IDE_NCQ_SEND_DATA_SET_MANAGEMENT
+#define IDE_NCQ_SEND_DATA_SET_MANAGEMENT 0x00
+#endif
+#ifndef IDE_SATA_FEATURE_DEVICE_AUTO_PARTIAL_TO_SLUMBER
+#define IDE_SATA_FEATURE_DEVICE_AUTO_PARTIAL_TO_SLUMBER 0x7
+#endif
+#ifndef IDE_SATA_FEATURE_DEVSLP
+#define IDE_SATA_FEATURE_DEVSLP 0x9
+#endif
+#ifndef IDE_SATA_FEATURE_DMA_SETUP_FIS_AUTO_ACTIVATE
+#define IDE_SATA_FEATURE_DMA_SETUP_FIS_AUTO_ACTIVATE 0x2
+#endif
+#ifndef IDE_SATA_FEATURE_ENABLE_HARDWARE_FEATURE_CONTROL
+#define IDE_SATA_FEATURE_ENABLE_HARDWARE_FEATURE_CONTROL 0x8
+#endif
+#ifndef IDE_SATA_FEATURE_GUARANTEED_IN_ORDER_DELIVERY
+#define IDE_SATA_FEATURE_GUARANTEED_IN_ORDER_DELIVERY 0x4
+#endif
+#ifndef IDE_SATA_FEATURE_NON_ZERO_DMA_BUFFER_OFFSET
+#define IDE_SATA_FEATURE_NON_ZERO_DMA_BUFFER_OFFSET 0x1
+#endif
+#ifndef IDE_SATA_FEATURE_SOFTWARE_SETTINGS_PRESERVATION
+#define IDE_SATA_FEATURE_SOFTWARE_SETTINGS_PRESERVATION 0x6
+#endif
+#ifndef IDE_SMART_DISABLE
+#define IDE_SMART_DISABLE 0xD9
+#endif
+#ifndef IDE_SMART_ENABLE
+#define IDE_SMART_ENABLE 0xD8
+#endif
+#ifndef IDE_SMART_ENABLE_DISABLE_AUTOSAVE
+#define IDE_SMART_ENABLE_DISABLE_AUTOSAVE 0xD2
+#endif
+#ifndef IDE_SMART_ENABLE_DISABLE_AUTO_OFFLINE
+#define IDE_SMART_ENABLE_DISABLE_AUTO_OFFLINE 0xDB
+#endif
+#ifndef IDE_SMART_EXECUTE_OFFLINE_DIAGS
+#define IDE_SMART_EXECUTE_OFFLINE_DIAGS 0xD4
+#endif
+#ifndef IDE_SMART_READ_ATTRIBUTES
+#define IDE_SMART_READ_ATTRIBUTES 0xD0
+#endif
+#ifndef IDE_SMART_READ_THRESHOLDS
+#define IDE_SMART_READ_THRESHOLDS 0xD1
+#endif
+#ifndef IDE_SMART_RETURN_STATUS
+#define IDE_SMART_RETURN_STATUS 0xDA
+#endif
+#ifndef IDE_SMART_SAVE_ATTRIBUTE_VALUES
+#define IDE_SMART_SAVE_ATTRIBUTE_VALUES 0xD3
+#endif
+#ifndef IDE_SMART_WRITE_LOG
+#define IDE_SMART_WRITE_LOG 0xD6
+#endif
+#ifndef SAVED_DEVICE_INTERNAL_STATUS_DATA_LOG_ADDRESS
+#define SAVED_DEVICE_INTERNAL_STATUS_DATA_LOG_ADDRESS 0x25
+#endif
+#ifndef ZAC_REVISION_01
+#define ZAC_REVISION_01 0xB6E8
+#endif
+#ifndef ZAC_REVISION_04
+#define ZAC_REVISION_04 0xA36C
+#endif
+#ifndef ZAC_REVISION_NOT_REPORTED_1
+#define ZAC_REVISION_NOT_REPORTED_1 0x0000
+#endif
+#ifndef ZAC_REVISION_NOT_REPORTED_2
+#define ZAC_REVISION_NOT_REPORTED_2 0xFFFF
+#endif
+#ifndef ZM_ACTION_CLOSE_ZONE
+#define ZM_ACTION_CLOSE_ZONE 0x01
+#endif
+#ifndef ZM_ACTION_FINISH_ZONE
+#define ZM_ACTION_FINISH_ZONE 0x02
+#endif
+#ifndef ZM_ACTION_OPEN_ZONE
+#define ZM_ACTION_OPEN_ZONE 0x03
+#endif
+#ifndef ZM_ACTION_REPORT_ZONES
+#define ZM_ACTION_REPORT_ZONES 0x00
+#endif
+#ifndef ZM_ACTION_RESET_WRITE_POINTER
+#define ZM_ACTION_RESET_WRITE_POINTER 0x04
+#endif
+
+#pragma pack(push, 1)
+typedef struct _ATA_ZONE_DESCRIPTOR {
+  UCHAR ZoneType : 4;
+  UCHAR Reserved0 : 4;
+  UCHAR Reset : 1;
+  UCHAR NonSeq : 1;
+  UCHAR Reserved1 : 2;
+  UCHAR ZoneCondition : 4;
+  UCHAR Reserved2[6];
+  ULONGLONG ZoneLength : 48;
+  ULONGLONG Reserved3 : 16;
+  ULONGLONG ZoneStartLBA : 48;
+  ULONGLONG Reserved4 : 16;
+  ULONGLONG WritePointerLBA : 48;
+  ULONGLONG Reserved5 : 16;
+  UCHAR Reserved6[32];
+} ATA_ZONE_DESCRIPTOR, *PATA_ZONE_DESCRIPTOR;
+#pragma pack(pop)
+
+typedef struct _GP_LOG_SUPPORTED_DEVICE_STATISTICS {
+  DEVICE_STATISTICS_LOG_PAGE_HEADER Header;
+  UCHAR NumberOfEntries;
+  UCHAR LogPageNumbers[503];
+} GP_LOG_SUPPORTED_DEVICE_STATISTICS, *PGP_LOG_SUPPORTED_DEVICE_STATISTICS;
+
+#pragma pack(push, 1)
+typedef struct _REGISTER_FIS {
+  UCHAR FisType;
+  UCHAR Reserved0 : 7;
+  UCHAR CmdReg : 1;
+  UCHAR Command;
+  UCHAR Features;
+  UCHAR SectorNumber;
+  UCHAR CylinderLow;
+  UCHAR CylinderHigh;
+  UCHAR DeviceHead;
+  UCHAR SectorNumberExp;
+  UCHAR CylinderLowExp;
+  UCHAR CylinderHighExp;
+  UCHAR FeaturesExp;
+  UCHAR SectorCount;
+  UCHAR SectorCountExp;
+  UCHAR Reserved2;
+  UCHAR Control;
+  ULONG Reserved3;
+} REGISTER_FIS, *PREGISTER_FIS;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _REPORT_ZONES_EXT_DATA {
+  ULONG ZoneListLength;
+  UCHAR SAME : 4;
+  UCHAR Reserved0 : 4;
+  UCHAR Reserved1[3];
+  ULONGLONG MaxLBA : 48;
+  ULONGLONG Reserved2 : 16;
+  UCHAR Reserved3[48];
+} REPORT_ZONES_EXT_DATA, *PREPORT_ZONES_EXT_DATA;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct _SAVED_DEVICE_INTERNAL_STATUS_LOG {
+  UCHAR LogAddress;
+  UCHAR Reserved0[3];
+  ULONG OrganizationID;
+  USHORT Area1LastLogPage;
+  USHORT Area2LastLogPage;
+  USHORT Area3LastLogPage;
+  UCHAR Reserved2[368];
+  UCHAR SavedDataAvailable;
+  UCHAR GenerationNumber;
+  UCHAR ReasonIdentifier[128];
+} SAVED_DEVICE_INTERNAL_STATUS_LOG, *PSAVED_DEVICE_INTERNAL_STATUS_LOG;
+#pragma pack(pop)
+
+#define ZM_ALL_ZONES_BIT 0x100
+
+#pragma pack(push, 1)
+struct _DEVICE_SET_PASSWORD
+{
+    struct
+    {
+        USHORT PasswordIdentifier : 1;
+        USHORT Reserved1 : 7;
+        USHORT MasterPasswordCapability : 1;
+        USHORT Reserved2 : 7;
+    } ControlWord;
+    USHORT Password[16];
+    USHORT MasterPasswordIdentifier;
+    USHORT Reserved[238];
+};
+#pragma pack(pop)
+
+struct _GP_LOG_FREE_FALL_STATISTICS
+{
+    DEVICE_STATISTICS_LOG_PAGE_HEADER Header;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberofFreeFallEventsDetected;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } OverlimitShockEvents;
+    UCHAR Reserved[488];
+};
+
+struct _GP_LOG_GENERAL_ERROR_STATISTICS
+{
+    DEVICE_STATISTICS_LOG_PAGE_HEADER Header;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfReportedUncorrectableErrors;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfResetsBetweenCommandAcceptanceAndCommandCompletion;
+    UCHAR Reserved[488];
+};
+
+struct _GP_LOG_ROTATING_MEDIA_STATISTICS
+{
+    DEVICE_STATISTICS_LOG_PAGE_HEADER Header;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } SpindleMotorPoweronHours;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } HeadFlyingHours;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } HeadLoadEvents;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfReallocatedLogicalSectors;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } ReadRecoveryAttempts;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfMechanicalStartFailures;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfReallocationCandidateLogicalSectors;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfHighPriorityUnloadEvents;
+    UCHAR Reserved[440];
+};
+
+struct _GP_LOG_SOLID_STATE_DEVICE_STATISTICS
+{
+    DEVICE_STATISTICS_LOG_PAGE_HEADER Header;
+    struct
+    {
+        ULONGLONG Value : 8;
+        ULONGLONG Reserved : 48;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } PercentageUsedEnduranceIndicator;
+    UCHAR Reserved[496];
+};
+
+struct _GP_LOG_TRANSPORT_STATISTICS
+{
+    DEVICE_STATISTICS_LOG_PAGE_HEADER Header;
+    struct
+    {
+        ULONGLONG Count : 8;
+        ULONGLONG Reserved : 48;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfHardwareResets;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfAsrEvents;
+    struct
+    {
+        ULONGLONG Count : 32;
+        ULONGLONG Reserved : 24;
+        ULONGLONG ReservedFlags : 3;
+        ULONGLONG MonitoredConditionMet : 1;
+        ULONGLONG StatisticsSupportsDsn : 1;
+        ULONGLONG Normalized : 1;
+        ULONGLONG ValidValue : 1;
+        ULONGLONG Supported : 1;
+    } NumberOfInterfaceCrcErrors;
+    UCHAR Reserved[480];
+};
+
+struct _IDENTIFY_DEVICE_DATA_LOG_PAGE_ZONED_DEVICE_INFO
+{
+    IDENTIFY_DEVICE_DATA_LOG_PAGE_HEADER Header;
+    struct
+    {
+        ULONGLONG URSWRZ : 1;
+        ULONGLONG Reserved : 62;
+        ULONGLONG Valid : 1;
+    } ZonedDeviceCapabilities;
+    struct
+    {
+        ULONGLONG Reserved : 63;
+        ULONGLONG Valid : 1;
+    } ZonedDeviceSettings;
+    struct
+    {
+        ULONGLONG Number : 32;
+        ULONGLONG Reserved : 31;
+        ULONGLONG Valid : 1;
+    } OptimalNumberOfOpenSequentialWritePreferredZones;
+    struct
+    {
+        ULONGLONG Number : 32;
+        ULONGLONG Reserved : 31;
+        ULONGLONG Valid : 1;
+    } OptimalNumberOfNonSequentiallyWrittenSequentialWritePreferredZones;
+    struct
+    {
+        ULONGLONG Number : 32;
+        ULONGLONG Reserved : 31;
+        ULONGLONG Valid : 1;
+    } MaxNumberOfOpenSequentialWriteRequiredZones;
+    struct
+    {
+        ULONGLONG ZacMinorVersion : 16;
+        ULONGLONG Reserved0 : 47;
+        ULONGLONG Valid : 1;
+    } Version;
+    UCHAR Reserved[456];
+};
+
+typedef struct _DEVICE_SET_PASSWORD DEVICE_SET_PASSWORD;
+
+typedef struct _GP_LOG_FREE_FALL_STATISTICS GP_LOG_FREE_FALL_STATISTICS;
+
+typedef struct _GP_LOG_GENERAL_ERROR_STATISTICS GP_LOG_GENERAL_ERROR_STATISTICS;
+
+typedef struct _GP_LOG_ROTATING_MEDIA_STATISTICS GP_LOG_ROTATING_MEDIA_STATISTICS;
+
+typedef struct _GP_LOG_SOLID_STATE_DEVICE_STATISTICS GP_LOG_SOLID_STATE_DEVICE_STATISTICS;
+
+typedef struct _GP_LOG_TRANSPORT_STATISTICS GP_LOG_TRANSPORT_STATISTICS;
+
+typedef struct _IDENTIFY_DEVICE_DATA_LOG_PAGE_ZONED_DEVICE_INFO IDENTIFY_DEVICE_DATA_LOG_PAGE_ZONED_DEVICE_INFO;
+
+typedef struct _DEVICE_SET_PASSWORD *PDEVICE_SET_PASSWORD;
+
+typedef struct _GP_LOG_FREE_FALL_STATISTICS *PGP_LOG_FREE_FALL_STATISTICS;
+
+typedef struct _GP_LOG_GENERAL_ERROR_STATISTICS *PGP_LOG_GENERAL_ERROR_STATISTICS;
+
+typedef struct _GP_LOG_ROTATING_MEDIA_STATISTICS *PGP_LOG_ROTATING_MEDIA_STATISTICS;
+
+typedef struct _GP_LOG_SOLID_STATE_DEVICE_STATISTICS *PGP_LOG_SOLID_STATE_DEVICE_STATISTICS;
+
+typedef struct _GP_LOG_TRANSPORT_STATISTICS *PGP_LOG_TRANSPORT_STATISTICS;
+
+typedef struct _IDENTIFY_DEVICE_DATA_LOG_PAGE_ZONED_DEVICE_INFO *PIDENTIFY_DEVICE_DATA_LOG_PAGE_ZONED_DEVICE_INFO;
+
 #endif

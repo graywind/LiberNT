@@ -65,3 +65,4 @@ interface IDocObjectService : IUnknown
             [in] LPCWSTR lpszUrl,
             [out] BOOL *pfIsError);
 };
+

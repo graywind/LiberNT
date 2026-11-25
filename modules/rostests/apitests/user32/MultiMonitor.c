@@ -6,6 +6,7 @@
  */
 
 #include "precomp.h"
+#include <d3dkmthk.h>
 
 #define MAX_MONITORS 16
 #define PROBE_COLOR RGB(0x12, 0x9A, 0x56)
@@ -74,7 +75,7 @@ TestMonitor(HMONITOR Monitor, RECT *Union, ULONG *Primaries)
     MONITORINFOEXW Info;
     DEVMODEW Mode;
     DWORD State;
-    POINT Center;
+    POINT Center, Cursor;
 
     Info.cbSize = sizeof(Info);
     ok(GetMonitorInfoW(Monitor, (MONITORINFO *)&Info), "GetMonitorInfo failed with %lu\n", GetLastError());
@@ -100,6 +101,9 @@ TestMonitor(HMONITOR Monitor, RECT *Union, ULONG *Primaries)
     Center.x = (Info.rcMonitor.left + Info.rcMonitor.right) / 2;
     Center.y = (Info.rcMonitor.top + Info.rcMonitor.bottom) / 2;
     ok(MonitorFromPoint(Center, MONITOR_DEFAULTTONULL) == Monitor, "%ls: its centre belongs to another monitor\n", Info.szDevice);
+    ok(SetCursorPos(Center.x, Center.y), "%ls: SetCursorPos failed with %lu\n", Info.szDevice, GetLastError());
+    ok(GetCursorPos(&Cursor) && Cursor.x == Center.x && Cursor.y == Center.y,
+       "%ls: the cursor went to (%ld,%ld) for (%ld,%ld)\n", Info.szDevice, Cursor.x, Cursor.y, Center.x, Center.y);
 
     if (Info.dwFlags & MONITORINFOF_PRIMARY)
     {
@@ -121,7 +125,9 @@ TestDrawingOnMonitor(HMONITOR Monitor)
     MONITORINFO Info;
     COLORREF Color;
     HBRUSH Brush;
-    RECT Client;
+    HRGN Region;
+    POINT Origin;
+    RECT Client, Box;
     HWND Window;
     HDC Dc;
     int x, y;
@@ -144,6 +150,15 @@ TestDrawingOnMonitor(HMONITOR Monitor)
     FillRect(Dc, &Client, Brush);
     DeleteObject(Brush);
     Color = GetPixel(Dc, 32, 32);
+    ok(GetDCOrgEx(Dc, &Origin), "GetDCOrgEx failed with %lu\n", GetLastError());
+    ok(Origin.x == x && Origin.y == y, "the window DC origin is (%ld,%ld), the window is at (%d,%d)\n", Origin.x,
+       Origin.y, x, y);
+    Region = CreateRectRgn(0, 0, 0, 0);
+    ok(GetRandomRgn(Dc, Region, SYSRGN) == 1, "GetRandomRgn(SYSRGN) failed\n");
+    GetRgnBox(Region, &Box);
+    ok(Box.left == x && Box.top == y && Box.right == x + 64 && Box.bottom == y + 64,
+       "the system region of the window at (%d,%d) is %s\n", x, y, wine_dbgstr_rect(&Box));
+    DeleteObject(Region);
     ReleaseDC(Window, Dc);
     ok(Color == PROBE_COLOR, "the window reads 0x%06lx at (%d,%d), expected 0x%06lx\n", Color, x + 32, y + 32,
        (ULONG)PROBE_COLOR);
@@ -219,12 +234,266 @@ TestDisplayConfig(const MONITOR_LIST *List)
     }
 }
 
+static BOOL
+ListsMode(PCWSTR Device, UINT Width, UINT Height)
+{
+    DEVMODEW Mode;
+    DWORD Index;
+
+    for (Index = 0; ; Index++)
+    {
+        ZeroMemory(&Mode, sizeof(Mode));
+        Mode.dmSize = sizeof(Mode);
+        if (!EnumDisplaySettingsExW(Device, Index, &Mode, EDS_RAWMODE))
+            return FALSE;
+        if (Mode.dmPelsWidth == Width && Mode.dmPelsHeight == Height && Mode.dmBitsPerPel == 32)
+            return TRUE;
+    }
+}
+
+static void
+TestModeLists(void)
+{
+    NTSTATUS (APIENTRY *pOpenAdapter)(D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME *);
+    NTSTATUS (APIENTRY *pGetModeList)(D3DKMT_GETDISPLAYMODELIST *);
+    NTSTATUS (APIENTRY *pCloseAdapter)(const D3DKMT_CLOSEADAPTER *);
+    HMODULE Gdi32 = GetModuleHandleW(L"gdi32.dll");
+    HMODULE Win32u = LoadLibraryW(L"win32u.dll");
+    D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME Open;
+    D3DKMT_GETDISPLAYMODELIST List;
+    D3DKMT_CLOSEADAPTER Close;
+    DISPLAY_DEVICEW Device;
+    D3DKMT_DISPLAYMODE *Modes;
+    ULONG Missing, Checked, Mode;
+    DWORD Index;
+
+    pOpenAdapter = (void *)GetProcAddress(Gdi32, "D3DKMTOpenAdapterFromGdiDisplayName");
+    pGetModeList = (void *)GetProcAddress(Gdi32, "D3DKMTGetDisplayModeList");
+    pCloseAdapter = (void *)GetProcAddress(Gdi32, "D3DKMTCloseAdapter");
+    if (!pGetModeList && Win32u)
+        pGetModeList = (void *)GetProcAddress(Win32u, "NtGdiDdDDIGetDisplayModeList");
+    if (!pCloseAdapter && Win32u)
+        pCloseAdapter = (void *)GetProcAddress(Win32u, "NtGdiDdDDICloseAdapter");
+    if (!pOpenAdapter || !pGetModeList || !pCloseAdapter)
+    {
+        skip("no D3DKMT display mode list\n");
+        return;
+    }
+    for (Index = 0; ; Index++)
+    {
+        Device.cb = sizeof(Device);
+        if (!EnumDisplayDevicesW(NULL, Index, &Device, 0))
+            break;
+        if (!(Device.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) || (Device.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
+            continue;
+        ZeroMemory(&Open, sizeof(Open));
+        lstrcpynW(Open.DeviceName, Device.DeviceName, ARRAYSIZE(Open.DeviceName));
+        if (pOpenAdapter(&Open) < 0)
+        {
+            skip("%ls: no adapter for D3DKMT\n", Device.DeviceName);
+            continue;
+        }
+        ZeroMemory(&List, sizeof(List));
+        List.hAdapter = Open.hAdapter;
+        List.VidPnSourceId = Open.VidPnSourceId;
+        Modes = NULL;
+        if (pGetModeList(&List) >= 0 && List.ModeCount != 0 &&
+            (Modes = HeapAlloc(GetProcessHeap(), 0, List.ModeCount * sizeof(*Modes))) != NULL)
+        {
+            List.pModeList = Modes;
+            ok(pGetModeList(&List) >= 0, "%ls: D3DKMTGetDisplayModeList failed\n", Device.DeviceName);
+            Missing = 0;
+            Checked = 0;
+            for (Mode = 0; Mode < List.ModeCount; Mode++)
+            {
+                if ((Modes[Mode].Format != D3DDDIFMT_X8R8G8B8 && Modes[Mode].Format != D3DDDIFMT_A8R8G8B8) ||
+                    (Modes[Mode].DisplayOrientation != D3DDDI_ROTATION_IDENTITY && Modes[Mode].DisplayOrientation != 0))
+                {
+                    continue;
+                }
+                Checked++;
+                if (!ListsMode(Device.DeviceName, Modes[Mode].Width, Modes[Mode].Height))
+                {
+                    if (Missing == 0)
+                        trace("%ls: %ux%u is not a display setting\n", Device.DeviceName, Modes[Mode].Width, Modes[Mode].Height);
+                    Missing++;
+                }
+            }
+            ok(Missing == 0, "%ls: %lu of %lu source modes are not display settings\n", Device.DeviceName, Missing, Checked);
+            trace("%ls: %lu source modes checked\n", Device.DeviceName, Checked);
+        }
+        HeapFree(GetProcessHeap(), 0, Modes);
+        Close.hAdapter = Open.hAdapter;
+        pCloseAdapter(&Close);
+    }
+}
+
+static void
+CheckDisplaySize(PCWSTR Device, DWORD Width, DWORD Height, const char *What)
+{
+    DEVMODEW Current;
+    MONITORINFOEXW Info;
+    HMONITOR Monitor;
+    RECT Desktop;
+    POINT Center;
+
+    ZeroMemory(&Current, sizeof(Current));
+    Current.dmSize = sizeof(Current);
+    ok(EnumDisplaySettingsW(Device, ENUM_CURRENT_SETTINGS, &Current), "%s: %ls has no current settings\n", What, Device);
+    ok(Current.dmPelsWidth == Width && Current.dmPelsHeight == Height, "%s: %ls is %lux%lu, expected %lux%lu\n",
+       What, Device, Current.dmPelsWidth, Current.dmPelsHeight, Width, Height);
+    Center.x = Current.dmPosition.x + (LONG)Width / 2;
+    Center.y = Current.dmPosition.y + (LONG)Height / 2;
+    Monitor = MonitorFromPoint(Center, MONITOR_DEFAULTTONULL);
+    ZeroMemory(&Info, sizeof(Info));
+    Info.cbSize = sizeof(Info);
+    ok(Monitor != NULL && GetMonitorInfoW(Monitor, (MONITORINFO *)&Info), "%s: no monitor at (%ld,%ld)\n", What, Center.x, Center.y);
+    ok(!wcscmp(Info.szDevice, Device), "%s: the monitor at (%ld,%ld) is %ls\n", What, Center.x, Center.y, Info.szDevice);
+    ok(Info.rcMonitor.left == Current.dmPosition.x && Info.rcMonitor.top == Current.dmPosition.y &&
+       Info.rcMonitor.right - Info.rcMonitor.left == (LONG)Width && Info.rcMonitor.bottom - Info.rcMonitor.top == (LONG)Height,
+       "%s: %ls monitor %s, expected %lux%lu at (%ld,%ld)\n", What, Device, wine_dbgstr_rect(&Info.rcMonitor),
+       Width, Height, Current.dmPosition.x, Current.dmPosition.y);
+    ok(Info.rcMonitor.right <= GetSystemMetrics(SM_XVIRTUALSCREEN) + GetSystemMetrics(SM_CXVIRTUALSCREEN) &&
+       Info.rcMonitor.bottom <= GetSystemMetrics(SM_YVIRTUALSCREEN) + GetSystemMetrics(SM_CYVIRTUALSCREEN),
+       "%s: %ls monitor %s is outside the virtual screen\n", What, Device, wine_dbgstr_rect(&Info.rcMonitor));
+    ok(GetWindowRect(GetDesktopWindow(), &Desktop), "GetWindowRect of the desktop failed with %lu\n", GetLastError());
+    ok(Desktop.left == GetSystemMetrics(SM_XVIRTUALSCREEN) && Desktop.top == GetSystemMetrics(SM_YVIRTUALSCREEN) &&
+       Desktop.right - Desktop.left == GetSystemMetrics(SM_CXVIRTUALSCREEN) &&
+       Desktop.bottom - Desktop.top == GetSystemMetrics(SM_CYVIRTUALSCREEN),
+       "%s: the desktop window is %s\n", What, wine_dbgstr_rect(&Desktop));
+}
+
+static void
+TestModeChange(void)
+{
+    DISPLAY_DEVICEW Device;
+    DEVMODEW Original, Mode;
+    DWORD Index;
+    LONG Result;
+    BOOL Found = FALSE;
+
+    for (Index = 0; !Found; Index++)
+    {
+        Device.cb = sizeof(Device);
+        if (!EnumDisplayDevicesW(NULL, Index, &Device, 0))
+            break;
+        Found = (Device.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) &&
+                !(Device.StateFlags & (DISPLAY_DEVICE_PRIMARY_DEVICE | DISPLAY_DEVICE_MIRRORING_DRIVER));
+    }
+    if (!Found)
+    {
+        skip("no display beside the primary one\n");
+        return;
+    }
+    ZeroMemory(&Original, sizeof(Original));
+    Original.dmSize = sizeof(Original);
+    ok(EnumDisplaySettingsW(Device.DeviceName, ENUM_CURRENT_SETTINGS, &Original), "%ls has no current settings\n", Device.DeviceName);
+    Found = FALSE;
+    for (Index = 0; !Found; Index++)
+    {
+        ZeroMemory(&Mode, sizeof(Mode));
+        Mode.dmSize = sizeof(Mode);
+        if (!EnumDisplaySettingsW(Device.DeviceName, Index, &Mode))
+            break;
+        Found = Mode.dmBitsPerPel == 32 && Mode.dmPelsWidth >= 800 && Mode.dmPelsHeight >= 600 &&
+                (Mode.dmPelsWidth != Original.dmPelsWidth || Mode.dmPelsHeight != Original.dmPelsHeight);
+    }
+    if (!Found)
+    {
+        skip("%ls offers one size only\n", Device.DeviceName);
+        return;
+    }
+    Mode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+    Result = ChangeDisplaySettingsExW(Device.DeviceName, &Mode, NULL, 0, NULL);
+    ok(Result == DISP_CHANGE_SUCCESSFUL, "changing %ls to %lux%lu returned %ld\n", Device.DeviceName,
+       Mode.dmPelsWidth, Mode.dmPelsHeight, Result);
+    if (Result == DISP_CHANGE_SUCCESSFUL)
+        CheckDisplaySize(Device.DeviceName, Mode.dmPelsWidth, Mode.dmPelsHeight, "changed");
+
+    Original.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+    Result = ChangeDisplaySettingsExW(Device.DeviceName, &Original, NULL, 0, NULL);
+    ok(Result == DISP_CHANGE_SUCCESSFUL, "restoring %ls to %lux%lu returned %ld\n", Device.DeviceName,
+       Original.dmPelsWidth, Original.dmPelsHeight, Result);
+    if (Result == DISP_CHANGE_SUCCESSFUL)
+        CheckDisplaySize(Device.DeviceName, Original.dmPelsWidth, Original.dmPelsHeight, "restored");
+}
+
+static LONG
+ApplyStored(PCWSTR Device, DEVMODEW *Mode)
+{
+    LONG Result = ChangeDisplaySettingsExW(Device, Mode, NULL, CDS_UPDATEREGISTRY | CDS_NORESET, NULL);
+
+    if (Result != DISP_CHANGE_SUCCESSFUL)
+        return Result;
+    return ChangeDisplaySettingsExW(NULL, NULL, NULL, 0, NULL);
+}
+
+static void
+TestAttachDetach(void)
+{
+    DISPLAY_DEVICEW Device;
+    DEVMODEW Original, Detach;
+    POINT Center;
+    RECT Desktop;
+    DWORD Index;
+    LONG Result;
+    int Monitors = GetSystemMetrics(SM_CMONITORS);
+    BOOL Found = FALSE;
+
+    for (Index = 0; !Found; Index++)
+    {
+        Device.cb = sizeof(Device);
+        if (!EnumDisplayDevicesW(NULL, Index, &Device, 0))
+            break;
+        Found = (Device.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) &&
+                !(Device.StateFlags & (DISPLAY_DEVICE_PRIMARY_DEVICE | DISPLAY_DEVICE_MIRRORING_DRIVER));
+    }
+    if (!Found)
+    {
+        skip("no display beside the primary one\n");
+        return;
+    }
+    ZeroMemory(&Original, sizeof(Original));
+    Original.dmSize = sizeof(Original);
+    ok(EnumDisplaySettingsW(Device.DeviceName, ENUM_CURRENT_SETTINGS, &Original), "%ls has no current settings\n", Device.DeviceName);
+    Center.x = Original.dmPosition.x + (LONG)Original.dmPelsWidth / 2;
+    Center.y = Original.dmPosition.y + (LONG)Original.dmPelsHeight / 2;
+
+    ZeroMemory(&Detach, sizeof(Detach));
+    Detach.dmSize = sizeof(Detach);
+    Detach.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
+    Result = ApplyStored(Device.DeviceName, &Detach);
+    ok(Result == DISP_CHANGE_SUCCESSFUL, "detaching %ls returned %ld\n", Device.DeviceName, Result);
+    ok(GetSystemMetrics(SM_CMONITORS) == Monitors - 1, "%d monitors after detaching %ls, expected %d\n",
+       GetSystemMetrics(SM_CMONITORS), Device.DeviceName, Monitors - 1);
+    ok(MonitorFromPoint(Center, MONITOR_DEFAULTTONULL) == NULL, "a monitor is left at (%ld,%ld)\n", Center.x, Center.y);
+    Device.cb = sizeof(Device);
+    ok(EnumDisplayDevicesW(NULL, Index - 1, &Device, 0) && !(Device.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP),
+       "%ls is still attached: %#lx\n", Device.DeviceName, Device.StateFlags);
+    ok(GetWindowRect(GetDesktopWindow(), &Desktop) && Desktop.right - Desktop.left == GetSystemMetrics(SM_CXVIRTUALSCREEN),
+       "the desktop window is %s after the detach\n", wine_dbgstr_rect(&Desktop));
+
+    Original.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+    Result = ApplyStored(Device.DeviceName, &Original);
+    ok(Result == DISP_CHANGE_SUCCESSFUL, "attaching %ls again returned %ld\n", Device.DeviceName, Result);
+    ok(GetSystemMetrics(SM_CMONITORS) == Monitors, "%d monitors after attaching %ls again, expected %d\n",
+       GetSystemMetrics(SM_CMONITORS), Device.DeviceName, Monitors);
+    if (Result == DISP_CHANGE_SUCCESSFUL)
+    {
+        CheckDisplaySize(Device.DeviceName, Original.dmPelsWidth, Original.dmPelsHeight, "attached again");
+        if (MonitorFromPoint(Center, MONITOR_DEFAULTTONULL) != NULL)
+            TestDrawingOnMonitor(MonitorFromPoint(Center, MONITOR_DEFAULTTONULL));
+    }
+}
+
 START_TEST(MultiMonitor)
 {
     MONITOR_LIST List;
     RECT Union, Virtual;
     ULONG Primaries = 0;
     ULONG Index;
+    POINT Saved, Origin;
+    HDC Dc;
 
     ZeroMemory(&List, sizeof(List));
     ok(EnumDisplayMonitors(NULL, NULL, CollectMonitor, (LPARAM)&List), "EnumDisplayMonitors failed with %lu\n", GetLastError());
@@ -238,9 +507,17 @@ START_TEST(MultiMonitor)
        CountAttachedDevices(), List.Count);
 
     SetRectEmpty(&Union);
+    GetCursorPos(&Saved);
     for (Index = 0; Index < List.Count; Index++)
         TestMonitor(List.Handles[Index], &Union, &Primaries);
+    SetCursorPos(Saved.x, Saved.y);
     ok(Primaries == 1, "%lu primary monitors\n", Primaries);
+
+    /* The screen DC draws in screen coordinates, whatever monitor holds the virtual screen's corner */
+    Dc = GetDC(NULL);
+    ok(Dc != NULL && GetDCOrgEx(Dc, &Origin), "GetDCOrgEx on the screen DC failed with %lu\n", GetLastError());
+    ok(Origin.x == 0 && Origin.y == 0, "the screen DC origin is (%ld,%ld)\n", Origin.x, Origin.y);
+    ReleaseDC(NULL, Dc);
 
     Virtual.left = GetSystemMetrics(SM_XVIRTUALSCREEN);
     Virtual.top = GetSystemMetrics(SM_YVIRTUALSCREEN);
@@ -249,6 +526,9 @@ START_TEST(MultiMonitor)
     ok(EqualRect(&Union, &Virtual), "the monitors cover %s, the virtual screen is %s\n", wine_dbgstr_rect(&Union),
        wine_dbgstr_rect(&Virtual));
     TestDisplayConfig(&List);
+    TestModeLists();
+    TestModeChange();
+    TestAttachDetach();
 
     if (List.Count < 2)
     {

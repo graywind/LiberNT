@@ -51,26 +51,23 @@ typedef struct STRUCT(_PEB)
     BOOLEAN InheritedAddressSpace;
     BOOLEAN ReadImageFileExecOptions;
     BOOLEAN BeingDebugged;
-#if (NTDDI_VERSION >= NTDDI_WS03)
     union
     {
         BOOLEAN BitField;
         struct
         {
             BOOLEAN ImageUsesLargePages:1;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
             BOOLEAN IsProtectedProcess:1;
-            BOOLEAN IsLegacyProcess:1;
             BOOLEAN IsImageDynamicallyRelocated:1;
             BOOLEAN SkipPatchingUser32Forwarders:1;
-            BOOLEAN SpareBits:3;
-#else
-            BOOLEAN SpareBits:7;
-#endif
+            BOOLEAN IsPackagedProcess:1;
+            BOOLEAN IsAppContainer:1;
+            BOOLEAN IsProtectedProcessLight:1;
+            BOOLEAN IsLongPathAwareProcess:1;
         };
     };
-#else
-    BOOLEAN SpareBool;
+#ifdef _STRUCT64
+    UCHAR Padding0[4];
 #endif
     PTR(HANDLE) Mutant;
     PTR(PVOID) ImageBaseAddress;
@@ -79,8 +76,7 @@ typedef struct STRUCT(_PEB)
     PTR(PVOID) SubSystemData;
     PTR(PVOID) ProcessHeap;
     PTR(struct _RTL_CRITICAL_SECTION*) FastPebLock;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
-    PTR(PVOID) AltThunkSListPtr;
+    PTR(PSLIST_HEADER) AtlThunkSListPtr;
     PTR(PVOID) IFEOKey;
     union
     {
@@ -91,37 +87,32 @@ typedef struct STRUCT(_PEB)
             ULONG ProcessInitializing:1;
             ULONG ProcessUsingVEH:1;
             ULONG ProcessUsingVCH:1;
-            ULONG ReservedBits0:28;
+            ULONG ProcessUsingFTH:1;
+            ULONG ProcessPreviouslyThrottled:1;
+            ULONG ProcessCurrentlyThrottled:1;
+            ULONG ProcessImagesHotPatched:1;
+            ULONG ReservedBits0:24;
         };
     };
+#ifdef _STRUCT64
+    UCHAR Padding1[4];
+#endif
     union
     {
         PTR(PVOID) KernelCallbackTable;
         PTR(PVOID) UserSharedInfoPtr;
     };
-#elif (NTDDI_VERSION >= NTDDI_WS03)
-    PTR(PVOID) AltThunkSListPtr;
-    PTR(PVOID) SparePtr2;
-    ULONG EnvironmentUpdateCount;
-    PTR(PVOID) KernelCallbackTable;
-#else
-    PTR(PPEBLOCKROUTINE) FastPebLockRoutine;
-    PTR(PPEBLOCKROUTINE) FastPebUnlockRoutine;
-    ULONG EnvironmentUpdateCount;
-    PTR(PVOID) KernelCallbackTable;
-#endif
     ULONG SystemReserved[1];
-    ULONG SpareUlong; // AtlThunkSListPtr32
+    ULONG AtlThunkSListPtr32;
     PTR(PVOID) ApiSetMap;
     ULONG TlsExpansionCounter;
+#ifdef _STRUCT64
+    UCHAR Padding2[4];
+#endif
     PTR(PVOID) TlsBitmap;
     ULONG TlsBitmapBits[2];
     PTR(PVOID) ReadOnlySharedMemoryBase;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
-    PTR(PVOID) HotpatchInformation;
-#else
-    PTR(PVOID) ReadOnlySharedMemoryHeap;
-#endif
+    PTR(PVOID) SharedData;
     PTR(PVOID*) ReadOnlyStaticServerData;
     PTR(PVOID) AnsiCodePageData;
     PTR(PVOID) OemCodePageData;
@@ -139,6 +130,9 @@ typedef struct STRUCT(_PEB)
     PTR(PVOID) GdiSharedHandleTable;
     PTR(PVOID) ProcessStarterHelper;
     ULONG GdiDCAttributeList;
+#ifdef _STRUCT64
+    UCHAR Padding3[4];
+#endif
     PTR(struct _RTL_CRITICAL_SECTION*) LoaderLock;
     ULONG OSMajorVersion;
     ULONG OSMinorVersion;
@@ -148,13 +142,18 @@ typedef struct STRUCT(_PEB)
     ULONG ImageSubsystem;
     ULONG ImageSubsystemMajorVersion;
     ULONG ImageSubsystemMinorVersion;
-    PTR(ULONG_PTR) ImageProcessAffinityMask;
+#ifdef _STRUCT64
+    UCHAR Padding4[4];
+#endif
+    PTR(ULONG_PTR) ActiveProcessAffinityMask;
     ULONG GdiHandleBuffer[GDI_HANDLE_BUFFER_SIZE];
     PTR(PPOST_PROCESS_INIT_ROUTINE) PostProcessInitRoutine;
     PTR(PVOID) TlsExpansionBitmap;
     ULONG TlsExpansionBitmapBits[32];
     ULONG SessionId;
-#if (NTDDI_VERSION >= NTDDI_WINXP)
+#ifdef _STRUCT64
+    UCHAR Padding5[4];
+#endif
     ULARGE_INTEGER AppCompatFlags;     // APPCOMPAT_FLAGS
     ULARGE_INTEGER AppCompatFlagsUser; // APPCOMPAT_USERFLAGS
     PTR(PVOID) pShimData;
@@ -165,27 +164,21 @@ typedef struct STRUCT(_PEB)
     PTR(struct _ACTIVATION_CONTEXT_DATA*) SystemDefaultActivationContextData;
     PTR(struct _ASSEMBLY_STORAGE_MAP*) SystemAssemblyStorageMap;
     PTR(ULONG_PTR) MinimumStackCommit;
-#endif
-#if (NTDDI_VERSION >= NTDDI_WS03)
-    PTR(PVOID*) FlsCallback;
-    STRUCT(LIST_ENTRY) FlsListHead;
-    union
-    {
-        PTR(PVOID) FlsBitmap;
-        PTR(PVOID) ChpeV2ProcessInfo;
-    };
-    ULONG FlsBitmapBits[4]; // [FLS_MAXIMUM_AVAILABLE/(sizeof(ULONG)*8)];
-    ULONG FlsHighIndex;
-#endif
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
+    PTR(PVOID) SparePointers[2];
+    PTR(PVOID) PatchLoaderData;
+    PTR(PVOID) ChpeV2ProcessInfo;
+    ULONG AppModelFeatureState;
+    ULONG SpareUlongs[2];
+    USHORT ActiveCodePage;
+    USHORT OemCodePage;
+    USHORT UseCaseMapping;
+    USHORT UnusedNlsField;
     PTR(PVOID) WerRegistrationData;
     PTR(PVOID) WerShipAssertPtr;
-#endif
-#if (NTDDI_VERSION >= NTDDI_WIN10)
 #ifdef _STRUCT64
     PTR(PVOID) EcCodeBitMap;
 #else
-    PTR(PVOID) pUnused;
+    PTR(PVOID) Spare;
 #endif
     PTR(PVOID) pImageHeaderHash;
     union
@@ -199,6 +192,9 @@ typedef struct STRUCT(_PEB)
             ULONG SpareTracingBits:29;
         };
     };
+#ifdef _STRUCT64
+    UCHAR Padding6[4];
+#endif
     ULONGLONG CsrServerReadOnlySharedMemoryBase;
     PTR(ULONG_PTR) TppWorkerpListLock;
     STRUCT(LIST_ENTRY) TppWorkerpList;
@@ -215,12 +211,11 @@ typedef struct STRUCT(_PEB)
         struct
         {
             ULONG SixtySecondEnabled:1;
-            ULONG LeapSecondReserved:31;
+            ULONG Reserved:31;
         };
     };
     ULONG NtGlobalFlag2;
     ULONGLONG ExtendedFeatureDisableMask;
-#endif
 } STRUCT(PEB), *STRUCT(PPEB);
 
 #undef PPEB
@@ -235,14 +230,11 @@ C_ASSERT(FIELD_OFFSET(STRUCT(PEB), NtGlobalFlag) == 0x0BC);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), GdiSharedHandleTable) == 0x0F8);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), LoaderLock) == 0x110);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ImageSubsystem) == 0x128);
-C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ImageProcessAffinityMask) == 0x138);
+C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ActiveProcessAffinityMask) == 0x138);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), PostProcessInitRoutine) == 0x230);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), SessionId) == 0x2C0);
-#if (NTDDI_VERSION >= NTDDI_WS03)
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ChpeV2ProcessInfo) == 0x338);
-C_ASSERT(FIELD_OFFSET(STRUCT(PEB), FlsHighIndex) == 0x350);
-#endif
-#if (NTDDI_VERSION >= NTDDI_WIN10)
+C_ASSERT(FIELD_OFFSET(STRUCT(PEB), UseCaseMapping) == 0x350);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), EcCodeBitMap) == 0x368);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), CsrServerReadOnlySharedMemoryBase) == 0x380);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), WaitOnAddressHashTable) == 0x3A0);
@@ -250,7 +242,6 @@ C_ASSERT(FIELD_OFFSET(STRUCT(PEB), TelemetryCoverageHeader) == 0x7A0);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), NtGlobalFlag2) == 0x7C4);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ExtendedFeatureDisableMask) == 0x7C8);
 C_ASSERT(sizeof(STRUCT(PEB)) == 0x7D0);
-#endif
 #else
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), Mutant) == 0x04);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), Ldr) == 0x0C);
@@ -261,22 +252,18 @@ C_ASSERT(FIELD_OFFSET(STRUCT(PEB), NtGlobalFlag) == 0x068);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), GdiSharedHandleTable) == 0x094);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), LoaderLock) == 0x0A0);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ImageSubsystem) == 0x0B4);
-C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ImageProcessAffinityMask) == 0x0C0);
+C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ActiveProcessAffinityMask) == 0x0C0);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), PostProcessInitRoutine) == 0x14C);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), SessionId) == 0x1D4);
-#if (NTDDI_VERSION >= NTDDI_WS03)
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ChpeV2ProcessInfo) == 0x218);
-C_ASSERT(FIELD_OFFSET(STRUCT(PEB), FlsHighIndex) == 0x22C);
-#endif
-#if (NTDDI_VERSION >= NTDDI_WIN10)
-C_ASSERT(FIELD_OFFSET(STRUCT(PEB), pUnused) == 0x238);
+C_ASSERT(FIELD_OFFSET(STRUCT(PEB), UseCaseMapping) == 0x22C);
+C_ASSERT(FIELD_OFFSET(STRUCT(PEB), Spare) == 0x238);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), CsrServerReadOnlySharedMemoryBase) == 0x248);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), WaitOnAddressHashTable) == 0x25C);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), TelemetryCoverageHeader) == 0x45C);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), NtGlobalFlag2) == 0x478);
 C_ASSERT(FIELD_OFFSET(STRUCT(PEB), ExtendedFeatureDisableMask) == 0x480);
 C_ASSERT(sizeof(STRUCT(PEB)) == 0x488);
-#endif
 #endif
 
 #define GDI_BATCH_BUFFER_SIZE 0x136
@@ -311,47 +298,36 @@ typedef struct STRUCT(_TEB)
     LCID                   CurrentLocale;
     ULONG                  FpSoftwareStatusRegister;
 
-#if (NTDDI_VERSION >= NTDDI_WIN10) // since 10.0.10240.16384
     PTR(PVOID)             ReservedForDebuggerInstrumentation[16];
-    PTR(PVOID)             SystemReserved1[38];
-#else
-    PTR(PVOID)             SystemReserved1[54];
-#endif
+    PTR(PVOID)             SystemReserved1[_SELECT3264(21, 25)];
+    PTR(PVOID)             HeapFlsData;
+    PTR(ULONG_PTR)         RngState[4];
+    CHAR                   PlaceholderCompatibilityMode;
+    BOOLEAN                PlaceholderHydrationAlwaysExplicit;
+    CHAR                   PlaceholderReserved[10];
+    ULONG                  ProxiedProcessId;
+    STRUCT(ACTIVATION_CONTEXT_STACK) _ActivationStack;
+    UCHAR                  WorkingOnBehalfTicket[8];
     LONG                   ExceptionCode;
 #ifdef _STRUCT64
     UCHAR                  Padding0[4];
 #endif
 
-#if (NTDDI_VERSION >= NTDDI_WS03SP1)
     PTR(PACTIVATION_CONTEXT_STACK) ActivationContextStackPointer;
-#else
-    STRUCT(ACTIVATION_CONTEXT_STACK) ActivationContextStack;
-#endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN10) // since 10.0.9926.0
     PTR(ULONG_PTR)         InstrumentationCallbackSp;
     PTR(ULONG_PTR)         InstrumentationCallbackPreviousPc;
     PTR(ULONG_PTR)         InstrumentationCallbackPreviousSp;
   #ifdef _STRUCT64
     ULONG                  TxFsContext;
     UCHAR                  InstrumentationCallbackDisabled;
-    UCHAR                  Padding1[3];
+    UCHAR                  UnalignedLoadStoreExceptions;
+    UCHAR                  Padding1[2];
   #else
     UCHAR                  InstrumentationCallbackDisabled;
     UCHAR                  SpareBytes[23];
     ULONG                  TxFsContext;
   #endif
-#elif (NTDDI_VERSION >= NTDDI_WIN7)
-    UCHAR                  SpareBytes[_SELECT3264(36, 24)];
-    ULONG                  TxFsContext;
-#elif (NTDDI_VERSION >= NTDDI_VISTA)
-    UCHAR                  SpareBytes1[_SELECT3264(36, 24)];
-    ULONG                  TxFsContext;
-#elif (NTDDI_VERSION >= NTDDI_WS03SP1)
-    UCHAR                  SpareBytes1[_SELECT3264(40, 28)];
-#else // only 32 bit version of 2k3 pre-SP1 exist
-    UCHAR                  SpareBytes1[_SELECT3264(24, -1)];
-#endif
 
     STRUCT(GDI_TEB_BATCH)  GdiTebBatch;
     STRUCT(CLIENT_ID)      RealClientId;
@@ -383,34 +359,17 @@ typedef struct STRUCT(_TEB)
     PTR(PVOID)             Vdm;
     PTR(PVOID)             ReservedForNtRpc;
     PTR(PVOID)             DbgSsReserved[2];
-#if (NTDDI_VERSION >= NTDDI_WS03)
     ULONG                  HardErrorMode;
-#else
-    ULONG                  HardErrorsAreDisabled;
-#endif
 #ifdef _STRUCT64
     UCHAR                  Padding4[4];
 #endif
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     PTR(PVOID)             Instrumentation[13 - sizeof(GUID)/sizeof(PTR(PVOID))];
     GUID                   ActivityId;
     PTR(PVOID)             SubProcessTag;
-#if (NTDDI_VERSION >= NTDDI_WIN8) // since ???
     PTR(PVOID)             PerflibData;
-#else
-    PTR(PVOID)             EtwLocalData;
-#endif
     PTR(PVOID)             EtwTraceData;
-#elif (NTDDI_VERSION >= NTDDI_WS03)
-    PTR(PVOID)             Instrumentation[14];
-    PTR(PVOID)             SubProcessTag;
-    PTR(PVOID)             EtwTraceData;
-#else
-    PTR(PVOID)             Instrumentation[16];
-#endif
     PTR(PVOID)             WinSockData;
     ULONG                  GdiBatchCount;
-#if (NTDDI_VERSION >= NTDDI_WIN7)
     union
     {
         PROCESSOR_NUMBER   CurrentIdealProcessor;
@@ -423,22 +382,7 @@ typedef struct STRUCT(_TEB)
             UCHAR          IdealProcessor;
         };
     };
-#elif (NTDDI_VERSION >= NTDDI_LONGHORN)
-    BOOLEAN                SpareBool0;
-    BOOLEAN                SpareBool1;
-    BOOLEAN                SpareBool2;
-    UCHAR                  IdealProcessor;
-#else
-    BOOLEAN                InDbgPrint;
-    BOOLEAN                FreeStackOnTermination;
-    BOOLEAN                HasFiberData;
-    UCHAR                  IdealProcessor;
-#endif
-#if (NTDDI_VERSION >= NTDDI_WS03)
     ULONG                  GuaranteedStackBytes;
-#else
-    ULONG                  Spare3;
-#endif
 #ifdef _STRUCT64
     UCHAR                  Padding5[4];
 #endif
@@ -448,50 +392,26 @@ typedef struct STRUCT(_TEB)
 #ifdef _STRUCT64
     UCHAR                  Padding6[4];
 #endif
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     PTR(PVOID)             SavedPriorityState;
-#if (NTDDI_VERSION >= NTDDI_WIN8)
     PTR(ULONG_PTR)         ReservedForCodeCoverage;
-#else
-    PTR(ULONG_PTR)         SoftPatchPtr1;
-#endif
     PTR(ULONG_PTR)         ThreadPoolData;
-#elif (NTDDI_VERSION >= NTDDI_WS03)
-    PTR(ULONG_PTR)         SparePointer1;
-    PTR(ULONG_PTR)         SoftPatchPtr1;
-    PTR(ULONG_PTR)         SoftPatchPtr2;
-#else
-    Wx86ThreadState        Wx86Thread;
-#endif
     PTR(PVOID*)            TlsExpansionSlots;
 #ifdef _STRUCT64
-    PTR(PVOID)             DeallocationBStore;
-    PTR(PVOID)             BStoreLimit;
+    PTR(PVOID)             ChpeV2CpuAreaInfo;
+    PTR(PVOID)             Unused;
 #endif
-#if (NTDDI_VERSION >= NTDDI_WIN10)
     ULONG                  MuiGeneration;
-#else
-    ULONG                  ImpersonationLocale;
-#endif
     ULONG                  IsImpersonating;
     PTR(PVOID)             NlsCache;
     PTR(PVOID)             pShimData;
-#if (NTDDI_VERSION >= NTDDI_WIN8)
-    USHORT                 HeapVirtualAffinity;
-    USHORT                 LowFragHeapDataSlot;
-#else
-    ULONG                  HeapVirtualAffinity;
-#endif
+    ULONG                  HeapData;
 #ifdef _STRUCT64
     UCHAR                  Padding7[4];
 #endif
     PTR(HANDLE)            CurrentTransactionHandle;
     PTR(PTEB_ACTIVE_FRAME) ActiveFrame;
-#if (NTDDI_VERSION >= NTDDI_WS03)
     PTR(PVOID) FlsData;
-#endif
 
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
     PTR(PVOID) PreferredLanguages;
     PTR(PVOID) UserPrefLanguages;
     PTR(PVOID) MergedPrefLanguages;
@@ -509,49 +429,48 @@ typedef struct STRUCT(_TEB)
         USHORT SameTebFlags;
         struct
         {
-            USHORT DbgSafeThunkCall:1;
-            USHORT DbgInDebugPrint:1;
-            USHORT DbgHasFiberData:1;
-            USHORT DbgSkipThreadAttach:1;
-            USHORT DbgWerInShipAssertCode:1;
-            USHORT DbgIssuedInitialBp:1;
-            USHORT DbgClonedThread:1;
-            USHORT SpareSameTebBits:9;
+            USHORT SafeThunkCall:1;
+            USHORT InDebugPrint:1;
+            USHORT HasFiberData:1;
+            USHORT SkipThreadAttach:1;
+            USHORT WerInShipAssertCode:1;
+            USHORT RanProcessInit:1;
+            USHORT ClonedThread:1;
+            USHORT SuppressDebugMsg:1;
+            USHORT DisableUserStackWalk:1;
+            USHORT RtlExceptionAttached:1;
+            USHORT InitialThread:1;
+            USHORT SessionAware:1;
+            USHORT LoadOwner:1;
+            USHORT LoaderWorker:1;
+            USHORT SkipLoaderInit:1;
+            USHORT SkipFileAPIBrokering:1;
         };
     };
     PTR(PVOID) TxnScopeEnterCallback;
     PTR(PVOID) TxnScopeExitCallback;
     PTR(PVOID) TxnScopeContext;
     ULONG LockCount;
-#else
-    BOOLEAN SafeThunkCall;
-    BOOLEAN BooleanSpare[3];
-#endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN10) || defined(__REACTOS__) // since 10.0.10041.0
     LONG WowTebOffset;
-#elif (NTDDI_VERSION >= NTDDI_WIN7)
-    ULONG SpareUlong0;
-#elif (NTDDI_VERSION >= NTDDI_LONGHORN)
-    ULONG ProcessRundown;
-#endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN7)
     PTR(PVOID) ResourceRetValue;
-#elif (NTDDI_VERSION >= NTDDI_LONGHORN)
-    ULONG64 LastSwitchTime;
-    ULONG64 TotalSwitchOutTime;
-    LARGE_INTEGER WaitReasonBitMap;
-#endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN8)
     PTR(PVOID) ReservedForWdf;
-#endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN10)
     ULONG64 ReservedForCrt;
     GUID EffectiveContainerId;
+
+    ULONG64 LastSleepCounter;
+    ULONG SpinCallCount;
+#ifdef _STRUCT64
+    UCHAR Padding8[4];
 #endif
+    ULONG64 ExtendedFeatureDisableMask;
+    PTR(PVOID) SchedulerSharedDataSlot;
+    PTR(PVOID) HeapWalkContext;
+    STRUCT(GROUP_AFFINITY) PrimaryGroupAffinity;
+    ULONG Rcu[2];
 
 } STRUCT(TEB), *STRUCT(PTEB);
 

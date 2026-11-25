@@ -32,8 +32,9 @@ typedef LONG TCENT;
 
 #ifndef REFERENCE_TIME_DEFINED
 #define REFERENCE_TIME_DEFINED
-typedef LONGLONG REFERENCE_TIME, *LPREFERENCE_TIME;
+typedef LONGLONG REFERENCE_TIME;
 #endif
+typedef REFERENCE_TIME *LPREFERENCE_TIME;
 
 /*****************************************************************************
  * FOURCC definition
@@ -208,5 +209,7 @@ struct _DMUS_WAVEARTDL {
 struct _DMUS_WAVEDL {
 	ULONG cbWaveData;
 };
+
+#define _DMDLS_
 
 #endif /* __WINE_DMUSIC_DLS_H */

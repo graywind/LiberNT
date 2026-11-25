@@ -457,7 +457,8 @@ typedef enum _SRBEXDATATYPE {
     SrbExDataTypeIoInfo = 0x80,
     SrbExDataTypePassthroughDirect = 0xa0,
     SrbExDataTypeMSReservedStart = 0xf0000000,
-    SrbExDataTypeReserved = 0xffffffff
+    SrbExDataTypeReserved = 0xffffffff,
+    SrbExDataTypeMiniportPassthrough = 0x45,
 } SRBEXDATATYPE, *PSRBEXDATATYPE;
 
 typedef struct SRB_ALIGN _SRBEX_DATA {
@@ -586,7 +587,12 @@ typedef struct SRB_ALIGN _SRBEX_DATA_IO_INFO {
     ULONG RWLength;
     BOOLEAN IsWriteRequest;
     UCHAR CachePriority;
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+    UCHAR IoPriorityLevel;
+    UCHAR Reserved;
+#else
     UCHAR Reserved[2];
+#endif
     ULONG Reserved1[2];
 } SRBEX_DATA_IO_INFO, *PSRBEX_DATA_IO_INFO;
 
@@ -3481,7 +3487,8 @@ typedef enum _SCSI_ADAPTER_CONTROL_TYPE {
     ScsiAdapterRestoreEarlyDumpData,
     ScsiAdapterKsrPowerDown,
     ScsiAdapterPreparePLDR,
-    ScsiNvmeofAdapterOperation,
+    ScsiAdapterReserved0,
+    ScsiAdapterReserved1,
     ScsiAdapterControlMax,
     MakeAdapterControlTypeSizeOfUlong = 0xffffffff
 } SCSI_ADAPTER_CONTROL_TYPE, *PSCSI_ADAPTER_CONTROL_TYPE;
@@ -3551,13 +3558,15 @@ typedef enum _SCSI_UNIT_CONTROL_TYPE {
     ScsiUnitQueryFruId,
     ScsiUnitReportInternalData,
     ScsiUnitKsrPowerDown,
+    ScsiUnitNvmeIceInformation,
     ScsiUnitControlMax,
     MakeUnitControlTypeSizeOfUlong = 0xffffffff
 } SCSI_UNIT_CONTROL_TYPE, *PSCSI_UNIT_CONTROL_TYPE;
 
 typedef enum _SCSI_UNIT_CONTROL_STATUS {
     ScsiUnitControlSuccess = 0,
-    ScsiUnitControlUnsuccessful
+    ScsiUnitControlUnsuccessful,
+    ScsiUnitControlNotSupported = 2,
 } SCSI_UNIT_CONTROL_STATUS, *PSCSI_UNIT_CONTROL_STATUS;
 
 typedef struct _STOR_UNIT_CONTROL_POWER {
@@ -4196,7 +4205,14 @@ typedef enum _STORPORT_FUNCTION_CODE {
     ExtFunctionNvmeIceIoStart,
     ExtFunctionNvmeIceIoComplete,
     ExtFunctionNvmeMiniportEvent,
-    ExtFunctionNvmeMiniportTelemetry
+    ExtFunctionNvmeMiniportTelemetry,
+    ExtFunctionGetDriverProxyEndpointWrapperFromEndpoint = 0x82,
+    ExtFunctionSwapDriverProxyEndpoints = 0x83,
+    ExtFunctionStorMQAddController = 0x84,
+    ExtFunctionStorMQRemoveController = 0x85,
+    ExtFunctionNvmeIceIoStartEx = 0x86,
+    ExtFunctionQueryNvmeIceSupport = 0x87,
+    ExtFunctionQueueWorkItemToNode = 0x88,
 } STORPORT_FUNCTION_CODE, *PSTORPORT_FUNCTION_CODE;
 
 #define STOR_STATUS_SUCCESS                     (0x00000000L)
@@ -4278,6 +4294,7 @@ typedef enum _SCSI_NOTIFICATION_TYPE {
     MarkDeviceFailedEx,
     TerminateSystemThread,
     NvmeofNotification,
+    StorMQControllerStartInitialization = 0x1010,
 } SCSI_NOTIFICATION_TYPE, *PSCSI_NOTIFICATION_TYPE;
 
 #if ((NTDDI_VERSION < NTDDI_WIN8))
@@ -6100,7 +6117,11 @@ typedef enum _STORPORT_ETW_EVENT_CHANNEL{
 #define STORPORT_ETW_MAX_DESCRIPTION_LENGTH    32
 
 #endif
-#if ((NTDDI_VERSION >= NTDDI_WIN10_VB))
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+
+#define STORPORT_ETW_MAX_PARAM_NAME_LENGTH     64
+
+#elif ((NTDDI_VERSION >= NTDDI_WIN10_VB))
 
 #define STORPORT_ETW_MAX_PARAM_NAME_LENGTH     32
 
@@ -6842,4 +6863,1312 @@ StorPortQueryDpcWatchdogInformation(
 }
 #endif
 
+typedef enum _DATA_TYPE {
+    DataTypeGuid = 0,
+    DataTypeBoolean = 1,
+    DataTypeUnicodeString = 2,
+    DataTypeAnsiString = 3,
+    DataTypeInt8 = 4,
+    DataTypeInt16 = 5,
+    DataTypeInt32 = 6,
+    DataTypeInt64 = 7,
+    DataTypeUInt8 = 8,
+    DataTypeUInt16 = 9,
+    DataTypeUInt32 = 10,
+    DataTypeUInt64 = 11,
+    DataTypeHex8 = 12,
+    DataTypeHex16 = 13,
+    DataTypeHex32 = 14,
+    DataTypeHex64 = 15,
+    DataTypeByteArray = 16
+} DATA_TYPE;
+
+typedef enum _INTERNAL_DATA_SCOPE {
+    InternalDataScopeUndefined = 0,
+    InternalDataScopeInMemoryState = 1,
+    InternalDataScopeMax = 2
+} INTERNAL_DATA_SCOPE, *PINTERNAL_DATA_SCOPE;
+
+typedef enum _NVME_ADAPTER_CONTROL_STATUS {
+    NvmeAdapterControlSuccess = 0,
+    NvmeAdapterControlUnsuccessful = 1,
+    NvmeAdapterControlRetryNeeded = 2,
+    NvmeAdapterControlBufferTooSmall = 3
+} NVME_ADAPTER_CONTROL_STATUS, *PNVME_ADAPTER_CONTROL_STATUS;
+
+typedef enum _NVME_ADAPTER_CONTROL_TYPE {
+    NvmeQuerySupportedControlTypes = 0,
+    NvmeStopAdapter = 1,
+    NvmeRestartAdapter = 2,
+    NvmeSetBootConfig = 3,
+    NvmeSetRunningConfig = 4,
+    NvmePowerSettingNotification = 5,
+    NvmeAdapterPower = 6,
+    NvmeAdapterPoFxPowerRequired = 7,
+    NvmeAdapterPoFxPowerActive = 8,
+    NvmeAdapterPoFxPowerSetFState = 9,
+    NvmeAdapterPoFxPowerControl = 10,
+    NvmeAdapterPrepareForBusReScan = 11,
+    NvmeAdapterSystemPowerHints = 12,
+    NvmeAdapterFilterResourceRequirements = 13,
+    NvmeAdapterPoFxMaxOperationalPower = 14,
+    NvmeAdapterPoFxSetPerfState = 15,
+    NvmeAdapterSurpriseRemoval = 16,
+    NvmeAdapterSerialNumber = 17,
+    NvmeAdapterCryptoOperation = 18,
+    NvmeAdapterQueryFruId = 19,
+    NvmeAdapterSetEventLogging = 20,
+    NvmeAdapterReportInternalData = 21,
+    NvmeAdapterResetBusSynchronous = 22,
+    NvmeAdapterPostHwInitialize = 23,
+    NvmeAdapterPrepareEarlyDumpData = 24,
+    NvmeAdapterRestoreEarlyDumpData = 25,
+    NvmeAdapterKsrPowerDown = 26,
+    NvmeAdapterPreparePLDR = 27,
+    NvmeNvmeofAdapterOperation = 28,
+    NvmeAdapterQueryStorMQInterface = 29,
+    NvmeAdapterControlMax = 30,
+    MakeNvmeAdapterControlTypeSizeOfUlong = (-1)
+} NVME_ADAPTER_CONTROL_TYPE, *PNVME_ADAPTER_CONTROL_TYPE;
+
+typedef enum _NVME_NAMESPACE_CONTROL_STATUS {
+    NvmeNamespaceControlSuccess = 0,
+    NvmeNamespaceControlUnsuccessful = 1,
+    NvmeNamespaceControlNotSupported = 2
+} NVME_NAMESPACE_CONTROL_STATUS, *PNVME_NAMESPACE_CONTROL_STATUS;
+
+typedef enum _NVME_NAMESPACE_CONTROL_TYPE {
+    NvmeQuerySupportedNamespaceControlTypes = 0,
+    NvmeNamespaceStart = 1,
+    NvmeNamespacePower = 2,
+    NvmeNamespacePoFxPowerInfo = 3,
+    NvmeNamespacePoFxPowerRequired = 4,
+    NvmeNamespacePoFxPowerActive = 5,
+    NvmeNamespacePoFxPowerSetFState = 6,
+    NvmeNamespacePoFxPowerControl = 7,
+    NvmeNamespaceRemove = 8,
+    NvmeNamespaceSurpriseRemoval = 9,
+    NvmeNamespaceControlMax = 10,
+    MakeNamespaceControlTypeSizeOfUlong = (-1)
+} NVME_NAMESPACE_CONTROL_TYPE, *PNVME_NAMESPACE_CONTROL_TYPE;
+
+typedef enum _SCSI_UC_DEVICE_USAGE_TYPE {
+    ScsiDeviceUsageTypeUndefined = 0,
+    ScsiDeviceUsageTypePaging = 1,
+    ScsiDeviceUsageTypeHibernation = 2,
+    ScsiDeviceUsageTypeDumpFile = 3,
+    ScsiDeviceUsageTypeBoot = 4,
+    ScsiDeviceUsageTypeInlineCryptoEngine = 7
+} SCSI_UC_DEVICE_USAGE_TYPE;
+
+typedef enum _STOR_CRYPTO_OPERATION_TYPE {
+    StorCryptoOperationInsertKey = 1,
+    StorCryptoOperationMax = 2
+} STOR_CRYPTO_OPERATION_TYPE, *PSTOR_CRYPTO_OPERATION_TYPE;
+
+typedef enum _STOR_DEVICE_RESET_TYPE {
+    StorFunctionLevelReset = 0,
+    StorPlatformLevelReset = 1,
+    StorBusSpecificReset = 2
+} STOR_DEVICE_RESET_TYPE;
+
+typedef enum _STOR_IMPORTANCE {
+    StorLowImportance = 0,
+    StorMediumImportance = 1,
+    StorHighImportance = 2,
+    StorMediumHighImportance = 3
+} STOR_IMPORTANCE;
+
+typedef enum _STOR_POFX_PERF_STATE_TYPE {
+    StorPoFxPerfStateTypeDiscrete = 0,
+    StorPoFxPerfStateTypeRange = 1,
+    StorPoFxPerfStateTypeMaximum = 2
+} STOR_POFX_PERF_STATE_TYPE, *PSTOR_POFX_PERF_STATE_TYPE;
+
+typedef enum _STOR_POFX_PERF_STATE_UNIT {
+    StorPoFxPerfStateUnitOther = 0,
+    StorPoFxPerfStateUnitFrequency = 1,
+    StorPoFxPerfStateUnitBandwidth = 2,
+    StorPoFxPerfStateUnitMilliwatts = 3,
+    StorPoFxPerfStateUnitMaximum = 4
+} STOR_POFX_PERF_STATE_UNIT, *PSTOR_POFX_PERF_STATE_UNIT;
+
+typedef enum _STOR_RPMB_FRAME_TYPE {
+    StorRpmbFrameTypeUnknown = 0,
+    StorRpmbFrameTypeStandard = 1,
+    StorRpmbFrameTypeMax = 2
+} STOR_RPMB_FRAME_TYPE, *PSTOR_RPMB_FRAME_TYPE;
+
+typedef enum _STOR_TELEMETRY_CATEGORY {
+    StorTelemetryCategory = 0,
+    StorMeasuresCategory = 1
+} STOR_TELEMETRY_CATEGORY, *PSTOR_TELEMETRY_CATEGORY;
+
+typedef enum _STOR_THREAD_PRIORITY {
+    StorThreadPriorityBackground = 7,
+    StorThreadPriorityNormal = 8,
+    StorThreadPriorityDelayed = 12,
+    StorThreadPriorityCritical = 13,
+    StorThreadPrioritySuperCritical = 14,
+    StorThreadPriorityHyperCritical = 15,
+    StorThreadPriorityRealTime = 18
+} STOR_THREAD_PRIORITY, *PSTOR_THREAD_PRIORITY;
+
+#ifndef STORAGE_CRYPTO_ALGORITHMS_DEFINED
+#define STORAGE_CRYPTO_ALGORITHMS_DEFINED
+typedef enum _STORAGE_CRYPTO_ALGORITHM_ID {
+    StorageCryptoAlgorithmUnknown = 0,
+    StorageCryptoAlgorithmXTSAES = 1,
+    StorageCryptoAlgorithmBitlockerAESCBC = 2,
+    StorageCryptoAlgorithmAESECB = 3,
+    StorageCryptoAlgorithmESSIVAESCBC = 4,
+    StorageCryptoAlgorithmMax = 5,
+    StorCryptoAlgorithmUnknown = 0,
+    StorCryptoAlgorithmXTSAES = 1,
+    StorCryptoAlgorithmBitlockerAESCBC = 2,
+    StorCryptoAlgorithmAESECB = 3,
+    StorCryptoAlgorithmESSIVAESCBC = 4
+} STORAGE_CRYPTO_ALGORITHM_ID, *PSTORAGE_CRYPTO_ALGORITHM_ID;
+
+typedef enum _STORAGE_CRYPTO_KEY_SIZE {
+    StorageCryptoKeySizeUnknown = 0,
+    StorageCryptoKeySize128Bits = 1,
+    StorageCryptoKeySize192Bits = 2,
+    StorageCryptoKeySize256Bits = 3,
+    StorageCryptoKeySize512Bits = 4,
+    StorageCryptoKeySizeMax = 5,
+    StorCryptoKeySizeUnknown = 0,
+    StorCryptoKeySize128Bits = 1,
+    StorCryptoKeySize192Bits = 2,
+    StorCryptoKeySize256Bits = 3,
+    StorCryptoKeySize512Bits = 4
+} STORAGE_CRYPTO_KEY_SIZE, *PSTORAGE_CRYPTO_KEY_SIZE;
+#endif
+
+typedef STORAGE_CRYPTO_ALGORITHM_ID STOR_CRYPTO_ALGORITHM_ID, *PSTOR_CRYPTO_ALGORITHM_ID;
+typedef STORAGE_CRYPTO_KEY_SIZE STOR_CRYPTO_KEY_SIZE, *PSTOR_CRYPTO_KEY_SIZE;
+
+typedef enum _STORMQ_CONTROLLER_STATUS {
+    ControllerStatusUnknown = 0,
+    ControllerStatusInitializationFailed = 1,
+    ControllerStatusRemovalInProgress = 2,
+    ControllerStatusRemovalFailed = 3,
+    MakeControllerStatusTypeSizeOfUlong = (-1)
+} STORMQ_CONTROLLER_STATUS, *PSTORMQ_CONTROLLER_STATUS;
+
+typedef enum _STORMQ_PROPERTY_OFFSET {
+    StorMQPropQueueBase = (-2147483648),
+    StorMQPropSQMetadataContext = (-2147483647),
+    StorMQPropSQMiniportContextSize = (-2147483646),
+    StorMQPropSQMiniportContext = (-2147483645),
+    StorMQPropControllerNumaAffinity = (-2147483644),
+    StorMQPropPopulatePrpEntries = (-2147483643),
+    StorMQPropLPSQAffinity = (-2147483642),
+    StorMQPropSQCQAffinity = (-2147483641),
+    StorMQPropCQIVAffinity = (-2147483640),
+    StorMQPropControllerStatus = (-2147483639)
+} STORMQ_PROPERTY_OFFSET;
+
+typedef enum _STORPORT_CAPTURE_LIVEDUMP_TYPE {
+    StorportCaptureLiveDumpTypeUndefined = 0,
+    StorportCaptureLiveDumpTypeMini = 1,
+    StorportCaptureLiveDumpTypeFull = 2
+} STORPORT_CAPTURE_LIVEDUMP_TYPE, *PSTORPORT_CAPTURE_LIVEDUMP_TYPE;
+
+typedef enum _STORPORT_FEATURE_TYPE {
+    StorportFeatureBusTypeUnitControl = 0,
+    StorportFeatureFruIdUnitControl = 1,
+    StorportFeatureFruIdAdapterControl = 2,
+    StorportFeatureSetEventLoggingAdapterControl = 3,
+    StorportFeatureReportInternalDataUnitControl = 4,
+    StorportFeatureReportInternalDataAdapterControl = 5,
+    StorportFeatureResetBusSynchronous = 6,
+    StorportFeaturePostHwInitialize = 7,
+    StorportFeaturePrepareEarlyDumpData = 8,
+    StorportFeatureRestoreEarlyDumpData = 9,
+    StorportFeatureKsrAdapterPowerDownOptimization = 10,
+    StorportFeatureKsrUnitPowerDownOptimization = 11,
+    StorportFeaturePreparePLDR = 12,
+    StorportFeatureNvmeofAdapterOperation = 13,
+    StorportFeatureReserved1 = 14,
+    StorportFeatureQueryStorMQInterface = 15,
+    StorportFeatureMax = 16
+} STORPORT_FEATURE_TYPE;
+
+typedef enum _STORPORT_LIVEDUMP_DATA_TYPE {
+    StorportLivedumpDataTypeUndefined = 0,
+    StorportLivedumpDataTypeDeviceTelemetryLog = 1
+} STORPORT_LIVEDUMP_DATA_TYPE, *PSTORPORT_LIVEDUMP_DATA_TYPE;
+
+typedef enum _STORPORT_LIVEDUMP_ISSUE_TYPE {
+    StorportLivedumpIssueTypeUndefined = 0,
+    StorportLivedumpIssueTypeDevicePanic = 1
+} STORPORT_LIVEDUMP_ISSUE_TYPE, *PSTORPORT_LIVEDUMP_ISSUE_TYPE;
+
+typedef enum _STORPORT_QUERY_CONFIGURATION_TYPE {
+    StorportQueryConfigurationD3 = 0,
+    StorportQueryConfigurationNvmeIce = 1,
+    StorportQueryConfigurationMax = 2
+} STORPORT_QUERY_CONFIGURATION_TYPE, *PSTORPORT_QUERY_CONFIGURATION_TYPE;
+
+typedef enum SRBEX_DATA_NVME_COMMAND_FLAG {
+    SRBEX_DATA_NVME_COMMAND_FLAG_REQUIRE_DATA_TRANSFER_IN = 1,
+    SRBEX_DATA_NVME_COMMAND_FLAG_REQUIRE_DATA_TRANSFER_OUT = 2,
+    SRBEX_DATA_NVME_COMMAND_FLAG_PRP_SET_ALREADY = 4,
+    SRBEX_DATA_NVME_COMMAND_FLAG_SIGNATURE_ENABLED = 8,
+    SRBEX_DATA_NVME_COMMAND_FLAG_NO_POLLING = 16
+} SRBEX_DATA_NVME_COMMAND_FLAG, *PSRBEX_DATA_NVME_COMMAND_FLAG;
+
+typedef enum SRBEX_DATA_NVME_COMMAND_TYPE {
+    SRBEX_DATA_NVME_COMMAND_TYPE_NVM = 0,
+    SRBEX_DATA_NVME_COMMAND_TYPE_ADMIN = 1,
+    SRBEX_DATA_NVME_COMMAND_TYPE_FABRICS = 2
+} SRBEX_DATA_NVME_COMMAND_TYPE, *PSRBEX_DATA_NVME_COMMAND_TYPE;
+
+typedef enum SRBEX_DATA_NVME_RESPONSE_FLAG {
+    SRBEX_DATA_NVME_RESPONSE_FLAG_SQHD_VALID = 1
+} SRBEX_DATA_NVME_RESPONSE_FLAG, *PSRBEX_DATA_NVME_RESPONSE_FLAG;
+
+typedef ULONG * PSTOR_DRIVER_PROXY_ENDPOINT_FUNCTION_ID;
+typedef PVOID PSTOR_DRIVER_PROXY_EXTENSION;
+typedef sp_DRIVER_INITIALIZE * sp_PDRIVER_INITIALIZE;
+typedef ULONG_PTR STOR_AFFINITY;
+typedef ULONG STOR_DRIVER_PROXY_ENDPOINT_FUNCTION_ID;
+typedef ULONG_PTR STOR_KSPIN_LOCK;
+typedef STOR_KSPIN_LOCK * PSTOR_KSPIN_LOCK;
+
+typedef struct _FREE_MINIPORT_DUMP_INFO {
+  ULONG Version;
+  ULONG Size;
+  ULONG Signature;
+  UCHAR Reserved0[4];
+  PVOID Context;
+} FREE_MINIPORT_DUMP_INFO, *PFREE_MINIPORT_DUMP_INFO;
+
+typedef struct _GET_MINIPORT_DUMP_INFO_V1 {
+  ULONG Version;
+  ULONG Size;
+  ULONG Signature;
+  USHORT DiskCount;
+  USHORT AddressType;
+  ULONG AddressSize;
+  UCHAR Reserved0[4];
+  UCHAR Addresses[1];
+} GET_MINIPORT_DUMP_INFO_V1, *PGET_MINIPORT_DUMP_INFO_V1;
+
+typedef struct _MINIPORT_DATA {
+  PSTR Name;
+  DATA_TYPE Type;
+  USHORT ArrayLength;
+  PVOID Data;
+} MINIPORT_DATA, *PMINIPORT_DATA;
+
+typedef struct _MINIPORT_DUMP_INFO {
+  ULONG Version;
+  ULONG Size;
+  ULONG Signature;
+  UCHAR Reserved0[4];
+  PVOID Context;
+} MINIPORT_DUMP_INFO, *PMINIPORT_DUMP_INFO;
+
+typedef struct _MINIPORT_MAPPINGS {
+  USHORT Version;
+  PVOID IBFTable;
+  PVOID Nic0Map;
+  PVOID Nic1Map;
+  ULONG NumberOfAdditionalNic;
+  PVOID NicMap[];
+} MINIPORT_MAPPINGS, *PMINIPORT_MAPPINGS;
+
+typedef struct _NVME_SUPPORTED_CONTROL_TYPE_LIST {
+  ULONG MaxControlType;
+  BOOLEAN SupportedTypeList[0];
+} NVME_SUPPORTED_CONTROL_TYPE_LIST, *PNVME_SUPPORTED_CONTROL_TYPE_LIST;
+
+typedef struct _SRBEX_DATA_MINIPORT_PASSTHROUGH {
+  SRBEXDATATYPE Type;
+  ULONG Length;
+  ULONG InputBufferLength;
+  ULONG OutputBufferLength;
+  ULONG OutputBufferWritten;
+  ULONG Reserved;
+} SRBEX_DATA_MINIPORT_PASSTHROUGH, *PSRBEX_DATA_MINIPORT_PASSTHROUGH;
+
+typedef struct _STARTIO_PERFORMANCE_PARAMETERS_V2 {
+  ULONG Version;
+  ULONG Size;
+  ULONG MessageNumber;
+  ULONG ChannelNumber;
+  PROCESSOR_NUMBER InitiatingProcessor;
+} STARTIO_PERFORMANCE_PARAMETERS_V2, *PSTARTIO_PERFORMANCE_PARAMETERS_V2;
+
+typedef struct _STOR_ADDR_NVME {
+  USHORT Type;
+  USHORT Port;
+  ULONG AddressLength;
+  PVOID Controller;
+  ULONG NamespaceId;
+  ULONG Reserved;
+} STOR_ADDR_NVME, *PSTOR_ADDR_NVME;
+
+typedef struct _STOR_CRYPTO_KEY_INFO {
+  ULONG Version;
+  ULONG Size;
+  ULONG KeyIndex;
+  ULONGLONG Tweak;
+} STOR_CRYPTO_KEY_INFO, *PSTOR_CRYPTO_KEY_INFO;
+
+typedef struct _STOR_CRYPTO_OPERATION {
+  STOR_CRYPTO_OPERATION_TYPE OperationType;
+  ULONG OperationBufferLength;
+  PVOID OperationBuffer;
+} STOR_CRYPTO_OPERATION, *PSTOR_CRYPTO_OPERATION;
+
+typedef struct _STOR_CRYPTO_OPERATION_INSERT_KEY {
+  USHORT Version;
+  USHORT Size;
+  ULONG KeyIndex;
+  ULONG CryptoCapabilityIndex;
+  ULONG DataUnitSizeBitmask;
+  ULONG KeySize;
+  ULONG Reserved;
+  PVOID KeyVirtualAddress;
+  PHYSICAL_ADDRESS KeyPhysicalAddress;
+} STOR_CRYPTO_OPERATION_INSERT_KEY, *PSTOR_CRYPTO_OPERATION_INSERT_KEY;
+
+typedef struct _STOR_DRIVER_PROXY_ENDPOINT_INFORMATION {
+  STOR_DRIVER_PROXY_ENDPOINT_FUNCTION_ID Id;
+  PVOID EndpointFunction;
+  ULONG ParameterCount;
+} STOR_DRIVER_PROXY_ENDPOINT_INFORMATION, *PSTOR_DRIVER_PROXY_ENDPOINT_INFORMATION;
+
+typedef struct _STOR_EXT_SET_PARAMETERS {
+  ULONG Version;
+  ULONG Reserved;
+  LONGLONG NoWakeTolerance;
+} STOR_EXT_SET_PARAMETERS, *PSTOR_EXT_SET_PARAMETERS;
+
+typedef struct _STOR_FRU_ID_DESCRIPTION {
+  ULONG Version;
+  ULONG Size;
+  PSTOR_ADDRESS Address;
+  UCHAR FruId[129];
+} STOR_FRU_ID_DESCRIPTION, *PSTOR_FRU_ID_DESCRIPTION;
+
+typedef struct _STOR_GROUP_AFFINITY {
+  STOR_AFFINITY Mask;
+  USHORT Group;
+  USHORT Reserved[3];
+} STOR_GROUP_AFFINITY, *PSTOR_GROUP_AFFINITY;
+
+typedef struct _STOR_MAX_OPERATIONAL_POWER {
+  ULONG Version;
+  ULONG Size;
+  ULONGLONG Value;
+} STOR_MAX_OPERATIONAL_POWER, *PSTOR_MAX_OPERATIONAL_POWER;
+
+typedef struct _STOR_POFX_PERF_STATE {
+  ULONG Version;
+  ULONG Size;
+  ULONGLONG Value;
+  PVOID Context;
+} STOR_POFX_PERF_STATE, *PSTOR_POFX_PERF_STATE;
+
+typedef struct _STOR_POFX_PERF_STATE_CONTEXT {
+  ULONG Version;
+  ULONG Size;
+  ULONG ComponentIndex;
+  BOOLEAN Succeeded;
+  PVOID Context;
+} STOR_POFX_PERF_STATE_CONTEXT, *PSTOR_POFX_PERF_STATE_CONTEXT;
+
+typedef struct _STOR_POFX_POWER_CONTROL {
+  STOR_POWER_CONTROL_HEADER Header;
+  LPCGUID PowerControlCode;
+  SIZE_T InBufferSize;
+  SIZE_T OutBufferSize;
+  PVOID InBuffer;
+  PVOID OutBuffer;
+  PSIZE_T BytesReturned;
+} STOR_POFX_POWER_CONTROL, *PSTOR_POFX_POWER_CONTROL;
+
+typedef struct _STOR_POFX_POWER_REQUIRED_CONTEXT {
+  STOR_POWER_CONTROL_HEADER Header;
+  BOOLEAN PowerRequired;
+} STOR_POFX_POWER_REQUIRED_CONTEXT, *PSTOR_POFX_POWER_REQUIRED_CONTEXT;
+
+typedef struct _STOR_REPORT_INTERNAL_DATA {
+  ULONG Version;
+  ULONG Size;
+  PSTOR_ADDRESS Address;
+  INTERNAL_DATA_SCOPE Scope;
+  PVOID CallbackContext;
+} STOR_REPORT_INTERNAL_DATA, *PSTOR_REPORT_INTERNAL_DATA;
+
+typedef struct _STOR_RESET_BUS_SYNCHRONOUS_PARAMETER {
+  ULONG Version;
+  ULONG Size;
+  ULONG PathId;
+  ULONG Reserved;
+} STOR_RESET_BUS_SYNCHRONOUS_PARAMETER, *PSTOR_RESET_BUS_SYNCHRONOUS_PARAMETER;
+
+typedef struct _STOR_RPMB_CAPABILITIES_DATA {
+  ULONG Version;
+  ULONG Size;
+  ULONG RpmbSize;
+  ULONG MaxReliableRpmbWriteSize;
+  UCHAR SecurityProtocol;
+  USHORT SecurityProtocolSpecifier;
+  STOR_ADDRESS RpmbTarget;
+  STOR_RPMB_FRAME_TYPE FrameFormat;
+} STOR_RPMB_CAPABILITIES_DATA, *PSTOR_RPMB_CAPABILITIES_DATA;
+
+typedef struct _STOR_SERIAL_NUMBER {
+  ULONG Version;
+  ULONG Size;
+  BOOLEAN Unicode;
+  UCHAR SerialNumber[256];
+} STOR_SERIAL_NUMBER, *PSTOR_SERIAL_NUMBER;
+
+typedef struct _STOR_SET_EVENT_LOGGING {
+  STORPORT_ETW_EVENT_CHANNEL Channel;
+  BOOLEAN Enabled;
+} STOR_SET_EVENT_LOGGING, *PSTOR_SET_EVENT_LOGGING;
+
+typedef struct _STOR_UC_DEVICE_USAGE {
+  PSTOR_ADDRESS Address;
+  SCSI_UC_DEVICE_USAGE_TYPE UsageType;
+  BOOLEAN InUse;
+} STOR_UC_DEVICE_USAGE, *PSTOR_UC_DEVICE_USAGE;
+
+typedef struct _STOR_UNIT_CONTROL_QUERY_BUS_TYPE {
+  PSTOR_ADDRESS Address;
+  ULONG BusType;
+} STOR_UNIT_CONTROL_QUERY_BUS_TYPE, *PSTOR_UNIT_CONTROL_QUERY_BUS_TYPE;
+
+typedef struct _STORMQ_PROPERTY_AFFINITY_DESCRIPTOR {
+  ULONG Version;
+  ULONG NumberOfElements;
+  ULONG Affinity[1];
+} STORMQ_PROPERTY_AFFINITY_DESCRIPTOR, *PSTORMQ_PROPERTY_AFFINITY_DESCRIPTOR;
+
+typedef struct _STORPORT_CAPTURE_LIVEDUMP {
+  ULONG Version;
+  ULONG Size;
+  STORPORT_CAPTURE_LIVEDUMP_TYPE LiveDumpType;
+  STORPORT_LIVEDUMP_ISSUE_TYPE IssueType;
+  PWSTR ComponentName;
+  STORPORT_LIVEDUMP_DATA_TYPE DataType;
+  PVOID Data;
+} STORPORT_CAPTURE_LIVEDUMP, *PSTORPORT_CAPTURE_LIVEDUMP;
+
+typedef struct _STORPORT_LIVEDUMP_DEVICE_TELEMETRY_LOG {
+  ULONG Version;
+  ULONG Size;
+  UCHAR BucketId[128];
+  UCHAR OrganizationID[3];
+  UCHAR Reserved;
+  ULONG TelemetryLength;
+  PVOID DeviceTelemetry;
+} STORPORT_LIVEDUMP_DEVICE_TELEMETRY_LOG, *PSTORPORT_LIVEDUMP_DEVICE_TELEMETRY_LOG;
+
+#ifdef _WIN64
+#define CONFIG_INFO_VERSION_3 0xE0
+#else
+#define CONFIG_INFO_VERSION_3 0xD0
+#endif
+#define GET_DUMP_INFO_VERSION_1 0x1C
+#define IOCTL_SCSI_MINIPORT_DSM 0x1B0720
+#define RAID_ASYNC_NOTIFY_SUPPORTED_FLAGS 7
+#define STOR_CRYPTO_ALGORITHM_ID_OFFSET 1
+#ifdef _WIN64
+#define STOR_DPC_BUFFER_SIZE 0x40
+#else
+#define STOR_DPC_BUFFER_SIZE 0x20
+#endif
+#define STOR_POFX_COMPONENT_PERF_SET_SIZE 0x28
+#define STOR_POFX_DEVICE_SIZE ((ULONG)0x10)
+#define STOR_POFX_PERF_STATE_SIZE 0x18
+#define STOR_SERIAL_NUMBER_MAX_SIZE 0x100
+
+struct _SRBEX_DATA_NVME_COMMAND
+{
+    SRBEXDATATYPE Type;
+    ULONG Length;
+    union
+    {
+        PVOID ControllerHandle;
+        ULONGLONG Reserved0;
+    };
+    union
+    {
+        struct
+        {
+            ULONG CommandDWORD0;
+            ULONG CommandNSID;
+            ULONG Reserved1[2];
+            ULONGLONG CommandMPTR;
+            union
+            {
+                struct
+                {
+                    ULONGLONG CommandPRP1;
+                    ULONGLONG CommandPRP2;
+                };
+                ULONGLONG CommandSGL1[2];
+            };
+            ULONG CommandCDW10;
+            ULONG CommandCDW11;
+            ULONG CommandCDW12;
+            ULONG CommandCDW13;
+            ULONG CommandCDW14;
+            ULONG CommandCDW15;
+        };
+        struct
+        {
+            UCHAR OPC;
+            UCHAR PSDT;
+            USHORT CID;
+            UCHAR FCTYPE;
+            UCHAR Reserved[35];
+            UCHAR Specific[24];
+        } FabricsCommand;
+        struct
+        {
+            ULONG OPC : 8;
+            ULONG FUSE : 2;
+            ULONG Reserved : 4;
+            ULONG PSDT : 2;
+            ULONG CID : 16;
+            UCHAR TypeSpecific[60];
+        } Command;
+    };
+    UCHAR CommandType;
+    UCHAR Reserved2;
+    USHORT CommandFlags;
+    USHORT ResponseFlags;
+    union
+    {
+        struct
+        {
+            USHORT P : 1;
+            USHORT SC : 8;
+            USHORT SCT : 3;
+            USHORT CRD : 2;
+            USHORT M : 1;
+            USHORT DNR : 1;
+        };
+        USHORT AsUshort;
+    } CommandStatus;
+    ULONG QID;
+    ULONG CommandTag;
+    union
+    {
+        struct
+        {
+            ULONG CQEntryDW0;
+            ULONG CQEntryDW1;
+        };
+        UCHAR Specific[8];
+    };
+    USHORT SQHD;
+    USHORT SQID;
+};
+
+struct _STOR_POFX_COMPONENT_PERF_SET
+{
+    ULONG Version;
+    ULONG Size;
+    ULONGLONG Flags;
+    STOR_POFX_PERF_STATE_UNIT PStateUnit;
+    STOR_POFX_PERF_STATE_TYPE PStateType;
+    union
+    {
+        struct
+        {
+            ULONG Count;
+            ULONG Offset;
+        } Discrete;
+        struct
+        {
+            ULONGLONG Minimum;
+            ULONGLONG Maximum;
+        } Range;
+    } PStates;
+};
+
+#if (defined(_WIN64))
+union DECLSPEC_ALIGN(16) _STOR_SLIST_HEADER
+{
+    struct
+    {
+        ULONGLONG Alignment;
+        ULONGLONG Region;
+    };
+    struct
+    {
+        ULONGLONG Depth : 16;
+        ULONGLONG Sequence : 9;
+        ULONGLONG NextEntry : 39;
+        ULONGLONG HeaderType : 1;
+        ULONGLONG Init : 1;
+        ULONGLONG Reserved : 59;
+        ULONGLONG Region : 3;
+    } Header8;
+    struct
+    {
+        ULONGLONG Depth : 16;
+        ULONGLONG Sequence : 48;
+        ULONGLONG HeaderType : 1;
+        ULONGLONG Init : 1;
+        ULONGLONG Reserved : 2;
+        ULONGLONG NextEntry : 60;
+    } Header16;
+    struct
+    {
+        ULONGLONG Depth : 16;
+        ULONGLONG Sequence : 48;
+        ULONGLONG HeaderType : 1;
+        ULONGLONG Reserved : 3;
+        ULONGLONG NextEntry : 60;
+    } HeaderX64;
+};
+#endif
+
+#ifndef STORAGE_CRYPTO_KEY_TYPE_DEFINED
+#define STORAGE_CRYPTO_KEY_TYPE_DEFINED
+typedef union _STORAGE_CRYPTO_KEY_TYPE
+{
+    struct
+    {
+        UCHAR DirectKey : 1;
+        UCHAR PlatformWrappedKey : 1;
+        UCHAR PlutonWrappedKey : 1;
+        UCHAR Reserved : 5;
+    };
+    UCHAR AsUchar;
+} STORAGE_CRYPTO_KEY_TYPE;
+#endif
+
+#ifndef STORAGE_SECURITY_COMPLIANCE_BITMASK_DEFINED
+#define STORAGE_SECURITY_COMPLIANCE_BITMASK_DEFINED
+typedef union _STORAGE_SECURITY_COMPLIANCE_BITMASK
+{
+    struct
+    {
+        UCHAR FIPS : 1;
+        UCHAR Reserved : 7;
+    };
+    UCHAR AsUchar;
+} STORAGE_SECURITY_COMPLIANCE_BITMASK;
+#endif
+
+struct _STORMQ_PROPERTY_QUEUE_DESCRIPTOR
+{
+    ULONG Version;
+    ULONG QueueId;
+    ULONG NumberOfElements;
+    ULONG Reserved;
+    struct
+    {
+        ULONGLONG IsSubmissionQueue : 1;
+        ULONGLONG Reserved : 63;
+    } Flags;
+    PVOID VirtualAddress;
+    STOR_PHYSICAL_ADDRESS PhysicalAddress;
+};
+
+struct DECLSPEC_ALIGN(64) _STORMQ_SUBMISSION_QUEUE_METADATA_CONTEXT
+{
+    ULONG Version;
+    ULONG Reserved1;
+    ULONG QueueId;
+    ULONG QueueSlot;
+    PVOID VirtualAddress;
+    PSTOR_SCATTER_GATHER_LIST Sgl;
+    PVOID Mdl;
+    union
+    {
+        struct
+        {
+            ULONGLONG ReadWrite : 1;
+            ULONGLONG PagingIO : 1;
+            ULONGLONG Reserved : 62;
+        };
+        ULONGLONG AsUlonglong;
+    } Flags;
+};
+
+typedef NVME_NAMESPACE_CONTROL_STATUS NTAPI HW_NAMESPACE_CONTROL(PVOID, NVME_NAMESPACE_CONTROL_TYPE, PVOID);
+
+typedef NVME_ADAPTER_CONTROL_STATUS NTAPI HW_NVME_ADAPTER_CONTROL(PVOID, NVME_ADAPTER_CONTROL_TYPE, PVOID);
+
+typedef void NTAPI HW_REGISTRY_NOTIFICATION_ROUTINE(PVOID);
+
+typedef ULONG NTAPI HW_STORMQ_COMPLETION_CALLBACK(PVOID, USHORT);
+
+typedef ULONG NTAPI HW_STORMQ_QUERY_PROPERTY(PVOID, ULONG, ULONG, ULONG, PVOID);
+
+typedef ULONG NTAPI HW_STORMQ_SET_PROPERTY(PVOID, ULONG, ULONG, ULONG, PVOID);
+
+typedef BOOLEAN NTAPI HW_STORMQ_START_SRB(PVOID, PVOID, struct _STORAGE_REQUEST_BLOCK *);
+
+typedef HW_NAMESPACE_CONTROL *PHW_NAMESPACE_CONTROL;
+
+typedef HW_NVME_ADAPTER_CONTROL *PHW_NVME_ADAPTER_CONTROL;
+
+typedef HW_REGISTRY_NOTIFICATION_ROUTINE *PHW_REGISTRY_NOTIFICATION_ROUTINE;
+
+typedef HW_STORMQ_COMPLETION_CALLBACK *PHW_STORMQ_COMPLETION_CALLBACK;
+
+typedef ULONG NTAPI HW_STORMQ_COMPLETION_NOTIFY_WITH_CALLBACK(PVOID, USHORT, USHORT, USHORT, PHW_STORMQ_COMPLETION_CALLBACK);
+
+typedef HW_STORMQ_COMPLETION_NOTIFY_WITH_CALLBACK *PHW_STORMQ_COMPLETION_NOTIFY_WITH_CALLBACK;
+
+typedef HW_STORMQ_QUERY_PROPERTY *PHW_STORMQ_QUERY_PROPERTY;
+
+typedef HW_STORMQ_SET_PROPERTY *PHW_STORMQ_SET_PROPERTY;
+
+typedef HW_STORMQ_START_SRB *PHW_STORMQ_START_SRB;
+
+struct _STORMQ_MINIPORT_INTERFACE
+{
+    ULONG Size;
+    USHORT StorMQVersion;
+    USHORT MiniportVersion;
+    struct
+    {
+        ULONGLONG ProvideVirtualAddresses : 1;
+        ULONGLONG Reserved : 63;
+    } Flags;
+    PHW_STORMQ_COMPLETION_NOTIFY_WITH_CALLBACK HwStorMQCompletionNotifyWithCallback;
+    PHW_STORMQ_QUERY_PROPERTY HwStorMQQueryProperty;
+    PHW_STORMQ_SET_PROPERTY HwStorMQSetProperty;
+    PHW_STORMQ_START_SRB HwStorMQStartSrb;
+};
+
+typedef struct _STOR_POFX_COMPONENT_PERF_SET *PSTOR_POFX_COMPONENT_PERF_SET;
+
+#if (defined(_WIN64))
+typedef union _STOR_SLIST_HEADER *PSTOR_SLIST_HEADER;
+#endif
+
+typedef struct _STORMQ_MINIPORT_INTERFACE *PSTORMQ_MINIPORT_INTERFACE;
+
+typedef struct _STORMQ_PROPERTY_QUEUE_DESCRIPTOR *PSTORMQ_PROPERTY_QUEUE_DESCRIPTOR;
+
+typedef struct _STORMQ_SUBMISSION_QUEUE_METADATA_CONTEXT *PSTORMQ_SUBMISSION_QUEUE_METADATA_CONTEXT;
+
+typedef void NTAPI STOR_EXT_DELETE_CALLBACK(PVOID);
+
+typedef STOR_EXT_DELETE_CALLBACK *PSTOR_EXT_DELETE_CALLBACK;
+
+struct _STOR_EXT_DELETE_PARAMETERS
+{
+    ULONG Version;
+    ULONG Reserved;
+    PSTOR_EXT_DELETE_CALLBACK DeleteCallback;
+    PVOID DeleteContext;
+};
+
+typedef struct _STOR_EXT_DELETE_PARAMETERS *PSTOR_EXT_DELETE_PARAMETERS;
+
+typedef struct _STOR_EXT_DELETE_PARAMETERS STOR_EXT_DELETE_PARAMETERS;
+
+typedef struct _STOR_POFX_COMPONENT_PERF_SET STOR_POFX_COMPONENT_PERF_SET;
+
+#if (defined(_WIN64))
+typedef union _STOR_SLIST_HEADER STOR_SLIST_HEADER;
+#endif
+
+typedef void NTAPI STOR_THREAD_START_ROUTINE(PVOID);
+
+typedef STOR_THREAD_START_ROUTINE *PSTOR_THREAD_START_ROUTINE;
+
+struct _STOR_CRYPTO_CAPABILITY
+{
+    ULONG Version;
+    ULONG Size;
+    USHORT CryptoCapabilityIndex;
+    USHORT DataUnitSizeBitmask;
+    STORAGE_CRYPTO_ALGORITHM_ID AlgorithmId;
+    STORAGE_CRYPTO_KEY_SIZE KeySize;
+    USHORT MaxIVBitSize;
+    USHORT Reserved;
+    STORAGE_SECURITY_COMPLIANCE_BITMASK SecurityComplianceBitmask;
+};
+
+typedef struct _STOR_CRYPTO_CAPABILITY *PSTOR_CRYPTO_CAPABILITY;
+
+typedef struct _STOR_CRYPTO_CAPABILITY STOR_CRYPTO_CAPABILITY;
+
+struct _STOR_CRYPTO_CAPABILITIES_DATA
+{
+    ULONG Version;
+    ULONG Size;
+    USHORT NumKeysSupported;
+    USHORT NumCryptoCapabilities;
+    STOR_CRYPTO_CAPABILITY CryptoCapabilities[1];
+};
+
+typedef struct _STOR_CRYPTO_CAPABILITIES_DATA *PSTOR_CRYPTO_CAPABILITIES_DATA;
+
+typedef struct _STOR_CRYPTO_CAPABILITIES_DATA STOR_CRYPTO_CAPABILITIES_DATA;
+
+typedef struct _STORMQ_MINIPORT_INTERFACE STORMQ_MINIPORT_INTERFACE;
+
+typedef struct _STORMQ_PROPERTY_QUEUE_DESCRIPTOR STORMQ_PROPERTY_QUEUE_DESCRIPTOR;
+
+typedef struct _STORMQ_SUBMISSION_QUEUE_METADATA_CONTEXT STORMQ_SUBMISSION_QUEUE_METADATA_CONTEXT;
+
+typedef ULONG NTAPI VIRTUAL_HW_FIND_ADAPTER(PVOID, PVOID, PVOID, PVOID, PCHAR, PPORT_CONFIGURATION_INFORMATION, PBOOLEAN);
+
+typedef VIRTUAL_HW_FIND_ADAPTER *PVIRTUAL_HW_FIND_ADAPTER;
+
+struct _VIRTUAL_HW_INITIALIZATION_DATA
+{
+    ULONG HwInitializationDataSize;
+    INTERFACE_TYPE AdapterInterfaceType;
+    PHW_INITIALIZE HwInitialize;
+    PHW_STARTIO HwStartIo;
+    PHW_INTERRUPT HwInterrupt;
+    PVIRTUAL_HW_FIND_ADAPTER HwFindAdapter;
+    PHW_RESET_BUS HwResetBus;
+    PHW_DMA_STARTED HwDmaStarted;
+    PHW_ADAPTER_STATE HwAdapterState;
+    ULONG DeviceExtensionSize;
+    ULONG SpecificLuExtensionSize;
+    ULONG SrbExtensionSize;
+    ULONG NumberOfAccessRanges;
+    PVOID Reserved;
+    UCHAR MapBuffers;
+    BOOLEAN NeedPhysicalAddresses;
+    BOOLEAN TaggedQueuing;
+    BOOLEAN AutoRequestSense;
+    BOOLEAN MultipleRequestPerLu;
+    BOOLEAN ReceiveEvent;
+    USHORT VendorIdLength;
+    PVOID VendorId;
+    union
+    {
+        USHORT ReservedUshort;
+        USHORT PortVersionFlags;
+    };
+    USHORT DeviceIdLength;
+    PVOID DeviceId;
+    PHW_ADAPTER_CONTROL HwAdapterControl;
+    PHW_BUILDIO HwBuildIo;
+    PHW_FREE_ADAPTER_RESOURCES HwFreeAdapterResources;
+    PHW_PROCESS_SERVICE_REQUEST HwProcessServiceRequest;
+    PHW_COMPLETE_SERVICE_IRP HwCompleteServiceIrp;
+    PHW_INITIALIZE_TRACING HwInitializeTracing;
+    PHW_CLEANUP_TRACING HwCleanupTracing;
+};
+
+typedef struct _VIRTUAL_HW_INITIALIZATION_DATA *PVIRTUAL_HW_INITIALIZATION_DATA;
+
+typedef struct _VIRTUAL_HW_INITIALIZATION_DATA VIRTUAL_HW_INITIALIZATION_DATA;
+
+#if (defined(_WIN64))
+typedef struct _STOR_SLIST_ENTRY *PSTOR_SLIST_ENTRY;
+
+struct DECLSPEC_ALIGN(16) _STOR_SLIST_ENTRY
+{
+    PSTOR_SLIST_ENTRY Next;
+};
+
+typedef struct _STOR_SLIST_ENTRY STOR_SLIST_ENTRY;
+#else
+typedef struct _STOR_SLIST_ENTRY
+{
+    struct _STOR_SLIST_ENTRY *Next;
+} STOR_SLIST_ENTRY, *PSTOR_SLIST_ENTRY;
+
+typedef union _STOR_SLIST_HEADER
+{
+    ULONGLONG Alignment;
+    struct
+    {
+        STOR_SLIST_ENTRY Next;
+        USHORT Depth;
+        USHORT Sequence;
+    } DUMMYSTRUCTNAME;
+} STOR_SLIST_HEADER, *PSTOR_SLIST_HEADER;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+ULONG StorPortAcquireSpinLockEx(PVOID HwDeviceExtension, STOR_SPINLOCK SpinLock, PVOID LockContext, PSTOR_LOCK_HANDLE LockHandle);
+ULONG StorPortAllocateContiguousMemorySpecifyCacheNode(PVOID HwDeviceExtension, SIZE_T NumberOfBytes, PHYSICAL_ADDRESS LowestAcceptableAddress, PHYSICAL_ADDRESS HighestAcceptableAddress, PHYSICAL_ADDRESS BoundaryAddressMultiple, MEMORY_CACHING_TYPE CacheType, NODE_REQUIREMENT PreferredNode, PVOID *BufferPointer);
+ULONG StorPortCancelDpc(PVOID HwDeviceExtension, PSTOR_DPC Dpc, BOOLEAN *ReturnValue);
+ULONG StorPortCancelHighResolutionTimer(PVOID HwDeviceExtension, PVOID TimerHandle, PVOID Parameters, BOOLEAN *ReturnValue);
+ULONG StorPortCaptureLiveDump(PVOID HwDeviceExtension, PSTOR_ADDRESS StorAddress, PSTORPORT_CAPTURE_LIVEDUMP CaptureLivedump);
+ULONG StorPortCreateSystemThread(PVOID HwDeviceExtension, PSTOR_THREAD_START_ROUTINE StartRoutine, PVOID StartContext, PSTOR_THREAD_PRIORITY Priority, PVOID *ThreadContext);
+ULONG StorPortDelayExecution(PVOID HwDeviceExtension, ULONG DelayInMicroseconds);
+ULONG StorPortEnableRegistryKeyNotification(PVOID HwDeviceExtension, PHW_REGISTRY_NOTIFICATION_ROUTINE NotificationCallback);
+ULONG StorPortEtwChannelEvent4(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, STORPORT_ETW_EVENT_CHANNEL EventChannel, ULONG EventId, PWSTR EventDescription, ULONGLONG EventKeywords, STORPORT_ETW_LEVEL EventLevel, STORPORT_ETW_EVENT_OPCODE EventOpcode, PSCSI_REQUEST_BLOCK Srb, PWSTR Parameter1Name, ULONGLONG Parameter1Value, PWSTR Parameter2Name, ULONGLONG Parameter2Value, PWSTR Parameter3Name, ULONGLONG Parameter3Value, PWSTR Parameter4Name, ULONGLONG Parameter4Value);
+ULONG StorPortEtwLogByteStream(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, STORPORT_ETW_EVENT_CHANNEL EventChannel, ULONG EventId, PWSTR EventDescription, ULONGLONG EventKeywords, STORPORT_ETW_LEVEL EventLevel, STORPORT_ETW_EVENT_OPCODE EventOpcode, USHORT DataLength, PUCHAR Data);
+ULONG StorPortEtwLogError(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, ULONG Id, PWSTR Description, ULONG DataBufferLength, PVOID DataBuffer);
+ULONG StorPortFlushDataBufferMdl(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb);
+ULONG StorPortFreeContiguousMemorySpecifyCache(PVOID HwDeviceExtension, PVOID BaseAddress, SIZE_T NumberOfBytes, MEMORY_CACHING_TYPE CacheType);
+ULONG StorPortFreeHighResolutionTimer(PVOID HwDeviceExtension, PVOID TimerHandle, BOOLEAN Cancel, BOOLEAN Wait, PSTOR_EXT_DELETE_PARAMETERS Parameters, BOOLEAN *ReturnValue);
+ULONG StorPortGetActiveGroupCount(PVOID HwDeviceExtension, PUSHORT NumberGroups);
+ULONG StorPortGetActiveNodeCount(PVOID HwDeviceExtension, PULONG NumberNodes);
+ULONG StorPortGetActivityIdSrb(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, LPGUID ActivityId);
+ULONG StorPortGetCurrentIrql(PVOID HwDeviceExtension, PKIRQL Irql);
+ULONG StorPortGetCurrentProcessorIndex(PVOID HwDeviceExtension, PULONG ProcessorIndex);
+ULONG StorPortGetCurrentProcessorNumber(PVOID HwDeviceExtension, PPROCESSOR_NUMBER ProcNumber);
+ULONG StorPortGetDataInBufferMdl(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, PVOID *Mdl);
+ULONG StorPortGetDataInBufferScatterGatherList(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, PSTOR_SCATTER_GATHER_LIST *SgList);
+ULONG StorPortGetDataInBufferSystemAddress(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, PVOID *SystemAddress);
+ULONG StorPortGetDeviceBase2(PVOID HwDeviceExtension, INTERFACE_TYPE BusType, ULONG SystemIoBusNumber, STOR_PHYSICAL_ADDRESS Address, ULONG NumberOfBytes, BOOLEAN InIoSpace, ULONG Flags, PVOID *BaseAddress);
+ULONG StorPortGetDriverProxyEndpointWrapper(PVOID HwDeviceExtension, PSTOR_DRIVER_PROXY_EXTENSION ProxyExtension, STOR_DRIVER_PROXY_ENDPOINT_FUNCTION_ID Id, PVOID *Wrapper);
+ULONG StorPortGetHighestNodeNumber(PVOID HwDeviceExtension, PULONG HighestNode);
+ULONG StorPortGetLogicalProcessorRelationship(PVOID HwDeviceExtension, PPROCESSOR_NUMBER ProcessorNumber, LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Information, PULONG Length);
+ULONG StorPortGetMessageInterruptIDFromProcessorIndex(PVOID HwDeviceExtension, ULONG ProcessorIndex, PULONG MessageInterruptID);
+BOOLEAN NTAPI StorPortGetMessageInterruptInformation(PVOID HwDeviceExtension, ULONG MessageId, PMESSAGE_INTERRUPT_INFORMATION InterruptInfo);
+ULONG StorPortGetNodeAffinity(PVOID HwDeviceExtension, ULONG NodeNumber, PGROUP_AFFINITY NodeAffinityMask);
+ULONG StorPortGetNodeAffinity2(PVOID HwDeviceExtension, ULONG NodeNumber, PGROUP_AFFINITY GroupAffinities, USHORT GroupAffinitiesCount, PUSHORT GroupAffinitiesCountRequired);
+ULONG StorPortGetPfns(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, PVOID Mdl, PVOID *Pfns, ULONG *PfnCount, ULONG *StartingOffset);
+ULONG StorPortGetProcessorCount(PVOID HwDeviceExtension, PULONG ProcessorCount);
+ULONG StorPortGetProcessorIndexFromNumber(PVOID HwDeviceExtension, PPROCESSOR_NUMBER ProcessorNumber, PULONG ProcessorIndex);
+ULONG StorPortGetRequestCryptoInfo(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, PSTOR_CRYPTO_KEY_INFO CryptoKeyInfo);
+ULONG StorPortGetSystemPortNumber(PVOID HwDeviceExtension, PSTOR_ADDRESS Address);
+ULONG StorPortHardwareReset(PVOID HwDeviceExtension, STOR_DEVICE_RESET_TYPE Type);
+ULONG StorPortHardwareResetEx(PVOID HwDeviceExtension, STOR_DEVICE_RESET_TYPE ResetType, ULONGLONG Flags, PVOID AdditionalParameters);
+ULONG StorPortInitializeCryptoEngine(PVOID HwDeviceExtension, PSTOR_CRYPTO_CAPABILITIES_DATA CryptoCapabilitiesData);
+void StorPortInitializeDpcWithContext(PVOID DeviceExtension, PSTOR_DPC Dpc, PHW_DPC_ROUTINE HwDpcRoutine, PVOID Context, ULONG Importance);
+ULONG StorPortInitializeHighResolutionTimer(PVOID HwDeviceExtension, PHW_TIMER_EX Callback, PVOID Context, PVOID *TimerHandle);
+void StorPortInitializeListHead(PVOID HwDeviceExtension, PSTOR_LIST_ENTRY ListHead);
+ULONG StorPortInitializeRpmb(PVOID HwDeviceExtension, PSTOR_ADDRESS StorAddress, PSTOR_RPMB_CAPABILITIES_DATA RpmbCapabilitiesData);
+ULONG StorPortInitializeSListHead(PVOID HwDeviceExtension, PSTOR_SLIST_HEADER SListHead);
+ULONG StorPortInitializeSpinlock(PVOID HwDeviceExtension, PSTOR_KSPIN_LOCK Lock);
+void StorPortInitializeThreadedDpc(PVOID DeviceExtension, PSTOR_DPC Dpc, PHW_DPC_ROUTINE HwDpcRoutine, PVOID Context, BOOLEAN Importance);
+ULONG StorPortInterlockedFlushSList(PVOID HwDeviceExtension, PSTOR_SLIST_HEADER SListHead, PSTOR_SLIST_ENTRY *Result);
+ULONG StorPortInterlockedInsertHeadList(PVOID HwDeviceExtension, PSTOR_LIST_ENTRY ListHead, PSTOR_LIST_ENTRY ListEntry, PSTOR_LIST_ENTRY *Result, PSTOR_KSPIN_LOCK Lock);
+ULONG StorPortInterlockedInsertTailList(PVOID HwDeviceExtension, PSTOR_LIST_ENTRY ListHead, PSTOR_LIST_ENTRY ListEntry, PSTOR_LIST_ENTRY *Result, PSTOR_KSPIN_LOCK Lock);
+ULONG StorPortInterlockedPopEntrySList(PVOID HwDeviceExtension, PSTOR_SLIST_HEADER SListHead, PSTOR_SLIST_ENTRY *Result);
+ULONG StorPortInterlockedPushEntrySList(PVOID HwDeviceExtension, PSTOR_SLIST_HEADER SListHead, PSTOR_SLIST_ENTRY SListEntry, PSTOR_SLIST_ENTRY *Result);
+ULONG StorPortInterlockedRemoveHeadList(PVOID HwDeviceExtension, PSTOR_LIST_ENTRY ListHead, PSTOR_LIST_ENTRY *Result, PSTOR_KSPIN_LOCK Lock);
+ULONG StorPortIsCurrentOsInstallationUpgrade(PVOID HwDeviceExtension, BOOLEAN *Upgraded);
+ULONG StorPortIsDriverHotSwapEnabled(PVOID HwDeviceExtension, PVOID DriverObject);
+ULONG StorPortLogTelemetryEx(PVOID HwDeviceExtension, PSTOR_ADDRESS StorAddress, PSTORPORT_TELEMETRY_EVENT Event, STOR_TELEMETRY_CATEGORY Category);
+ULONG StorPortMaskMsixInterrupt(PVOID HwDeviceExtension, ULONG MessageId, BOOLEAN Mask);
+ULONG StorPortMiniportReportInternalData(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, PVOID CallbackContext, ULONG DataCount, PMINIPORT_DATA Data);
+ULONG StorPortNvmeIceIoComplete(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb);
+ULONG StorPortNvmeIceIoStart(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, ULONG LbaCount, ULONG PrpCount, PULONGLONG Prp1, PULONGLONG Prp2, PULONGLONG PrpList);
+ULONG StorPortNvmeIceIoStartEx(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, ULONGLONG LbaOffset, ULONG LbaCount, ULONG PrpCount, PULONGLONG Prp1, PULONGLONG Prp2, PULONGLONG PrpList);
+ULONG StorPortNvmeLogTelemetry(PVOID HwDeviceExtension, PVOID ControllerHandle, ULONG NamespaceId, PSTORPORT_TELEMETRY_EVENT Event, STOR_TELEMETRY_CATEGORY Category);
+ULONG StorPortNvmeMiniportEvent(PVOID HwDeviceExtension, PVOID ControllerHandle, ULONG NamespaceId, STORPORT_ETW_EVENT_CHANNEL EventChannel, ULONG EventId, PWSTR EventDescription, ULONGLONG EventKeywords, STORPORT_ETW_LEVEL EventLevel, STORPORT_ETW_EVENT_OPCODE EventOpcode, PWSTR Parameter1Name, ULONGLONG Parameter1Value, PWSTR Parameter2Name, ULONGLONG Parameter2Value, PWSTR Parameter3Name, ULONGLONG Parameter3Value, PWSTR Parameter4Name, ULONGLONG Parameter4Value, PWSTR Parameter5Name, ULONGLONG Parameter5Value, PWSTR Parameter6Name, ULONGLONG Parameter6Value, PWSTR Parameter7Name, ULONGLONG Parameter7Value, PWSTR Parameter8Name, ULONGLONG Parameter8Value);
+ULONG StorPortPoFxPowerControl(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, LPCGUID PowerControlCode, PVOID InBuffer, SIZE_T InBufferSize, PVOID OutBuffer, SIZE_T OutBufferSize, PSIZE_T BytesReturned);
+ULONG StorPortPoFxRegisterPerfStates(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, ULONG Component, ULONGLONG Flags, ULONG PerfSetCount, PSTOR_POFX_COMPONENT_PERF_SET PerfSets);
+ULONG StorPortPoFxRegisterPerfStatesEx(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, ULONG Component, ULONGLONG Flags, PULONG PerfSetCount, PSTOR_POFX_COMPONENT_PERF_SET PerfSets, PSTOR_POFX_COMPONENT_PERF_SET *PerfSetsFromPEP);
+ULONG StorPortPoFxSetComponentLatency(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, ULONG Component, ULONGLONG Latency);
+ULONG StorPortPoFxSetComponentResidency(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, ULONG Component, ULONGLONG Residency);
+ULONG StorPortPoFxSetIdleTimeout(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, ULONG IdleTimeoutInMS);
+ULONG StorPortPoFxSetPerfState(PVOID HwDeviceExtension, PSTOR_ADDRESS Address, ULONG Component, ULONG Flags, ULONG SetIndex, ULONG State, PVOID Context);
+ULONG StorPortPropagateIrpExtension(PVOID HwDeviceExtension, PSCSI_REQUEST_BLOCK Srb, PVOID TargetIrp, ULONG Flags);
+ULONG StorPortQueryConfiguration(PVOID HwDeviceExtension, STORPORT_QUERY_CONFIGURATION_TYPE Type, PBOOLEAN Enabled);
+ULONG StorPortQueryDepthSList(PVOID HwDeviceExtension, PSTOR_SLIST_HEADER SListHead, PSHORT Result);
+ULONG StorPortQueryTimerMinInterval(PVOID HwDeviceExtension, PULONG TimerMinInterval);
+ULONG StorPortQueueWorkItemToNode(PVOID HwDeviceExtension, PHW_WORKITEM WorkItemCallback, PVOID Worker, PVOID Context, ULONG Node);
+BOOLEAN NTAPI StorPortReadDriverRegistry(PVOID DriverObject, PUCHAR ValueName, PULONG ValueDataLength, PVOID ValueData);
+ULONG StorPortReadRegistryKey(PVOID HwDeviceExtension, PWSTR AbsolutePath, PWSTR KeyName, ULONG ValueType, PVOID *ValueData, PULONG ValueDataLength);
+ULONG StorPortRegisterDriverProxy(PVOID HwDeviceExtension, PVOID DriverObject, PSTOR_DRIVER_PROXY_EXTENSION *ProxyExtension);
+ULONG StorPortRegisterDriverProxyEndpoints(PVOID HwDeviceExtension, PSTOR_DRIVER_PROXY_EXTENSION ProxyExtension, PSTOR_DRIVER_PROXY_ENDPOINT_INFORMATION EndpointInfo, ULONG Count);
+ULONG StorPortRequestHighResolutionTimer(PVOID HwDeviceExtension, PVOID TimerHandle, LONGLONG DueTime, LONGLONG Period, PSTOR_EXT_SET_PARAMETERS Parameters, BOOLEAN *ReturnValue);
+ULONG StorPortRevertToUserGroupAffinityThread(PVOID HwDeviceExtension, PVOID ThreadContext, PSTOR_GROUP_AFFINITY PreviousAffinity);
+ULONG StorPortSecureCopyMemory(PVOID Dest, SIZE_T DestSizeInBytes, const PVOID Src, SIZE_T Count);
+ULONG StorPortSetFeatureList(PVOID HwDeviceExtension, ULONG FeatureCount, PBOOLEAN FeatureList);
+ULONG StorPortSetPriorityThread(PVOID HwDeviceExtension, PVOID ThreadContext, STOR_THREAD_PRIORITY Priority);
+ULONG StorPortSetSystemGroupAffinityThread(PVOID HwDeviceExtension, PVOID ThreadContext, PSTOR_GROUP_AFFINITY Affinity, PSTOR_GROUP_AFFINITY PreviousAffinity);
+ULONG StorPortStorMQAddController(PVOID HwAdapterExtension, ULONG NumberOfBytes, PVOID *ControllerExtension);
+ULONG StorPortStorMQRemoveController(PVOID HwAdapterExtension, PVOID ControllerExtension);
+void StorPortTerminateSystemThread(PVOID HwDeviceExtension, PVOID ThreadContext);
+ULONG StorPortUpdateAdapterMaxIO(PVOID HwDeviceExtension, ULONG MaxIoCount);
+ULONG StorPortUpdatePortConfigMaxIOInfo(PVOID HwDeviceExtension, ULONG MaxIoCount, ULONG MaxIosPerLun);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+typedef struct _NVME_ICE_ENTRY *PNVME_ICE_ENTRY;
+
+struct _STOR_UNIT_NVME_ICE_INFORMATION
+{
+    ULONG Version;
+    PSTOR_ADDRESS Address;
+    PNVME_ICE_ENTRY NvmeIceEntry;
+};
+
+typedef struct _STOR_UNIT_NVME_ICE_INFORMATION *PSTOR_UNIT_NVME_ICE_INFORMATION;
+
+typedef struct _STOR_UNIT_NVME_ICE_INFORMATION STOR_UNIT_NVME_ICE_INFORMATION;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+ULONG StorPortQueryNvmeIceSupport(PVOID HwDeviceExtension, ULONG SegmentAndBus, ULONG SlotNumber, PNVME_ICE_ENTRY *NvmeIceEntry);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+struct DECLSPEC_ALIGN(8) _SRBEX_DATA_NVMEOF_OPERATION
+{
+    SRBEXDATATYPE Type;
+    ULONG Length;
+    USHORT Version;
+    USHORT Reserved1;
+    ULONG Flags;
+    ULONG FunctionType;
+};
+
+#define StorPortConvertPhysicalAddressToULong64(Address) ((Address) . QuadPart)
+#if (defined(_WIN64))
+#define StorPortReadRegisterBufferUlong64(h, r, b, c) READ_REGISTER_BUFFER_ULONG64(r, b, c)
+#define StorPortReadRegisterUlong64(h, r) READ_REGISTER_ULONG64(r)
+#define StorPortWriteRegisterBufferUlong64(h, r, b, c) WRITE_REGISTER_BUFFER_ULONG64(r, b, c)
+#define StorPortWriteRegisterUlong64(h, r, v) WRITE_REGISTER_ULONG64(r, v)
+#endif
+
 #endif /* _NTSTORPORT_ */
+
+#ifndef ATTRIBUTE_VM_PASSTHROUGH_LUN
+#define ATTRIBUTE_VM_PASSTHROUGH_LUN 0x1
+#endif
+#ifndef DUMP_MINIPORT_VERSION
+#define DUMP_MINIPORT_VERSION 0x0200
+#endif
+#ifndef EXTENDED_FLAG_POWER
+#define EXTENDED_FLAG_POWER 0x00000001
+#endif
+#ifndef FREE_DUMP_INFO_SIGNATURE
+#define FREE_DUMP_INFO_SIGNATURE 0x464D4449
+#endif
+#ifndef GET_DUMP_INFO_SIGNATURE_EXT
+#define GET_DUMP_INFO_SIGNATURE_EXT 0x474D4445
+#endif
+#ifndef MARK_DUMP_MEMORY_FLAG_PHYSICAL_ADDRESS
+#define MARK_DUMP_MEMORY_FLAG_PHYSICAL_ADDRESS 0x1
+#endif
+#ifndef MINIPORT_DUMP_INFO_SIGNATURE
+#define MINIPORT_DUMP_INFO_SIGNATURE 0x4D504449
+#endif
+#ifndef MINIPORT_REG_DWORD
+#define MINIPORT_REG_DWORD 4
+#endif
+#ifndef MINIPORT_REG_MULTI_SZ
+#define MINIPORT_REG_MULTI_SZ 7
+#endif
+#ifndef MINIPORT_REG_SZ
+#define MINIPORT_REG_SZ 1
+#endif
+#ifndef RAID_MIN_TIMER_DELAY_IN_MSEC
+#define RAID_MIN_TIMER_DELAY_IN_MSEC 32
+#endif
+#ifndef SCSISTAT_TASK_ABORTED
+#define SCSISTAT_TASK_ABORTED 0x40
+#endif
+#ifndef SCSI_DMA64_MINIPORT_64BIT_ONE_4GB_SUPPORTED
+#define SCSI_DMA64_MINIPORT_64BIT_ONE_4GB_SUPPORTED 0x04
+#endif
+#ifndef SP_RETURN_ENGAGED
+#define SP_RETURN_ENGAGED 4
+#endif
+#ifndef STATE_CHANGE_BUS
+#define STATE_CHANGE_BUS 0x4
+#endif
+#ifndef STATE_CHANGE_LUN
+#define STATE_CHANGE_LUN 0x1
+#endif
+#ifndef STORMQ_MINIPORT_INTERFACE_VERSION_V1
+#define STORMQ_MINIPORT_INTERFACE_VERSION_V1 0x0001
+#endif
+#ifndef STORMQ_PROPERTY_AFFINITY_DESCRIPTOR_VERSION
+#define STORMQ_PROPERTY_AFFINITY_DESCRIPTOR_VERSION 0x0001
+#endif
+#ifndef STORMQ_PROPERTY_FLAG_STORMQ_SPECIFIC
+#define STORMQ_PROPERTY_FLAG_STORMQ_SPECIFIC 0x00000001
+#endif
+#ifndef STORMQ_PROPERTY_QUEUE_DESCRIPTOR_VERSION
+#define STORMQ_PROPERTY_QUEUE_DESCRIPTOR_VERSION 0x0001
+#endif
+#ifndef STORMQ_SUBMISSION_QUEUE_METADATA_CONTEXT_VERSION
+#define STORMQ_SUBMISSION_QUEUE_METADATA_CONTEXT_VERSION 0x00000001
+#endif
+#ifndef STORPORT_ETW_EVENT_KEYWORD_ASYNC_EVENT
+#define STORPORT_ETW_EVENT_KEYWORD_ASYNC_EVENT 0x0000000000000020
+#endif
+#ifndef STORPORT_ETW_EVENT_KEYWORD_COMMAND_TRACE_IO
+#define STORPORT_ETW_EVENT_KEYWORD_COMMAND_TRACE_IO 0x0000000000000080
+#endif
+#ifndef STORPORT_ETW_EVENT_KEYWORD_COMMAND_TRACE_NON_IO
+#define STORPORT_ETW_EVENT_KEYWORD_COMMAND_TRACE_NON_IO 0x0000000000000100
+#endif
+#ifndef STORPORT_ETW_EVENT_KEYWORD_ENUMERATION
+#define STORPORT_ETW_EVENT_KEYWORD_ENUMERATION 0x0000000000000008
+#endif
+#ifndef STORPORT_ETW_EVENT_KEYWORD_NON_IO
+#define STORPORT_ETW_EVENT_KEYWORD_NON_IO 0x0000000000000040
+#endif
+#ifndef STORPORT_ETW_EVENT_KEYWORD_NVME_FABRIC
+#define STORPORT_ETW_EVENT_KEYWORD_NVME_FABRIC 0x0000000000000200
+#endif
+#ifndef STORPORT_ETW_EVENT_KEYWORD_PERFORMANCE
+#define STORPORT_ETW_EVENT_KEYWORD_PERFORMANCE 0x0000000000000002
+#endif
+#ifndef STORPORT_ETW_MAX_BYTE_STREAM_LENGTH
+#define STORPORT_ETW_MAX_BYTE_STREAM_LENGTH 1024
+#endif
+#ifndef STORPORT_LIVEDUMP_BUCKET_ID_LENGTH
+#define STORPORT_LIVEDUMP_BUCKET_ID_LENGTH 128
+#endif
+#ifndef STORPORT_MAP_WRITECOMBINE
+#define STORPORT_MAP_WRITECOMBINE 0x00000001UL
+#endif
+#ifndef STORPORT_MARK_DEVICE_FAILED_FLAG_PREDICTED_FAILURE
+#define STORPORT_MARK_DEVICE_FAILED_FLAG_PREDICTED_FAILURE 0x2
+#endif
+#ifndef STORPORT_MARK_DEVICE_FAILED_FLAG_REMOVE_DEVICE
+#define STORPORT_MARK_DEVICE_FAILED_FLAG_REMOVE_DEVICE 0x1
+#endif
+#ifndef STOR_ADAPTER_DMA_ADDRESS_WIDTH_SPECIFIED
+#define STOR_ADAPTER_DMA_ADDRESS_WIDTH_SPECIFIED 0x00000040
+#endif
+#ifndef STOR_ADAPTER_FEATURE_ABORT_COMMAND
+#define STOR_ADAPTER_FEATURE_ABORT_COMMAND 0x00000010
+#endif
+#ifndef STOR_ADAPTER_FEATURE_UNIQUE_QUEUEING_TAG
+#define STOR_ADAPTER_FEATURE_UNIQUE_QUEUEING_TAG 0x00000080
+#endif
+#ifndef STOR_ADAPTER_UNCACHED_EXTENSION_NUMA_NODE_PREFERRED
+#define STOR_ADAPTER_UNCACHED_EXTENSION_NUMA_NODE_PREFERRED 0x00000004
+#endif
+#ifndef STOR_CRYPTO_CAPABILITIES_DATA_VERSION_1
+#define STOR_CRYPTO_CAPABILITIES_DATA_VERSION_1 1
+#endif
+#ifndef STOR_CRYPTO_CAPABILITY_VERSION_1
+#define STOR_CRYPTO_CAPABILITY_VERSION_1 1
+#endif
+#ifndef STOR_CRYPTO_CAPABILITY_VERSION_2
+#define STOR_CRYPTO_CAPABILITY_VERSION_2 2
+#endif
+#ifndef STOR_CRYPTO_KEY_INFO_VERSION_1
+#define STOR_CRYPTO_KEY_INFO_VERSION_1 1
+#endif
+#ifndef STOR_CRYPTO_OPERATION_INSERT_KEY_VERSION_1
+#define STOR_CRYPTO_OPERATION_INSERT_KEY_VERSION_1 1
+#endif
+#ifndef STOR_CURRENT_LOG_INTERFACE_REVISION
+#define STOR_CURRENT_LOG_INTERFACE_REVISION 0x0100
+#endif
+#ifndef STOR_FEATURE_DMA_ALLOCATION_NO_BOUNDARY
+#define STOR_FEATURE_DMA_ALLOCATION_NO_BOUNDARY 0x00002000
+#endif
+#ifndef STOR_FEATURE_DUMP_16_BYTE_ALIGNMENT
+#define STOR_FEATURE_DUMP_16_BYTE_ALIGNMENT 0x00000400
+#endif
+#ifndef STOR_FEATURE_EARLY_DUMP
+#define STOR_FEATURE_EARLY_DUMP 0x00010000
+#endif
+#ifndef STOR_FEATURE_NVME_ICE
+#define STOR_FEATURE_NVME_ICE 0x00020000
+#endif
+#ifndef STOR_FEATURE_REPORT_INTERNAL_DATA
+#define STOR_FEATURE_REPORT_INTERNAL_DATA 0x00008000
+#endif
+#ifndef STOR_FEATURE_STORMQ_MINIPORT
+#define STOR_FEATURE_STORMQ_MINIPORT 0x00040000
+#endif
+#ifndef STOR_FRU_ID_DESCRIPTION_STRUCTURE_VERSION_1
+#define STOR_FRU_ID_DESCRIPTION_STRUCTURE_VERSION_1 0x1
+#endif
+#ifndef STOR_FRU_ID_MAX_LENGTH
+#define STOR_FRU_ID_MAX_LENGTH 128
+#endif
+#ifndef STOR_POFX_ADAPTER_MAX_COMPONENTS
+#define STOR_POFX_ADAPTER_MAX_COMPONENTS 1
+#endif
+#ifndef STOR_POFX_ADAPTER_MAX_IDLE_STATES
+#define STOR_POFX_ADAPTER_MAX_IDLE_STATES 8
+#endif
+#ifndef STOR_POFX_ADAPTER_MIN_COMPONENTS
+#define STOR_POFX_ADAPTER_MIN_COMPONENTS 1
+#endif
+#ifndef STOR_POFX_ADAPTER_MIN_IDLE_STATES
+#define STOR_POFX_ADAPTER_MIN_IDLE_STATES 1
+#endif
+#ifndef STOR_POFX_COMPONENT_MAX_PERF_SETS
+#define STOR_POFX_COMPONENT_MAX_PERF_SETS 3
+#endif
+#ifndef STOR_POFX_COMPONENT_MIN_PERF_SETS
+#define STOR_POFX_COMPONENT_MIN_PERF_SETS 0
+#endif
+#ifndef STOR_POFX_COMPONENT_PERF_SET_VERSION_V1
+#define STOR_POFX_COMPONENT_PERF_SET_VERSION_V1 1
+#endif
+#ifndef STOR_POFX_DEVICE_FLAG_DISABLE_INTERRUPTS_ON_D3
+#define STOR_POFX_DEVICE_FLAG_DISABLE_INTERRUPTS_ON_D3 0x400
+#endif
+#ifndef STOR_POFX_DEVICE_FLAG_DUMP_ALWAYS_POWER_ON
+#define STOR_POFX_DEVICE_FLAG_DUMP_ALWAYS_POWER_ON 0x200
+#endif
+#ifndef STOR_POFX_DEVICE_FLAG_GET_PERF_STATE_FROM_PEP
+#define STOR_POFX_DEVICE_FLAG_GET_PERF_STATE_FROM_PEP 0x1000
+#endif
+#ifndef STOR_POFX_DEVICE_FLAG_NO_D0
+#define STOR_POFX_DEVICE_FLAG_NO_D0 0x01
+#endif
+#ifndef STOR_POFX_DEVICE_FLAG_NO_D3
+#define STOR_POFX_DEVICE_FLAG_NO_D3 0x02
+#endif
+#ifndef STOR_POFX_DEVICE_FLAG_NO_UNIT_REGISTRATION
+#define STOR_POFX_DEVICE_FLAG_NO_UNIT_REGISTRATION 0x40
+#endif
+#ifndef STOR_POFX_DEVICE_FLAG_PERF_STATE_PEP_OPTIONAL
+#define STOR_POFX_DEVICE_FLAG_PERF_STATE_PEP_OPTIONAL 0x80
+#endif
+#ifndef STOR_POFX_DEVICE_VERSION_V1
+#define STOR_POFX_DEVICE_VERSION_V1 1
+#endif
+#ifndef STOR_POFX_MAX_DISCRETE_PERF_STATES
+#define STOR_POFX_MAX_DISCRETE_PERF_STATES 8
+#endif
+#ifndef STOR_POFX_MIN_DISCRETE_PERF_STATES
+#define STOR_POFX_MIN_DISCRETE_PERF_STATES 1
+#endif
+#ifndef STOR_POFX_PERF_STATE_VERSION_V1
+#define STOR_POFX_PERF_STATE_VERSION_V1 1
+#endif
+#ifndef STOR_POFX_UNIT_MAX_COMPONENTS
+#define STOR_POFX_UNIT_MAX_COMPONENTS 1
+#endif
+#ifndef STOR_POFX_UNIT_MAX_IDLE_STATES
+#define STOR_POFX_UNIT_MAX_IDLE_STATES 2
+#endif
+#ifndef STOR_POFX_UNIT_MIN_COMPONENTS
+#define STOR_POFX_UNIT_MIN_COMPONENTS 1
+#endif
+#ifndef STOR_POFX_UNIT_MIN_IDLE_STATES
+#define STOR_POFX_UNIT_MIN_IDLE_STATES 1
+#endif
+#ifndef STOR_POFX_UNKNOWN_TIME
+#define STOR_POFX_UNKNOWN_TIME 0xFFFFFFFFFFFFFFFF
+#endif
+#ifndef STOR_RPMB_VERSION_1
+#define STOR_RPMB_VERSION_1 0x00000001
+#endif
+#ifndef STOR_STATUS_RESET_REQUIRED
+#define STOR_STATUS_RESET_REQUIRED 0xC1000010L
+#endif
+#ifndef STOR_SYSTEM_POWER_HINTS_V1
+#define STOR_SYSTEM_POWER_HINTS_V1 0x1
+#endif

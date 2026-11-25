@@ -53,6 +53,8 @@ cpp_quote("#else")
 cpp_quote("#include <mmreg.h>")
 cpp_quote("#endif")
 
+cpp_quote("#include <pshpack1.h>")
+
 typedef struct XAPO_REGISTRATION_PROPERTIES
 {
     CLSID clsid;
@@ -136,7 +138,6 @@ interface IXAPO : IUnknown
 /* XAudio2 2.7 version of IXAPO is identical to 2.8 */
 cpp_quote("DEFINE_GUID(IID_IXAPO27, 0xa90bc001, 0xe897, 0xe897, 0x55, 0xe4, 0x9e, 0x47, 0x00, 0x00, 0x00, 0x00);")
 
-
 /* XAudio2 2.8 version of IXAPOParameters */
 [
     object,
@@ -152,3 +153,31 @@ interface IXAPOParameters : IUnknown
 
 /* XAudio2 2.7 version of IXAPOParameters is identical to 2.8 */
 cpp_quote("DEFINE_GUID(IID_IXAPO27Parameters, 0xa90bc001, 0xe897, 0xe897, 0x55, 0xe4, 0x9e, 0x47, 0x00, 0x00, 0x00, 0x01);")
+
+cpp_quote("#include <poppack.h>")
+
+cpp_quote("#ifndef FACILITY_XAPO")
+cpp_quote("#define FACILITY_XAPO 0x897")
+cpp_quote("#endif")
+cpp_quote("#ifndef XAPO_MAX_CHANNELS")
+cpp_quote("#define XAPO_MAX_CHANNELS 64")
+cpp_quote("#endif")
+cpp_quote("#ifndef XAPO_MAX_FRAMERATE")
+cpp_quote("#define XAPO_MAX_FRAMERATE 384000")
+cpp_quote("#endif")
+cpp_quote("#ifndef XAPO_MIN_CHANNELS")
+cpp_quote("#define XAPO_MIN_CHANNELS 1")
+cpp_quote("#endif")
+cpp_quote("#ifndef XAPO_MIN_FRAMERATE")
+cpp_quote("#define XAPO_MIN_FRAMERATE 1000")
+cpp_quote("#endif")
+
+cpp_quote("#define XAPO_E_FORMAT_UNSUPPORTED (-2003369983)")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct XAPO_LOCKFORPROCESS_BUFFER_PARAMETERS XAPO_LOCKFORPROCESS_PARAMETERS;")
+
+cpp_quote("#define XAPOAlloc(size) CoTaskMemAlloc(size)")
+cpp_quote("#define XAPOFree(p) CoTaskMemFree(p)")
+

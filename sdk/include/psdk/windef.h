@@ -267,4 +267,29 @@ typedef struct tagPOINTS {
 }
 #endif
 
+#ifndef APP_LOCAL_DEVICE_ID_SIZE
+#define APP_LOCAL_DEVICE_ID_SIZE 32
+#endif
+
+#define _DPI_AWARENESS_CONTEXTS_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif /* _WINDEF_ */

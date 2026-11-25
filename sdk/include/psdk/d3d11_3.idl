@@ -383,3 +383,14 @@ interface ID3D11Device3 : ID3D11Device2
         const D3D11_BOX *src_box
     );
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

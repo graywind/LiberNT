@@ -449,4 +449,105 @@ typedef struct tagHH_GLOBAL_PROPERTY
 }
 #endif
 
+#ifndef HH_SET_QUERYSERVICE
+#define HH_SET_QUERYSERVICE 0x001E
+#endif
+
+typedef struct tagHH_SET_INFOTYPE * PHH_SET_INFOTYPE;
+
+typedef struct tagHH_AKLINK {
+  int cbStruct;
+  BOOL fReserved;
+  LPCTSTR pszKeywords;
+  LPCTSTR pszUrl;
+  LPCTSTR pszMsgText;
+  LPCTSTR pszMsgTitle;
+  LPCTSTR pszWindow;
+  BOOL fIndexOnFail;
+} HH_AKLINK;
+
+typedef struct tagHHN_NOTIFY {
+  NMHDR hdr;
+  PCSTR pszUrl;
+} HHN_NOTIFY;
+
+struct tagHH_FTS_QUERY
+{
+    int cbStruct;
+    BOOL fUniCodeStrings;
+    LPCTSTR pszSearchQuery;
+    LONG iProximity;
+    BOOL fStemmedSearch;
+    BOOL fTitleOnly;
+    BOOL fExecute;
+    LPCTSTR pszWindow;
+};
+
+struct tagHH_POPUP
+{
+    int cbStruct;
+    HINSTANCE hinst;
+    UINT idString;
+    LPCTSTR pszText;
+    POINT pt;
+    COLORREF clrForeground;
+    COLORREF clrBackground;
+    RECT rcMargins;
+    LPCTSTR pszFont;
+};
+
+struct tagHH_WINTYPE
+{
+    int cbStruct;
+    BOOL fUniCodeStrings;
+    LPCTSTR pszType;
+    DWORD fsValidMembers;
+    DWORD fsWinProperties;
+    LPCTSTR pszCaption;
+    DWORD dwStyles;
+    DWORD dwExStyles;
+    RECT rcWindowPos;
+    int nShowState;
+    HWND hwndHelp;
+    HWND hwndCaller;
+    HH_INFOTYPE *paInfoTypes;
+    HWND hwndToolBar;
+    HWND hwndNavigation;
+    HWND hwndHTML;
+    int iNavWidth;
+    RECT rcHTML;
+    LPCTSTR pszToc;
+    LPCTSTR pszIndex;
+    LPCTSTR pszFile;
+    LPCTSTR pszHome;
+    DWORD fsToolBarFlags;
+    BOOL fNotExpanded;
+    int curNavType;
+    int tabpos;
+    int idNotify;
+    BYTE tabOrder[20];
+    int cHistory;
+    LPCTSTR pszJump1;
+    LPCTSTR pszJump2;
+    LPCTSTR pszUrlJump1;
+    LPCTSTR pszUrlJump2;
+    RECT rcMinSize;
+    int cbInfoTypes;
+    LPCTSTR pszCustomTabs;
+};
+
+typedef struct tagHH_WINTYPE *PHH_WINTYPE;
+
+#ifndef WINE_NO_UNICODE_MACROS
+typedef struct tagHHNTRACK HHNTRACK;
+
+struct tagHHNTRACK
+{
+    NMHDR hdr;
+    PCSTR pszCurUrl;
+    int idAction;
+    HH_WINTYPE *phhWinType;
+};
+#endif
+
 #endif /* __HTMLHELP_H__ */

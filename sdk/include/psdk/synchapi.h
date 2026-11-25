@@ -12,6 +12,16 @@
 extern "C" {
 #endif
 
+#if (_WIN32_WINNT >= 0x0600)
+WINBASEAPI HANDLE WINAPI CreateMutexExA(LPSECURITY_ATTRIBUTES, LPCSTR, DWORD, DWORD);
+WINBASEAPI HANDLE WINAPI CreateMutexExW(LPSECURITY_ATTRIBUTES, LPCWSTR, DWORD, DWORD);
+#ifdef UNICODE
+#define CreateMutexEx CreateMutexExW
+#else
+#define CreateMutexEx CreateMutexExA
+#endif
+#endif
+
 WINBASEAPI
 BOOL
 WINAPI
@@ -73,3 +83,22 @@ DeleteSynchronizationBarrier(
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+#define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if (_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400)
+typedef VOID (APIENTRY *PTIMERAPCROUTINE)(LPVOID lpArgToCompletionRoutine, DWORD dwTimerLowValue, DWORD dwTimerHighValue);
+#endif
+
+BOOL WINAPI SetWaitableTimerEx(HANDLE hTimer, const LARGE_INTEGER *lpDueTime, LONG lPeriod, PTIMERAPCROUTINE pfnCompletionRoutine, LPVOID lpArgToCompletionRoutine, PREASON_CONTEXT WakeContext, ULONG TolerableDelay);
+
+#ifdef __cplusplus
+}
+#endif
+

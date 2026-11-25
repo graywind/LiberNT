@@ -15,7 +15,6 @@ namespace lntget
 std::string Utf8FromWide(const std::wstring &value);
 std::wstring WideFromUtf8(const std::string &value);
 std::string Trim(const std::string &value);
-std::string UnquoteYaml(const std::string &value);
 std::string AsciiLower(const std::string &value);
 bool AsciiEquals(const std::string &left, const std::string &right);
 bool AsciiContains(const std::string &value, const std::string &needle);
@@ -37,5 +36,31 @@ std::string HexLower(const uint8_t *data, std::size_t size);
 bool ParseHex256(const std::string &text, uint8_t (&value)[32]);
 std::string DecimalString(unsigned long long value);
 std::wstring DecimalWideString(unsigned long long value);
+
+class InstallLockWait
+{
+public:
+    virtual void Waiting() = 0;
+    virtual void Acquired() = 0;
+
+protected:
+    ~InstallLockWait() {}
+};
+
+class InstallLock
+{
+public:
+    InstallLock() = default;
+    InstallLock(const InstallLock &) = delete;
+    InstallLock &operator=(const InstallLock &) = delete;
+    ~InstallLock();
+
+    Status Acquire(InstallLockWait *wait = nullptr);
+
+private:
+    HANDLE handle_ = nullptr;
+    DWORD thread_ = 0;
+    bool acquired_ = false;
+};
 
 } // namespace lntget

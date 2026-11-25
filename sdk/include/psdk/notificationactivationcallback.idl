@@ -26,3 +26,4 @@ interface INotificationActivationCallback : IUnknown
         [in, size_is(count), unique] const NOTIFICATION_USER_INPUT_DATA *data,
         [in] ULONG count);
 }
+

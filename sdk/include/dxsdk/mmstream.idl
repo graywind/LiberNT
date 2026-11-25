@@ -58,7 +58,6 @@ typedef enum {
 	STREAMSTATE_RUN         = 1
 } STREAM_STATE;
 
-
 typedef enum {
 	COMPSTAT_NOUPDATEOK                             = 0x00000001,
 	COMPSTAT_WAIT                                   = 0x00000002,
@@ -79,7 +78,6 @@ enum {
 interface IMultiMediaStream;
 interface IMediaStream;
 interface IStreamSample;
-
 
 [
 object,
@@ -120,7 +118,6 @@ interface IMultiMediaStream : IUnknown {
 		[out] HANDLE *phEOS);
 }
 
-
 [
 object,
 uuid(B502D1BD-9A57-11d0-8FDE-00C04FD9189D),
@@ -150,7 +147,6 @@ interface IMediaStream : IUnknown {
 
 	HRESULT SendEndOfStream(DWORD dwFlags);
 }
-
 
 [
 object,
@@ -182,3 +178,8 @@ interface IStreamSample : IUnknown {
 		[in] DWORD dwFlags,
 		[in, optional] DWORD dwMilliseconds);
 }
+
+cpp_quote("")
+cpp_quote("")
+
+

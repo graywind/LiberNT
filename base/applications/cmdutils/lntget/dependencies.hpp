@@ -8,11 +8,23 @@
 #pragma once
 
 #include "source.hpp"
+#include "util.hpp"
 
 namespace lntget
 {
 
-Status InstallPackageDependencies(SourceManager &source, const InstallerEntry &installer, const SelectionOptions &selection,
-                                  unsigned depth = 0);
+struct DependencyStep
+{
+    PackageRecord package;
+    std::string minimumVersion;
+    Manifest manifest;
+    InstallerEntry installer;
+};
+
+Status PlanPackageDependencies(SourceManager &source, const InstallerEntry &installer, const SelectionOptions &selection,
+                               std::vector<DependencyStep> &plan);
+Status InstallDependencyPlan(SourceManager &source, const std::vector<DependencyStep> &plan, const SelectionOptions &selection,
+                             InstallLockWait *wait = nullptr);
+Status InstallPackageDependencies(SourceManager &source, const InstallerEntry &installer, const SelectionOptions &selection);
 
 } // namespace lntget

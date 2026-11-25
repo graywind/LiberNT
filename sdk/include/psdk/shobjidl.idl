@@ -41,7 +41,6 @@ cpp_quote("#ifdef WINE_NO_UNICODE_MACROS")
 cpp_quote("#undef PlaySound")
 cpp_quote("#endif")
 
-
 /*****************************************************************************
  * IPersistFolder interface
  */
@@ -56,7 +55,6 @@ interface IPersistFolder : IPersist
 
     HRESULT Initialize( [in] PCIDLIST_ABSOLUTE pidl );
 }
-
 
 /*****************************************************************************
  * IPersistFolder2 interface
@@ -73,7 +71,6 @@ interface IPersistFolder2 : IPersistFolder
     HRESULT GetCurFolder( [out] PIDLIST_ABSOLUTE *ppidl );
 }
 
-
 /*****************************************************************************
  * IPersistIDList interface
  */
@@ -87,7 +84,6 @@ interface IPersistIDList : IPersist
     HRESULT SetIDList( [in] PCIDLIST_ABSOLUTE pidl );
     HRESULT GetIDList( [out] PIDLIST_ABSOLUTE *ppidl );
 }
-
 
 /*****************************************************************************
  * IEnumIDList interface
@@ -294,7 +290,6 @@ interface IShellFolder : IUnknown
         [out] PITEMID_CHILD *ppidlOut);
 }
 
-
 /*****************************************************************************
  * IEnumExtraSearch interface
  */
@@ -332,7 +327,6 @@ interface IEnumExtraSearch : IUnknown
     HRESULT Reset();
     HRESULT Clone( [out] IEnumExtraSearch **ppenum );
 }
-
 
 /*****************************************************************************
  * IShellFolder2 interface
@@ -1282,7 +1276,6 @@ cpp_quote("#endif")
         [in] UINT uFlags);
 }
 
-
 /*****************************************************************************
  * IShellLinkA interface
  */
@@ -1369,7 +1362,6 @@ interface IShellLinkA : IUnknown
     HRESULT SetPath( [in] LPCSTR pszFile );
 }
 
-
 /*****************************************************************************
  * IShellLinkW interface
  */
@@ -1438,7 +1430,6 @@ interface IShellLinkW : IUnknown
 
 cpp_quote("#define IShellLink WINELIB_NAME_AW(IShellLink)")
 
-
 /*****************************************************************************
  * IShellExtInit interface
  */
@@ -1501,7 +1492,6 @@ interface IShellIconOverlayIdentifier : IUnknown
 cpp_quote("#define ISIOI_ICONFILE   0x00000001")
 cpp_quote("#define ISIOI_ICONINDEX  0x00000002")
 
-
 /*******************************************************************************/
 /* Note: the following interfaces are not in shobjidl.idl under Windows, they  */
 /* are declared directly in shlobj.h. It hopefully won't break anything to put */
@@ -1511,6 +1501,7 @@ cpp_quote("#define ISIOI_ICONINDEX  0x00000002")
 #ifndef MAX_PATH
 #define MAX_PATH 260
 #endif
+
 
 
 /*****************************************************************************
@@ -1539,7 +1530,6 @@ interface IPersistFolder3 : IPersistFolder2
 
     HRESULT GetFolderTargetInfo( [out] PERSIST_FOLDER_TARGET_INFO *ppfti );
 }
-
 
 /*****************************************************************************
  * IExtractIconA interface
@@ -1581,7 +1571,6 @@ cpp_quote("#define GIL_DONTCACHE    0x0010")
         [in] UINT nIconSize );
 }
 
-
 /*****************************************************************************
  * IExtractIconW interface
  */
@@ -1613,7 +1602,6 @@ interface IExtractIconW : IUnknown
 cpp_quote("#define LPEXTRACTICON WINELIB_NAME_AW(LPEXTRACTICON)")
 cpp_quote("#define IExtractIcon WINELIB_NAME_AW(IExtractIcon)")
 
-
 /*****************************************************************************
  * ICommDlgBrowser interface
  */
@@ -1636,7 +1624,6 @@ cpp_quote("#define CDBOSC_STATECHANGE  0x00000004")
     HRESULT OnStateChange( [in] IShellView *shv, [in] ULONG uChange );
     HRESULT IncludeObject( [in] IShellView *shv, [in] PCUITEMID_CHILD pidl );
 }
-
 
 /*****************************************************************************
  * ICommDlgBrowser2 interface
@@ -1666,7 +1653,6 @@ cpp_quote("#define CDB2GVF_NOINCLUDEITEM 0x00000010 /* IncludeObject should not 
     HRESULT GetViewFlags(
         [out] DWORD *pdwFlags);
 }
-
 
 /*****************************************************************************
  * ICommDlgBrowser3 interface
@@ -1795,7 +1781,6 @@ interface IDockingWindow : IOleWindow
         [in] BOOL fReserved);
 };
 
-
 /*****************************************************************************
  * IDockingWindowFrame interface
  */
@@ -1826,7 +1811,6 @@ cpp_quote("#define DWFAF_HIDDEN           0x0001")
         [out] LPVOID *ppvObj);
 }
 
-
 /*****************************************************************************
  * IDragSourceHelper interface
  */
@@ -1855,7 +1839,6 @@ interface IDragSourceHelper : IUnknown
       [in] POINT *ppt,
       [in] IDataObject *pDataObject);
 }
-
 
 /*****************************************************************************
  * IDropTargetHelper interface
@@ -1887,7 +1870,6 @@ interface IDropTargetHelper : IUnknown
 
     HRESULT Show( [in] BOOL fShow );
 }
-
 
 #ifdef __REACTOS__
 typedef struct CMINVOKECOMMANDINFOEX_REMOTE
@@ -2082,7 +2064,6 @@ cpp_quote("#define CMIC_MASK_NOZONECHECKS   SEE_MASK_NOZONECHECKS")
 #endif
 }
 
-
 /*****************************************************************************
  * IContextMenu2 interface
  */
@@ -2121,7 +2102,6 @@ interface IContextMenu2 : IContextMenu
 #endif
 #endif
 }
-
 
 /*****************************************************************************
  * IContextMenu3 interface
@@ -2201,7 +2181,6 @@ interface IShellExecuteHookA : IUnknown
         [in, out] struct _SHELLEXECUTEINFOA* pei);
 }
 
-
 /*****************************************************************************
  * IShellExecuteHookW interface
  */
@@ -2241,7 +2220,6 @@ interface IShellLinkDataList : IUnknown
                 [in] DWORD dwFlags);
 }
 
-
 /*****************************************************************************
  * IResolveShellLink interface
  */
@@ -2258,7 +2236,6 @@ interface IResolveShellLink : IUnknown
                 [in] DWORD fFlags);
 }
 
-
 /*****************************************************************************
  * IURLSearchHook interface
  */
@@ -2274,7 +2251,6 @@ interface IURLSearchHook : IUnknown
                 [in, out] LPWSTR lpwszSearchURL,
                 [in] DWORD cchBufferSize);
 }
-
 
 /*****************************************************************************
  * ISearchContext interface
@@ -2295,7 +2271,6 @@ interface ISearchContext : IUnknown
                 [in] BSTR *pdwSearchStyle);
 }
 
-
 /*****************************************************************************
  * IURLSearchHook2 interface
  */
@@ -2312,7 +2287,6 @@ interface IURLSearchHook2 : IURLSearchHook
                 [in] DWORD cchBufferSize,
                 [in] ISearchContext *pSearchContext);
 }
-
 
 cpp_quote("#define INewShortcutHook WINELIB_NAME_AW(INewShortcutHook)")
 
@@ -2345,7 +2319,6 @@ interface INewShortcutHookA : IUnknown
                 [out] LPSTR pszExtension,
                 [in] int cchExtension);
 }
-
 
 /*****************************************************************************
  * INewShortcutHookW interface
@@ -2639,7 +2612,6 @@ interface IDefaultExtractIconInit : IUnknown
                        [in] int iIcon);
 }
 
-
 #ifdef __REACTOS__
 /*****************************************************************************
  * IExplorerCommand interface (Vista+)
@@ -2703,7 +2675,6 @@ interface IExplorerCommand : IUnknown
                     [out] IEnumExplorerCommand **ppEnum);
 };
 
-
 /*****************************************************************************
  * IExplorerCommandState interface (Vista+)
  */
@@ -2720,7 +2691,6 @@ interface IExplorerCommandState : IUnknown
                     [out] EXPCMDSTATE *pCmdState);
 }
 
-
 /*****************************************************************************
  * IInitializeCommand interface (Vista+)
  */
@@ -2735,7 +2705,6 @@ interface IInitializeCommand : IUnknown
                     [in, string] LPCWSTR pszCommandName,
                     [in, optional] IPropertyBag *ppb);
 }
-
 
 /*****************************************************************************
  * IEnumExplorerCommand interface (Vista+)
@@ -2764,7 +2733,6 @@ interface IEnumExplorerCommand : IUnknown
                     [out] IEnumExplorerCommand **ppenum);
 };
 
-
 /*****************************************************************************
  * IExplorerCommandProvider interface (Vista+)
  */
@@ -2787,7 +2755,6 @@ interface IExplorerCommandProvider : IUnknown
                     [out, iid_is(riid)] void **ppv);
 };
 
-
 /*****************************************************************************
  * IExecuteCommand interface (7+)
  */
@@ -2805,7 +2772,6 @@ interface IExecuteCommand : IUnknown
     HRESULT SetDirectory([in, string] LPCWSTR pszDirectory);
     HRESULT Execute();
 };
-
 
 /*****************************************************************************
  * IInitializeWithItem interface (Vista+)
@@ -2845,7 +2811,6 @@ interface IRegTreeItem : IUnknown
     HRESULT GetCheckState([out] BOOL *pbCheck);
     HRESULT SetCheckState([in] BOOL bCheck);
 };
-
 
 /*****************************************************************************
  * IOpenControlPanel interface (Vista+)
@@ -2973,7 +2938,6 @@ interface IDeskBar : IOleWindow
     HRESULT OnPosRectChangeDB([in] RECT *prc);
 }
 
-
 /*****************************************************************************
  * IMenuPopup interface
  */
@@ -3043,7 +3007,6 @@ typedef struct tagBANDSITEINFO
 } BANDSITEINFO;
 
 cpp_quote("#pragma pack(pop)")
-
 
 enum tagBANDSITECID {
     BSID_BANDADDED,
@@ -3206,7 +3169,6 @@ enum
 	SMIF_NEW			= 0x00002000,
 };
 
-
 cpp_quote("#define SMC_INITMENU                0x00000001")
 cpp_quote("#define SMC_CREATE                  0x00000002")
 cpp_quote("#define SMC_EXITMENU                0x00000003")
@@ -3254,7 +3216,6 @@ interface IShellMenuCallback : IUnknown
         [in] WPARAM wParam,
         [in] LPARAM lParam);
 }
-
 
 /*****************************************************************************
  * IShellMenu interface
@@ -3731,8 +3692,9 @@ interface INameSpaceTreeControlEvents : IUnknown
         NSTCEHT_ONITEMRIGHT                = 0x0020,
         NSTCEHT_ONITEMSTATEICON            = 0x0040,
         NSTCEHT_ONITEM                     = 0x0046,
-        NSTCEHT_ONITEMTABBUTTON            = 0x1000
-    };
+        NSTCEHT_ONITEMTABBUTTON            = 0x1000,
+        NSTCEHT_ONITEMINDENT = 8,
+};
     typedef DWORD NSTCEHITTEST;
 
     [v1_enum] enum _NSTCECLICKTYPE {
@@ -4234,7 +4196,6 @@ interface IFileSaveDialog : IFileDialog
         [in, unique] HWND hwnd,
         [in, unique] IFileOperationProgressSink *pSink);
 }
-
 
 /*****************************************************************************
  * IFileOpenDialog interface
@@ -5357,7 +5318,6 @@ interface IShellTaskScheduler : IUnknown
         [in] DWORD dwThreadTimeout);
 }
 
-
 [
     uuid(47c01f95-e185-412c-b5c5-4f27df965aea),
     object,
@@ -5374,7 +5334,6 @@ interface IFolderBandPriv : IUnknown
     HRESULT SetNoText([in] BOOL fNoText);
 }
 
-
 #ifdef __REACTOS__
 /*****************************************************************************
  * IQueryContinue interface
@@ -5390,7 +5349,6 @@ interface IQueryContinue : IUnknown
     // Returns S_OK if the operation should continue, and S_FALSE if not.
     HRESULT QueryContinue();
 }
-
 
 /*****************************************************************************
  * IUserNotification interface
@@ -5426,7 +5384,6 @@ interface IUserNotification : IUnknown
         [in, string] LPCWSTR pszSoundName);
 };
 
-
 /*****************************************************************************
  * IUserNotificationCallback interface (Vista+)
  */
@@ -5441,7 +5398,6 @@ interface IUserNotificationCallback : IUnknown
     HRESULT OnLeftClick([in] POINT * pt);
     HRESULT OnContextMenu([in] POINT * pt);
 };
-
 
 /*****************************************************************************
  * IUserNotification2 interface (Vista+)
@@ -6069,3 +6025,710 @@ interface IVisualProperties : IUnknown
         [in, unique, string] LPCWSTR pszSubAppName,
         [in, unique, string] LPCWSTR pszSubIdList);
 }
+
+cpp_quote("#ifndef __shobjidl_cpp_quote_1_DEFINED__")
+cpp_quote("#define __shobjidl_cpp_quote_1_DEFINED__")
+cpp_quote("#ifndef IDD_WIZEXTN_FIRST")
+cpp_quote("#define IDD_WIZEXTN_FIRST 0x5000")
+cpp_quote("#endif")
+cpp_quote("#ifndef IDD_WIZEXTN_LAST")
+cpp_quote("#define IDD_WIZEXTN_LAST 0x5100")
+cpp_quote("#endif")
+cpp_quote("#ifndef SHPWHF_ANYLOCATION")
+cpp_quote("#define SHPWHF_ANYLOCATION 0x00000100")
+cpp_quote("#endif")
+cpp_quote("#ifndef SHPWHF_NOFILESELECTOR")
+cpp_quote("#define SHPWHF_NOFILESELECTOR 0x00000004")
+cpp_quote("#endif")
+cpp_quote("#ifndef SHPWHF_NONETPLACECREATE")
+cpp_quote("#define SHPWHF_NONETPLACECREATE 0x00000002")
+cpp_quote("#endif")
+cpp_quote("#ifndef SHPWHF_USEMRU")
+cpp_quote("#define SHPWHF_USEMRU 0x00000008")
+cpp_quote("#endif")
+cpp_quote("#ifndef SHPWHF_VALIDATEVIAWEBFOLDERS")
+cpp_quote("#define SHPWHF_VALIDATEVIAWEBFOLDERS 0x00010000")
+cpp_quote("#endif")
+
+cpp_quote("#define NSTCS2_ALLMASK (NSTCS2_INTERRUPTNOTIFICATIONS | NSTCS2_SHOWNULLSPACEMENU | NSTCS2_DISPLAYPADDING)")
+cpp_quote("#define PROPSTR_EXTENSIONCOMPLETIONSTATE L\"ExtensionCompletionState\"")
+cpp_quote("#define SHPWHF_NORECOMPRESS 0x00000001")
+cpp_quote("#define SID_SBandHost IID_IBandHost")
+cpp_quote("#define SID_WizardSite IID_IWizardSite")
+cpp_quote("")
+cpp_quote("typedef struct AccessibilityDockingService AccessibilityDockingService;")
+cpp_quote("")
+cpp_quote("typedef struct AlphabeticalCategorizer AlphabeticalCategorizer;")
+cpp_quote("")
+cpp_quote("typedef struct ApplicationAssociationRegistrationUI ApplicationAssociationRegistrationUI;")
+cpp_quote("")
+cpp_quote("typedef struct DesktopGadget DesktopGadget;")
+cpp_quote("")
+cpp_quote("typedef struct DocPropShellExtension DocPropShellExtension;")
+cpp_quote("")
+cpp_quote("typedef struct FSCopyHandler FSCopyHandler;")
+cpp_quote("")
+cpp_quote("typedef struct IAccessibilityDockingService IAccessibilityDockingService;")
+cpp_quote("")
+cpp_quote("typedef struct IAccessibilityDockingServiceCallback IAccessibilityDockingServiceCallback;")
+cpp_quote("")
+cpp_quote("typedef struct IAccessibleObject IAccessibleObject;")
+cpp_quote("")
+cpp_quote("typedef struct IApplicationAssociationRegistrationUI IApplicationAssociationRegistrationUI;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IControlMarkup IControlMarkup;")
+cpp_quote("")
+cpp_quote("typedef struct IDeskBand2 IDeskBand2;")
+cpp_quote("")
+cpp_quote("typedef struct IDesktopGadget IDesktopGadget;")
+cpp_quote("")
+cpp_quote("typedef struct IDragSourceHelper2 IDragSourceHelper2;")
+cpp_quote("")
+cpp_quote("typedef struct IDynamicHWHandler IDynamicHWHandler;")
+cpp_quote("")
+cpp_quote("typedef struct IENamespaceTreeControl IENamespaceTreeControl;")
+cpp_quote("")
+cpp_quote("typedef struct IEnumerableView IEnumerableView;")
+cpp_quote("")
+cpp_quote("typedef struct IEnumReadyCallback IEnumReadyCallback;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IFolderViewOptions IFolderViewOptions;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IImageRecompress IImageRecompress;")
+cpp_quote("")
+cpp_quote("typedef struct IInsertItem IInsertItem;")
+cpp_quote("")
+cpp_quote("typedef struct ImageRecompress ImageRecompress;")
+cpp_quote("")
+cpp_quote("typedef struct IMarkupCallback IMarkupCallback;")
+cpp_quote("")
+cpp_quote("typedef struct INameSpaceTreeAccessible INameSpaceTreeAccessible;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct InternetPrintOrdering InternetPrintOrdering;")
+cpp_quote("")
+cpp_quote("typedef struct IPreviousVersionsInfo IPreviousVersionsInfo;")
+cpp_quote("")
+cpp_quote("typedef struct IPublishingWizard IPublishingWizard;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IQueryCodePage IQueryCodePage;")
+cpp_quote("")
+cpp_quote("typedef struct IResultsFolder IResultsFolder;")
+cpp_quote("")
+cpp_quote("typedef struct ISearchBoxInfo ISearchBoxInfo;")
+cpp_quote("")
+cpp_quote("typedef struct IShellRunDll IShellRunDll;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IStorageProviderBanners IStorageProviderBanners;")
+cpp_quote("")
+cpp_quote("typedef struct IStorageProviderCopyHook IStorageProviderCopyHook;")
+cpp_quote("")
+cpp_quote("typedef struct IStreamAsync IStreamAsync;")
+cpp_quote("")
+cpp_quote("typedef struct IStreamUnbufferedInfo IStreamUnbufferedInfo;")
+cpp_quote("")
+cpp_quote("typedef struct ITrayDeskBand ITrayDeskBand;")
+cpp_quote("")
+cpp_quote("typedef struct IUserAccountChangeCallback IUserAccountChangeCallback;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IUseToBrowseItem IUseToBrowseItem;")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IWebWizardExtension IWebWizardExtension;")
+cpp_quote("")
+cpp_quote("typedef struct IWizardExtension IWizardExtension;")
+cpp_quote("")
+cpp_quote("typedef struct IWizardSite IWizardSite;")
+cpp_quote("")
+cpp_quote("typedef struct MergedCategorizer MergedCategorizer;")
+cpp_quote("")
+cpp_quote("typedef struct PreviousVersions PreviousVersions;")
+cpp_quote("")
+cpp_quote("typedef struct PublishDropTarget PublishDropTarget;")
+cpp_quote("")
+cpp_quote("typedef struct PublishingWizard PublishingWizard;")
+cpp_quote("")
+cpp_quote("typedef struct StorageProviderBanners StorageProviderBanners;")
+cpp_quote("")
+cpp_quote("typedef struct TimeCategorizer TimeCategorizer;")
+cpp_quote("")
+cpp_quote("typedef struct TrayBandSiteService TrayBandSiteService;")
+cpp_quote("")
+cpp_quote("typedef struct TrayDeskBand TrayDeskBand;")
+cpp_quote("")
+cpp_quote("typedef struct VirtualDesktopManager VirtualDesktopManager;")
+cpp_quote("")
+cpp_quote("typedef struct WebWizardHost WebWizardHost;")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("void HMONITOR_UserFree(unsigned long *, HMONITOR *);")
+cpp_quote("void HMONITOR_UserFree64(unsigned long *, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserMarshal(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserMarshal64(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("unsigned long HMONITOR_UserSize(unsigned long *, unsigned long, HMONITOR *);")
+cpp_quote("unsigned long HMONITOR_UserSize64(unsigned long *, unsigned long, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserUnmarshal(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserUnmarshal64(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("HRESULT WINAPI IResultsFolder_AddIDList_Proxy(IResultsFolder *This, LPCITEMIDLIST pidl, LPITEMIDLIST *ppidlAdded);")
+cpp_quote("HRESULT WINAPI IResultsFolder_AddIDList_Stub(IResultsFolder *This, LPCITEMIDLIST pidl, LPITEMIDLIST *ppidlAdded);")
+cpp_quote("HRESULT WINAPI IResultsFolder_RemoteAddIDList_Proxy(IResultsFolder *This, LPCITEMIDLIST pidl, LPITEMIDLIST *ppidlAdded);")
+cpp_quote("void IResultsFolder_RemoteAddIDList_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void PCIDLIST_ABSOLUTE_UserFree64(unsigned long *, LPCITEMIDLIST *);")
+cpp_quote("unsigned char * PCIDLIST_ABSOLUTE_UserMarshal64(unsigned long *, unsigned char *, LPCITEMIDLIST *);")
+cpp_quote("unsigned long PCIDLIST_ABSOLUTE_UserSize64(unsigned long *, unsigned long, LPCITEMIDLIST *);")
+cpp_quote("unsigned char * PCIDLIST_ABSOLUTE_UserUnmarshal64(unsigned long *, unsigned char *, LPCITEMIDLIST *);")
+cpp_quote("void PITEMID_CHILD_UserFree64(unsigned long *, LPITEMIDLIST *);")
+cpp_quote("unsigned char * PITEMID_CHILD_UserMarshal64(unsigned long *, unsigned char *, LPITEMIDLIST *);")
+cpp_quote("unsigned long PITEMID_CHILD_UserSize64(unsigned long *, unsigned long, LPITEMIDLIST *);")
+cpp_quote("unsigned char * PITEMID_CHILD_UserUnmarshal64(unsigned long *, unsigned char *, LPITEMIDLIST *);")
+cpp_quote("HRESULT SHRemovePersonalPropertyValues(IShellItemArray *psia);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+
+cpp_quote("#define NSTCS2_ALLMASK (NSTCS2_INTERRUPTNOTIFICATIONS | NSTCS2_SHOWNULLSPACEMENU | NSTCS2_DISPLAYPADDING)")
+cpp_quote("#define PROPSTR_EXTENSIONCOMPLETIONSTATE L\"ExtensionCompletionState\"")
+cpp_quote("#define SHPWHF_NORECOMPRESS 0x00000001")
+cpp_quote("#define SID_SBandHost IID_IBandHost")
+cpp_quote("#define SID_WizardSite IID_IWizardSite")
+cpp_quote("")
+cpp_quote("enum DSH_FLAGS")
+cpp_quote("{")
+cpp_quote("    DSH_ALLOWDROPDESCRIPTIONTEXT = 1,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum DSH_FLAGS DSH_FLAGS;")
+cpp_quote("")
+cpp_quote("enum FOLDERVIEWOPTIONS")
+cpp_quote("{")
+cpp_quote("    FVO_DEFAULT = 0,")
+cpp_quote("    FVO_VISTALAYOUT = 1,")
+cpp_quote("    FVO_CUSTOMPOSITION = 2,")
+cpp_quote("    FVO_CUSTOMORDERING = 4,")
+cpp_quote("    FVO_SUPPORTHYPERLINKS = 8,")
+cpp_quote("    FVO_NOANIMATIONS = 0x10,")
+cpp_quote("    FVO_NOSCROLLTIPS = 0x20,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum FOLDERVIEWOPTIONS FOLDERVIEWOPTIONS;")
+cpp_quote("")
+cpp_quote("enum SYNC_ENGINE_STATE_FLAGS")
+cpp_quote("{")
+cpp_quote("    SESF_NONE = 0,")
+cpp_quote("    SESF_SERVICE_QUOTA_NEARING_LIMIT = 1,")
+cpp_quote("    SESF_SERVICE_QUOTA_EXCEEDED_LIMIT = 2,")
+cpp_quote("    SESF_AUTHENTICATION_ERROR = 4,")
+cpp_quote("    SESF_PAUSED_DUE_TO_METERED_NETWORK = 8,")
+cpp_quote("    SESF_PAUSED_DUE_TO_DISK_SPACE_FULL = 0x10,")
+cpp_quote("    SESF_PAUSED_DUE_TO_CLIENT_POLICY = 0x20,")
+cpp_quote("    SESF_PAUSED_DUE_TO_SERVICE_POLICY = 0x40,")
+cpp_quote("    SESF_SERVICE_UNAVAILABLE = 0x80,")
+cpp_quote("    SESF_PAUSED_DUE_TO_USER_REQUEST = 0x100,")
+cpp_quote("    SESF_ALL_FLAGS = 0x1FF,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum SYNC_ENGINE_STATE_FLAGS SYNC_ENGINE_STATE_FLAGS;")
+cpp_quote("")
+cpp_quote("enum tagCDBURNINGEXTENSIONRET")
+cpp_quote("{")
+cpp_quote("    CDBE_RET_DEFAULT = 0,")
+cpp_quote("    CDBE_RET_DONTRUNOTHEREXTS = 1,")
+cpp_quote("    CDBE_RET_STOPWIZARD = 2,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("enum UNDOCK_REASON")
+cpp_quote("{")
+cpp_quote("    UR_RESOLUTION_CHANGE = 0,")
+cpp_quote("    UR_MONITOR_DISCONNECT = 1,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef enum UNDOCK_REASON UNDOCK_REASON;")
+cpp_quote("")
+cpp_quote("typedef struct AccessibilityDockingService AccessibilityDockingService;")
+cpp_quote("")
+cpp_quote("typedef struct AlphabeticalCategorizer AlphabeticalCategorizer;")
+cpp_quote("")
+cpp_quote("typedef struct ApplicationAssociationRegistrationUI ApplicationAssociationRegistrationUI;")
+cpp_quote("")
+cpp_quote("typedef struct DesktopGadget DesktopGadget;")
+cpp_quote("")
+cpp_quote("typedef struct DocPropShellExtension DocPropShellExtension;")
+cpp_quote("")
+cpp_quote("typedef struct FSCopyHandler FSCopyHandler;")
+cpp_quote("")
+cpp_quote("typedef struct IAccessibilityDockingService IAccessibilityDockingService;")
+cpp_quote("")
+cpp_quote("typedef struct IAccessibilityDockingServiceCallback IAccessibilityDockingServiceCallback;")
+cpp_quote("")
+cpp_quote("struct IAccessibilityDockingServiceCallbackVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IAccessibilityDockingServiceCallback *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IAccessibilityDockingServiceCallback *);")
+cpp_quote("    ULONG (WINAPI *Release)(IAccessibilityDockingServiceCallback *);")
+cpp_quote("    HRESULT (WINAPI *Undocked)(IAccessibilityDockingServiceCallback *, UNDOCK_REASON);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("struct IAccessibilityDockingServiceVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IAccessibilityDockingService *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IAccessibilityDockingService *);")
+cpp_quote("    ULONG (WINAPI *Release)(IAccessibilityDockingService *);")
+cpp_quote("    HRESULT (WINAPI *GetAvailableSize)(IAccessibilityDockingService *, HMONITOR, UINT *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *DockWindow)(IAccessibilityDockingService *, HWND, HMONITOR, UINT, IAccessibilityDockingServiceCallback *);")
+cpp_quote("    HRESULT (WINAPI *UndockWindow)(IAccessibilityDockingService *, HWND);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IAccessibleObject IAccessibleObject;")
+cpp_quote("")
+cpp_quote("struct IAccessibleObjectVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IAccessibleObject *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IAccessibleObject *);")
+cpp_quote("    ULONG (WINAPI *Release)(IAccessibleObject *);")
+cpp_quote("    HRESULT (WINAPI *SetAccessibleName)(IAccessibleObject *, LPCWSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IApplicationAssociationRegistrationUI IApplicationAssociationRegistrationUI;")
+cpp_quote("")
+cpp_quote("struct IApplicationAssociationRegistrationUIVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IApplicationAssociationRegistrationUI *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IApplicationAssociationRegistrationUI *);")
+cpp_quote("    ULONG (WINAPI *Release)(IApplicationAssociationRegistrationUI *);")
+cpp_quote("    HRESULT (WINAPI *LaunchAdvancedAssociationUI)(IApplicationAssociationRegistrationUI *, LPCWSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IControlMarkup IControlMarkup;")
+cpp_quote("")
+cpp_quote("typedef struct IDeskBand2 IDeskBand2;")
+cpp_quote("")
+cpp_quote("struct IDeskBand2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IDeskBand2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IDeskBand2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(IDeskBand2 *);")
+cpp_quote("    HRESULT (WINAPI *GetWindow)(IDeskBand2 *, HWND *);")
+cpp_quote("    HRESULT (WINAPI *ContextSensitiveHelp)(IDeskBand2 *, BOOL);")
+cpp_quote("    HRESULT (WINAPI *ShowDW)(IDeskBand2 *, BOOL);")
+cpp_quote("    HRESULT (WINAPI *CloseDW)(IDeskBand2 *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *ResizeBorderDW)(IDeskBand2 *, LPCRECT, IUnknown *, BOOL);")
+cpp_quote("    HRESULT (WINAPI *GetBandInfo)(IDeskBand2 *, DWORD, DWORD, DESKBANDINFO *);")
+cpp_quote("    HRESULT (WINAPI *CanRenderComposited)(IDeskBand2 *, BOOL *);")
+cpp_quote("    HRESULT (WINAPI *SetCompositionState)(IDeskBand2 *, BOOL);")
+cpp_quote("    HRESULT (WINAPI *GetCompositionState)(IDeskBand2 *, BOOL *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IDesktopGadget IDesktopGadget;")
+cpp_quote("")
+cpp_quote("struct IDesktopGadgetVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IDesktopGadget *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IDesktopGadget *);")
+cpp_quote("    ULONG (WINAPI *Release)(IDesktopGadget *);")
+cpp_quote("    HRESULT (WINAPI *RunGadget)(IDesktopGadget *, LPCWSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IDragSourceHelper2 IDragSourceHelper2;")
+cpp_quote("")
+cpp_quote("struct IDragSourceHelper2Vtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IDragSourceHelper2 *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IDragSourceHelper2 *);")
+cpp_quote("    ULONG (WINAPI *Release)(IDragSourceHelper2 *);")
+cpp_quote("    HRESULT (WINAPI *InitializeFromBitmap)(IDragSourceHelper2 *, LPSHDRAGIMAGE, IDataObject *);")
+cpp_quote("    HRESULT (WINAPI *InitializeFromWindow)(IDragSourceHelper2 *, HWND, POINT *, IDataObject *);")
+cpp_quote("    HRESULT (WINAPI *SetFlags)(IDragSourceHelper2 *, DWORD);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IDynamicHWHandler IDynamicHWHandler;")
+cpp_quote("")
+cpp_quote("struct IDynamicHWHandlerVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IDynamicHWHandler *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IDynamicHWHandler *);")
+cpp_quote("    ULONG (WINAPI *Release)(IDynamicHWHandler *);")
+cpp_quote("    HRESULT (WINAPI *GetDynamicInfo)(IDynamicHWHandler *, LPCWSTR, DWORD, LPWSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IENamespaceTreeControl IENamespaceTreeControl;")
+cpp_quote("")
+cpp_quote("typedef struct IEnumerableView IEnumerableView;")
+cpp_quote("")
+cpp_quote("typedef struct IEnumReadyCallback IEnumReadyCallback;")
+cpp_quote("")
+cpp_quote("struct IEnumerableViewVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IEnumerableView *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IEnumerableView *);")
+cpp_quote("    ULONG (WINAPI *Release)(IEnumerableView *);")
+cpp_quote("    HRESULT (WINAPI *SetEnumReadyCallback)(IEnumerableView *, IEnumReadyCallback *);")
+cpp_quote("    HRESULT (WINAPI *CreateEnumIDListFromContents)(IEnumerableView *, LPCITEMIDLIST, DWORD, IEnumIDList **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("struct IEnumReadyCallbackVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IEnumReadyCallback *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IEnumReadyCallback *);")
+cpp_quote("    ULONG (WINAPI *Release)(IEnumReadyCallback *);")
+cpp_quote("    HRESULT (WINAPI *EnumReady)(IEnumReadyCallback *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IFolderViewOptions IFolderViewOptions;")
+cpp_quote("")
+cpp_quote("struct IFolderViewOptionsVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IFolderViewOptions *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IFolderViewOptions *);")
+cpp_quote("    ULONG (WINAPI *Release)(IFolderViewOptions *);")
+cpp_quote("    HRESULT (WINAPI *SetFolderViewOptions)(IFolderViewOptions *, FOLDERVIEWOPTIONS, FOLDERVIEWOPTIONS);")
+cpp_quote("    HRESULT (WINAPI *GetFolderViewOptions)(IFolderViewOptions *, FOLDERVIEWOPTIONS *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IImageRecompress IImageRecompress;")
+cpp_quote("")
+cpp_quote("struct IImageRecompressVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IImageRecompress *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IImageRecompress *);")
+cpp_quote("    ULONG (WINAPI *Release)(IImageRecompress *);")
+cpp_quote("    HRESULT (WINAPI *RecompressImage)(IImageRecompress *, IShellItem *, int, int, int, IStorage *, IStream **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IInsertItem IInsertItem;")
+cpp_quote("")
+cpp_quote("struct IInsertItemVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IInsertItem *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IInsertItem *);")
+cpp_quote("    ULONG (WINAPI *Release)(IInsertItem *);")
+cpp_quote("    HRESULT (WINAPI *InsertItem)(IInsertItem *, LPCITEMIDLIST);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct ImageRecompress ImageRecompress;")
+cpp_quote("")
+cpp_quote("typedef struct IMarkupCallback IMarkupCallback;")
+cpp_quote("")
+cpp_quote("typedef struct INameSpaceTreeAccessible INameSpaceTreeAccessible;")
+cpp_quote("")
+cpp_quote("struct INameSpaceTreeAccessibleVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(INameSpaceTreeAccessible *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(INameSpaceTreeAccessible *);")
+cpp_quote("    ULONG (WINAPI *Release)(INameSpaceTreeAccessible *);")
+cpp_quote("    HRESULT (WINAPI *OnGetDefaultAccessibilityAction)(INameSpaceTreeAccessible *, IShellItem *, BSTR *);")
+cpp_quote("    HRESULT (WINAPI *OnDoDefaultAccessibilityAction)(INameSpaceTreeAccessible *, IShellItem *);")
+cpp_quote("    HRESULT (WINAPI *OnGetAccessibilityRole)(INameSpaceTreeAccessible *, IShellItem *, VARIANT *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct InternetPrintOrdering InternetPrintOrdering;")
+cpp_quote("")
+cpp_quote("typedef struct IPreviousVersionsInfo IPreviousVersionsInfo;")
+cpp_quote("")
+cpp_quote("struct IPreviousVersionsInfoVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IPreviousVersionsInfo *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IPreviousVersionsInfo *);")
+cpp_quote("    ULONG (WINAPI *Release)(IPreviousVersionsInfo *);")
+cpp_quote("    HRESULT (WINAPI *AreSnapshotsAvailable)(IPreviousVersionsInfo *, LPCWSTR, BOOL, BOOL *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IPublishingWizard IPublishingWizard;")
+cpp_quote("")
+cpp_quote("struct IPublishingWizardVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IPublishingWizard *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IPublishingWizard *);")
+cpp_quote("    ULONG (WINAPI *Release)(IPublishingWizard *);")
+cpp_quote("    HRESULT (WINAPI *AddPages)(IPublishingWizard *, HPROPSHEETPAGE *, UINT, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetFirstPage)(IPublishingWizard *, HPROPSHEETPAGE *);")
+cpp_quote("    HRESULT (WINAPI *GetLastPage)(IPublishingWizard *, HPROPSHEETPAGE *);")
+cpp_quote("    HRESULT (WINAPI *Initialize)(IPublishingWizard *, IDataObject *, DWORD, LPCWSTR);")
+cpp_quote("    HRESULT (WINAPI *GetTransferManifest)(IPublishingWizard *, HRESULT *, IXMLDOMDocument **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IQueryCodePage IQueryCodePage;")
+cpp_quote("")
+cpp_quote("struct IQueryCodePageVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IQueryCodePage *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IQueryCodePage *);")
+cpp_quote("    ULONG (WINAPI *Release)(IQueryCodePage *);")
+cpp_quote("    HRESULT (WINAPI *GetCodePage)(IQueryCodePage *, UINT *);")
+cpp_quote("    HRESULT (WINAPI *SetCodePage)(IQueryCodePage *, UINT);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IResultsFolder IResultsFolder;")
+cpp_quote("")
+cpp_quote("struct IResultsFolderVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IResultsFolder *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IResultsFolder *);")
+cpp_quote("    ULONG (WINAPI *Release)(IResultsFolder *);")
+cpp_quote("    HRESULT (WINAPI *AddItem)(IResultsFolder *, IShellItem *);")
+cpp_quote("    HRESULT (WINAPI *AddIDList)(IResultsFolder *, LPCITEMIDLIST, LPITEMIDLIST *);")
+cpp_quote("    HRESULT (WINAPI *RemoveItem)(IResultsFolder *, IShellItem *);")
+cpp_quote("    HRESULT (WINAPI *RemoveIDList)(IResultsFolder *, LPCITEMIDLIST);")
+cpp_quote("    HRESULT (WINAPI *RemoveAll)(IResultsFolder *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct ISearchBoxInfo ISearchBoxInfo;")
+cpp_quote("")
+cpp_quote("struct ISearchBoxInfoVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(ISearchBoxInfo *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(ISearchBoxInfo *);")
+cpp_quote("    ULONG (WINAPI *Release)(ISearchBoxInfo *);")
+cpp_quote("    HRESULT (WINAPI *GetCondition)(ISearchBoxInfo *, const IID *const , void **);")
+cpp_quote("    HRESULT (WINAPI *GetText)(ISearchBoxInfo *, LPWSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IShellRunDll IShellRunDll;")
+cpp_quote("")
+cpp_quote("struct IShellRunDllVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IShellRunDll *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IShellRunDll *);")
+cpp_quote("    ULONG (WINAPI *Release)(IShellRunDll *);")
+cpp_quote("    HRESULT (WINAPI *Run)(IShellRunDll *, LPCWSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IStorageProviderBanners IStorageProviderBanners;")
+cpp_quote("")
+cpp_quote("struct IStorageProviderBannersVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IStorageProviderBanners *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IStorageProviderBanners *);")
+cpp_quote("    ULONG (WINAPI *Release)(IStorageProviderBanners *);")
+cpp_quote("    HRESULT (WINAPI *SetBanner)(IStorageProviderBanners *, LPCWSTR, LPCWSTR, LPCWSTR);")
+cpp_quote("    HRESULT (WINAPI *ClearBanner)(IStorageProviderBanners *, LPCWSTR, LPCWSTR);")
+cpp_quote("    HRESULT (WINAPI *ClearAllBanners)(IStorageProviderBanners *, LPCWSTR);")
+cpp_quote("    HRESULT (WINAPI *GetBanner)(IStorageProviderBanners *, LPCWSTR, LPCWSTR, LPWSTR *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IStorageProviderCopyHook IStorageProviderCopyHook;")
+cpp_quote("")
+cpp_quote("struct IStorageProviderCopyHookVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IStorageProviderCopyHook *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IStorageProviderCopyHook *);")
+cpp_quote("    ULONG (WINAPI *Release)(IStorageProviderCopyHook *);")
+cpp_quote("    HRESULT (WINAPI *CopyCallback)(IStorageProviderCopyHook *, HWND, UINT, UINT, LPCWSTR, DWORD, LPCWSTR, DWORD, UINT *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IStreamAsync IStreamAsync;")
+cpp_quote("")
+cpp_quote("struct IStreamAsyncVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IStreamAsync *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IStreamAsync *);")
+cpp_quote("    ULONG (WINAPI *Release)(IStreamAsync *);")
+cpp_quote("    HRESULT (WINAPI *Read)(IStreamAsync *, void *, ULONG, ULONG *);")
+cpp_quote("    HRESULT (WINAPI *Write)(IStreamAsync *, const void *, ULONG, ULONG *);")
+cpp_quote("    HRESULT (WINAPI *Seek)(IStreamAsync *, LARGE_INTEGER, DWORD, ULARGE_INTEGER *);")
+cpp_quote("    HRESULT (WINAPI *SetSize)(IStreamAsync *, ULARGE_INTEGER);")
+cpp_quote("    HRESULT (WINAPI *CopyTo)(IStreamAsync *, IStream *, ULARGE_INTEGER, ULARGE_INTEGER *, ULARGE_INTEGER *);")
+cpp_quote("    HRESULT (WINAPI *Commit)(IStreamAsync *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *Revert)(IStreamAsync *);")
+cpp_quote("    HRESULT (WINAPI *LockRegion)(IStreamAsync *, ULARGE_INTEGER, ULARGE_INTEGER, DWORD);")
+cpp_quote("    HRESULT (WINAPI *UnlockRegion)(IStreamAsync *, ULARGE_INTEGER, ULARGE_INTEGER, DWORD);")
+cpp_quote("    HRESULT (WINAPI *Stat)(IStreamAsync *, STATSTG *, DWORD);")
+cpp_quote("    HRESULT (WINAPI *Clone)(IStreamAsync *, IStream **);")
+cpp_quote("    HRESULT (WINAPI *ReadAsync)(IStreamAsync *, void *, DWORD, LPDWORD, LPOVERLAPPED);")
+cpp_quote("    HRESULT (WINAPI *WriteAsync)(IStreamAsync *, const void *, DWORD, LPDWORD, LPOVERLAPPED);")
+cpp_quote("    HRESULT (WINAPI *OverlappedResult)(IStreamAsync *, LPOVERLAPPED, LPDWORD, BOOL);")
+cpp_quote("    HRESULT (WINAPI *CancelIo)(IStreamAsync *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IStreamUnbufferedInfo IStreamUnbufferedInfo;")
+cpp_quote("")
+cpp_quote("struct IStreamUnbufferedInfoVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IStreamUnbufferedInfo *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IStreamUnbufferedInfo *);")
+cpp_quote("    ULONG (WINAPI *Release)(IStreamUnbufferedInfo *);")
+cpp_quote("    HRESULT (WINAPI *GetSectorSize)(IStreamUnbufferedInfo *, ULONG *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct ITrayDeskBand ITrayDeskBand;")
+cpp_quote("")
+cpp_quote("struct ITrayDeskBandVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(ITrayDeskBand *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(ITrayDeskBand *);")
+cpp_quote("    ULONG (WINAPI *Release)(ITrayDeskBand *);")
+cpp_quote("    HRESULT (WINAPI *ShowDeskBand)(ITrayDeskBand *, const IID *const );")
+cpp_quote("    HRESULT (WINAPI *HideDeskBand)(ITrayDeskBand *, const IID *const );")
+cpp_quote("    HRESULT (WINAPI *IsDeskBandShown)(ITrayDeskBand *, const IID *const );")
+cpp_quote("    HRESULT (WINAPI *DeskBandRegistrationChanged)(ITrayDeskBand *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IUserAccountChangeCallback IUserAccountChangeCallback;")
+cpp_quote("")
+cpp_quote("struct IUserAccountChangeCallbackVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IUserAccountChangeCallback *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IUserAccountChangeCallback *);")
+cpp_quote("    ULONG (WINAPI *Release)(IUserAccountChangeCallback *);")
+cpp_quote("    HRESULT (WINAPI *OnPictureChange)(IUserAccountChangeCallback *, LPCWSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IUseToBrowseItem IUseToBrowseItem;")
+cpp_quote("")
+cpp_quote("struct IUseToBrowseItemVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IUseToBrowseItem *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IUseToBrowseItem *);")
+cpp_quote("    ULONG (WINAPI *Release)(IUseToBrowseItem *);")
+cpp_quote("    HRESULT (WINAPI *GetItemIDList)(IUseToBrowseItem *, LPITEMIDLIST *);")
+cpp_quote("    HRESULT (WINAPI *GetItem)(IUseToBrowseItem *, IShellItem **);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("typedef struct IWebWizardExtension IWebWizardExtension;")
+cpp_quote("")
+cpp_quote("struct IWebWizardExtensionVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IWebWizardExtension *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IWebWizardExtension *);")
+cpp_quote("    ULONG (WINAPI *Release)(IWebWizardExtension *);")
+cpp_quote("    HRESULT (WINAPI *AddPages)(IWebWizardExtension *, HPROPSHEETPAGE *, UINT, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetFirstPage)(IWebWizardExtension *, HPROPSHEETPAGE *);")
+cpp_quote("    HRESULT (WINAPI *GetLastPage)(IWebWizardExtension *, HPROPSHEETPAGE *);")
+cpp_quote("    HRESULT (WINAPI *SetInitialURL)(IWebWizardExtension *, LPCWSTR);")
+cpp_quote("    HRESULT (WINAPI *SetErrorURL)(IWebWizardExtension *, LPCWSTR);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IWizardExtension IWizardExtension;")
+cpp_quote("")
+cpp_quote("struct IWizardExtensionVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IWizardExtension *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IWizardExtension *);")
+cpp_quote("    ULONG (WINAPI *Release)(IWizardExtension *);")
+cpp_quote("    HRESULT (WINAPI *AddPages)(IWizardExtension *, HPROPSHEETPAGE *, UINT, UINT *);")
+cpp_quote("    HRESULT (WINAPI *GetFirstPage)(IWizardExtension *, HPROPSHEETPAGE *);")
+cpp_quote("    HRESULT (WINAPI *GetLastPage)(IWizardExtension *, HPROPSHEETPAGE *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct IWizardSite IWizardSite;")
+cpp_quote("")
+cpp_quote("struct IWizardSiteVtbl")
+cpp_quote("{")
+cpp_quote("    HRESULT (WINAPI *QueryInterface)(IWizardSite *, const IID *const , void **);")
+cpp_quote("    ULONG (WINAPI *AddRef)(IWizardSite *);")
+cpp_quote("    ULONG (WINAPI *Release)(IWizardSite *);")
+cpp_quote("    HRESULT (WINAPI *GetPreviousPage)(IWizardSite *, HPROPSHEETPAGE *);")
+cpp_quote("    HRESULT (WINAPI *GetNextPage)(IWizardSite *, HPROPSHEETPAGE *);")
+cpp_quote("    HRESULT (WINAPI *GetCancelledPage)(IWizardSite *, HPROPSHEETPAGE *);")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("typedef struct MergedCategorizer MergedCategorizer;")
+cpp_quote("")
+cpp_quote("typedef struct PreviousVersions PreviousVersions;")
+cpp_quote("")
+cpp_quote("typedef struct PublishDropTarget PublishDropTarget;")
+cpp_quote("")
+cpp_quote("typedef struct PublishingWizard PublishingWizard;")
+cpp_quote("")
+cpp_quote("typedef struct StorageProviderBanners StorageProviderBanners;")
+cpp_quote("")
+cpp_quote("typedef struct TimeCategorizer TimeCategorizer;")
+cpp_quote("")
+cpp_quote("typedef struct TrayBandSiteService TrayBandSiteService;")
+cpp_quote("")
+cpp_quote("typedef struct TrayDeskBand TrayDeskBand;")
+cpp_quote("")
+cpp_quote("typedef struct VirtualDesktopManager VirtualDesktopManager;")
+cpp_quote("")
+cpp_quote("typedef struct WebWizardHost WebWizardHost;")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("extern \"C\" {")
+cpp_quote("#endif")
+cpp_quote("")
+cpp_quote("/* TODO: LiberNT does not implement the functions below yet */")
+cpp_quote("void HMONITOR_UserFree(unsigned long *, HMONITOR *);")
+cpp_quote("void HMONITOR_UserFree64(unsigned long *, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserMarshal(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserMarshal64(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("unsigned long HMONITOR_UserSize(unsigned long *, unsigned long, HMONITOR *);")
+cpp_quote("unsigned long HMONITOR_UserSize64(unsigned long *, unsigned long, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserUnmarshal(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("unsigned char * HMONITOR_UserUnmarshal64(unsigned long *, unsigned char *, HMONITOR *);")
+cpp_quote("HRESULT WINAPI IResultsFolder_AddIDList_Proxy(IResultsFolder *This, LPCITEMIDLIST pidl, LPITEMIDLIST *ppidlAdded);")
+cpp_quote("HRESULT WINAPI IResultsFolder_AddIDList_Stub(IResultsFolder *This, LPCITEMIDLIST pidl, LPITEMIDLIST *ppidlAdded);")
+cpp_quote("HRESULT WINAPI IResultsFolder_RemoteAddIDList_Proxy(IResultsFolder *This, LPCITEMIDLIST pidl, LPITEMIDLIST *ppidlAdded);")
+cpp_quote("void IResultsFolder_RemoteAddIDList_Stub(IRpcStubBuffer *This, IRpcChannelBuffer *_pRpcChannelBuffer, PRPC_MESSAGE _pRpcMessage, DWORD *_pdwStubPhase);")
+cpp_quote("void PCIDLIST_ABSOLUTE_UserFree64(unsigned long *, LPCITEMIDLIST *);")
+cpp_quote("unsigned char * PCIDLIST_ABSOLUTE_UserMarshal64(unsigned long *, unsigned char *, LPCITEMIDLIST *);")
+cpp_quote("unsigned long PCIDLIST_ABSOLUTE_UserSize64(unsigned long *, unsigned long, LPCITEMIDLIST *);")
+cpp_quote("unsigned char * PCIDLIST_ABSOLUTE_UserUnmarshal64(unsigned long *, unsigned char *, LPCITEMIDLIST *);")
+cpp_quote("void PITEMID_CHILD_UserFree64(unsigned long *, LPITEMIDLIST *);")
+cpp_quote("unsigned char * PITEMID_CHILD_UserMarshal64(unsigned long *, unsigned char *, LPITEMIDLIST *);")
+cpp_quote("unsigned long PITEMID_CHILD_UserSize64(unsigned long *, unsigned long, LPITEMIDLIST *);")
+cpp_quote("unsigned char * PITEMID_CHILD_UserUnmarshal64(unsigned long *, unsigned char *, LPITEMIDLIST *);")
+cpp_quote("HRESULT SHRemovePersonalPropertyValues(IShellItemArray *psia);")
+cpp_quote("")
+cpp_quote("#ifdef __cplusplus")
+cpp_quote("}")
+cpp_quote("#endif")
+
+cpp_quote("#define SID_WebWizardHost IID_IWebWizardExtension")
+
+cpp_quote("#define SID_CDWizardHost IID_ICDBurnExt")
+
+cpp_quote("#define SID_EnumerableView IID_IEnumerableView")
+
+cpp_quote("#define SID_PublishingWizard CLSID_PublishingWizard")
+
+cpp_quote("#define ISDBLCLICK(x) (NSTCECT_DBLCLICK == ((x) & NSTCECT_DBLCLICK))")
+cpp_quote("#define ISLBUTTON(x) (NSTCECT_LBUTTON == ((x) & NSTCECT_BUTTON))")
+cpp_quote("#define ISMBUTTON(x) (NSTCECT_MBUTTON == ((x) & NSTCECT_BUTTON))")
+cpp_quote("#define ISRBUTTON(x) (NSTCECT_RBUTTON == ((x) & NSTCECT_BUTTON))")
+cpp_quote("#endif")

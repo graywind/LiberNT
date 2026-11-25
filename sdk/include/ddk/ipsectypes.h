@@ -1021,4 +1021,6 @@ typedef struct _IPSEC_KEY_MANAGER0
 }
 #endif
 
+#define espAuthTranform espAuthTransform
+
 #endif

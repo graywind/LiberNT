@@ -200,4 +200,56 @@ DWORD WINAPI GetProcessImageFileNameW(HANDLE, LPWSTR, DWORD);
 }
 #endif
 
+typedef struct _PERFORMANCE_INFORMATION PERFORMACE_INFORMATION;
+typedef struct _PERFORMANCE_INFORMATION * PPERFORMACE_INFORMATION;
+
+typedef struct _PROCESS_MEMORY_COUNTERS_EX2 {
+  DWORD cb;
+  DWORD PageFaultCount;
+  SIZE_T PeakWorkingSetSize;
+  SIZE_T WorkingSetSize;
+  SIZE_T QuotaPeakPagedPoolUsage;
+  SIZE_T QuotaPagedPoolUsage;
+  SIZE_T QuotaPeakNonPagedPoolUsage;
+  SIZE_T QuotaNonPagedPoolUsage;
+  SIZE_T PagefileUsage;
+  SIZE_T PeakPagefileUsage;
+  SIZE_T PrivateUsage;
+  SIZE_T PrivateWorkingSetSize;
+  ULONG64 SharedCommitUsage;
+} PROCESS_MEMORY_COUNTERS_EX2;
+
+union _PSAPI_WORKING_SET_BLOCK
+{
+    ULONG_PTR Flags;
+    struct
+    {
+        ULONG_PTR Protection : 5;
+        ULONG_PTR ShareCount : 3;
+        ULONG_PTR Shared : 1;
+        ULONG_PTR Reserved : 3;
+#if defined(_WIN64)
+        ULONG_PTR VirtualPage : 52;
+#else
+        ULONG_PTR VirtualPage : 20;
+#endif
+    };
+};
+
+typedef PROCESS_MEMORY_COUNTERS_EX2 *PPROCESS_MEMORY_COUNTERS_EX2;
+
+typedef union _PSAPI_WORKING_SET_BLOCK *PPSAPI_WORKING_SET_BLOCK;
+
+typedef union _PSAPI_WORKING_SET_BLOCK PSAPI_WORKING_SET_BLOCK;
+
+struct _PSAPI_WORKING_SET_INFORMATION
+{
+    ULONG_PTR NumberOfEntries;
+    PSAPI_WORKING_SET_BLOCK WorkingSetInfo[1];
+};
+
+typedef struct _PSAPI_WORKING_SET_INFORMATION *PPSAPI_WORKING_SET_INFORMATION;
+
+typedef struct _PSAPI_WORKING_SET_INFORMATION PSAPI_WORKING_SET_INFORMATION;
+
 #endif  /* __WINE_PSAPI_H */

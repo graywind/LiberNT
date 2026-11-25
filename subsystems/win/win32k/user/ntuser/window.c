@@ -3424,11 +3424,11 @@ BOOLEAN co_UserDestroyWindow(PVOID Object)
 /*
  * @implemented
  */
-BOOLEAN APIENTRY
+BOOL APIENTRY
 NtUserDestroyWindow(HWND Wnd)
 {
    PWND Window;
-   BOOLEAN ret = FALSE;
+   BOOL ret = FALSE;
    USER_REFERENCE_ENTRY Ref;
 
    TRACE("Enter NtUserDestroyWindow\n");
@@ -3878,6 +3878,8 @@ NtUserGetComboBoxInfo(
    PPROCESSINFO ppi;
    BOOL NotSameppi = FALSE;
    BOOL Ret = TRUE;
+   DWORD cbSize;
+   COMBOBOXINFO Info;
 
    TRACE("Enter NtUserGetComboBoxInfo\n");
    UserEnterShared();
@@ -3890,6 +3892,7 @@ NtUserGetComboBoxInfo(
    _SEH2_TRY
    {
         ProbeForWrite(pcbi, sizeof(COMBOBOXINFO), 1);
+        cbSize = pcbi->cbSize;
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
@@ -3899,7 +3902,7 @@ NtUserGetComboBoxInfo(
    }
    _SEH2_END;
 
-   if (pcbi->cbSize < sizeof(COMBOBOXINFO))
+   if (cbSize < sizeof(COMBOBOXINFO))
    {
       EngSetLastError(ERROR_INVALID_PARAMETER);
       Ret = FALSE;
@@ -3920,37 +3923,40 @@ NtUserGetComboBoxInfo(
       KeAttachProcess(&Wnd->head.pti->ppi->peProcess->Pcb);
    }
 
+   RtlZeroMemory(&Info, sizeof(Info));
    _SEH2_TRY
    {
 #ifdef _WIN64
       if (PsGetProcessWow64Process(Wnd->head.pti->ppi->peProcess))
       {
          HEADCOMBO32 *lphc32 = UlongToPtr(*(PULONG)&((PWND2CBOX)Wnd)->pCBox);
-         pcbi->rcItem = lphc32->textRect;
-         pcbi->rcButton = lphc32->buttonRect;
-         pcbi->stateButton = 0;
+         ProbeForRead(lphc32, sizeof(*lphc32), 1);
+         Info.rcItem = lphc32->textRect;
+         Info.rcButton = lphc32->buttonRect;
+         Info.stateButton = 0;
          if (lphc32->wState & CBF_BUTTONDOWN)
-            pcbi->stateButton |= STATE_SYSTEM_PRESSED;
-         if (RECTL_bIsEmptyRect(&lphc32->buttonRect))
-            pcbi->stateButton |= STATE_SYSTEM_INVISIBLE;
-         pcbi->hwndCombo = UlongToHandle(lphc32->self);
-         pcbi->hwndItem = UlongToHandle(lphc32->hWndEdit);
-         pcbi->hwndList = UlongToHandle(lphc32->hWndLBox);
+            Info.stateButton |= STATE_SYSTEM_PRESSED;
+         if (RECTL_bIsEmptyRect(&Info.rcButton))
+            Info.stateButton |= STATE_SYSTEM_INVISIBLE;
+         Info.hwndCombo = UlongToHandle(lphc32->self);
+         Info.hwndItem = UlongToHandle(lphc32->hWndEdit);
+         Info.hwndList = UlongToHandle(lphc32->hWndLBox);
       }
       else
 #endif
       {
          LPHEADCOMBO lphc = ((PWND2CBOX)Wnd)->pCBox;
-         pcbi->rcItem = lphc->textRect;
-         pcbi->rcButton = lphc->buttonRect;
-         pcbi->stateButton = 0;
+         ProbeForRead(lphc, sizeof(*lphc), 1);
+         Info.rcItem = lphc->textRect;
+         Info.rcButton = lphc->buttonRect;
+         Info.stateButton = 0;
          if (lphc->wState & CBF_BUTTONDOWN)
-            pcbi->stateButton |= STATE_SYSTEM_PRESSED;
-         if (RECTL_bIsEmptyRect(&lphc->buttonRect))
-            pcbi->stateButton |= STATE_SYSTEM_INVISIBLE;
-         pcbi->hwndCombo = lphc->self;
-         pcbi->hwndItem = lphc->hWndEdit;
-         pcbi->hwndList = lphc->hWndLBox;
+            Info.stateButton |= STATE_SYSTEM_PRESSED;
+         if (RECTL_bIsEmptyRect(&Info.rcButton))
+            Info.stateButton |= STATE_SYSTEM_INVISIBLE;
+         Info.hwndCombo = lphc->self;
+         Info.hwndItem = lphc->hWndEdit;
+         Info.hwndList = lphc->hWndLBox;
       }
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
@@ -3959,6 +3965,28 @@ NtUserGetComboBoxInfo(
       SetLastNtError(_SEH2_GetExceptionCode());
    }
    _SEH2_END;
+
+   if (NotSameppi)
+   {
+      KeDetachProcess();
+      NotSameppi = FALSE;
+   }
+
+   if (Ret)
+   {
+      _SEH2_TRY
+      {
+         RtlCopyMemory(&pcbi->rcItem,
+                       &Info.rcItem,
+                       sizeof(COMBOBOXINFO) - FIELD_OFFSET(COMBOBOXINFO, rcItem));
+      }
+      _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+      {
+         Ret = FALSE;
+         SetLastNtError(_SEH2_GetExceptionCode());
+      }
+      _SEH2_END;
+   }
 
 Exit:
    if (NotSameppi) KeDetachProcess();
@@ -4057,12 +4085,14 @@ NtUserGetListBoxInfo(
       if (PsGetProcessWow64Process(Wnd->head.pti->ppi->peProcess))
       {
          LB_DESCR32 *descr32 = UlongToPtr(*(PULONG)&((PWND2LB)Wnd)->pLBiv);
+         ProbeForRead(descr32, sizeof(*descr32), 1);
          Ret = descr32->page_size;
       }
       else
 #endif
       {
          LB_DESCR *descr = ((PWND2LB)Wnd)->pLBiv;
+         ProbeForRead(descr, sizeof(*descr), 1);
          // See Controls ListBox.c:LB_GETLISTBOXINFO must match...
          Ret = descr->page_size;
       }
@@ -4301,7 +4331,7 @@ co_IntSetWindowLongPtr(HWND hWnd, DWORD Index, LONG_PTR NewValue, BOOL Ansi, ULO
 
    if ((INT)Index >= 0)
    {
-      if ((Index + Size) > Window->cbwndExtra)
+      if (FNID_HAS_PRIVATE_EXTRA(Window->fnid) || (Index + Size) > Window->cbwndExtra)
       {
          EngSetLastError(ERROR_INVALID_INDEX);
          OldValue = 0;
@@ -4348,7 +4378,7 @@ co_IntSetWindowLongPtr(HWND hWnd, DWORD Index, LONG_PTR NewValue, BOOL Ansi, ULO
          if ((Index != GWL_STYLE) &&
              (Index != GWL_EXSTYLE) &&
              (Index != GWL_ID) &&
-             (Index != GWL_USERDATA))
+             (Index != GWLP_USERDATA))
          {
             ERR("NtUserSetWindowLong(): Index requires pointer size: %lu\n", Index);
             EngSetLastError(ERROR_INVALID_INDEX);
@@ -4660,7 +4690,7 @@ NtUserSetWindowWord(HWND hWnd, INT Index, WORD NewValue)
       goto Exit; // Return 0
    }
 
-   if ((ULONG)Index > (Window->cbwndExtra - sizeof(WORD)))
+   if (FNID_HAS_PRIVATE_EXTRA(Window->fnid) || (ULONG)Index > (Window->cbwndExtra - sizeof(WORD)))
    {
       EngSetLastError(ERROR_INVALID_INDEX);
       goto Exit; // Return 0

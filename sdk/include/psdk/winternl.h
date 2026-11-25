@@ -386,6 +386,7 @@ typedef enum _KEY_SET_INFORMATION_CLASS
     KeySetVirtualizationInformation,
     KeySetDebugInformation,
     KeySetHandleTagsInformation,
+    KeySetLayerInformation,
     MaxKeySetInfoClass
 } KEY_SET_INFORMATION_CLASS;
 
@@ -735,5 +736,21 @@ RtlUniform(
 #ifdef __cplusplus
 }
 #endif
+
+typedef struct _SYSTEM_BASICPROCESS_INFORMATION {
+  ULONG NextEntryOffset;
+  HANDLE UniqueProcessId;
+  HANDLE InheritedFromUniqueProcessId;
+  ULONG64 SequenceNumber;
+  UNICODE_STRING ImageName;
+} SYSTEM_BASICPROCESS_INFORMATION, *PSYSTEM_BASICPROCESS_INFORMATION;
+
+typedef struct _SYSTEM_HANDLECOUNT_INFORMATION {
+  ULONG ProcessCount;
+  ULONG ThreadCount;
+  ULONG HandleCount;
+} SYSTEM_HANDLECOUNT_INFORMATION, *PSYSTEM_HANDLECOUNT_INFORMATION;
+
+#define __os_arm64x_get_x64_information __os_arm64x_rdtsc
 
 #endif /* _WINTERNL_ */

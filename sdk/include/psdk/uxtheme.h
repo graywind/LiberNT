@@ -74,7 +74,7 @@ THEMEAPI DrawThemeText(HTHEME,HDC,int,int,LPCWSTR,int,DWORD,DWORD, const RECT*);
 #define DTT_GLOWSIZE     0x00000800
 #define DTT_CALLBACK     0x00001000
 #define DTT_COMPOSITED   0x00002000
-#define DTT_VALIDBITS    0x00003fff
+#define DTT_VALIDBITS    (DTT_TEXTCOLOR | DTT_BORDERCOLOR | DTT_SHADOWCOLOR | DTT_SHADOWTYPE | DTT_SHADOWOFFSET | DTT_BORDERSIZE | DTT_FONTPROP | DTT_COLORPROP | DTT_STATEID | DTT_CALCRECT | DTT_APPLYOVERLAY | DTT_GLOWSIZE | DTT_COMPOSITED)
 
 typedef int (WINAPI *DTT_CALLBACK_PROC)(HDC,LPWSTR,int,RECT*,UINT,LPARAM);
 
@@ -284,5 +284,168 @@ THEMEAPI_(HANIMATIONBUFFER) BeginBufferedAnimation(HWND, HDC, const RECT *,
 THEMEAPI_(BOOL) BufferedPaintRenderAnimation(HWND, HDC);
 THEMEAPI BufferedPaintStopAllAnimations(HWND);
 THEMEAPI EndBufferedAnimation(HANIMATIONBUFFER, BOOL);
+
+#ifndef BPPF_ERASE
+#define BPPF_ERASE 0x0001
+#endif
+#ifndef BPPF_NOCLIP
+#define BPPF_NOCLIP 0x0002
+#endif
+#ifndef BPPF_NONCLIENT
+#define BPPF_NONCLIENT 0x0004
+#endif
+#ifndef DTBG_NOMIRROR
+#define DTBG_NOMIRROR 0x00000040
+#endif
+#ifndef DTPB_USECTLCOLORSTATIC
+#define DTPB_USECTLCOLORSTATIC 0x00000002
+#endif
+#ifndef DTPB_USEERASEBKGND
+#define DTPB_USEERASEBKGND 0x00000004
+#endif
+#ifndef DTPB_WINDOWDC
+#define DTPB_WINDOWDC 0x00000001
+#endif
+#ifndef GBF_COPY
+#define GBF_COPY 0x00000002
+#endif
+#ifndef GBF_DIRECT
+#define GBF_DIRECT 0x00000001
+#endif
+#ifndef MAX_THEMECOLOR
+#define MAX_THEMECOLOR 64
+#endif
+#ifndef MAX_THEMESIZE
+#define MAX_THEMESIZE 64
+#endif
+#ifndef WTNCA_NODRAWCAPTION
+#define WTNCA_NODRAWCAPTION 0x00000001
+#endif
+#ifndef WTNCA_NODRAWICON
+#define WTNCA_NODRAWICON 0x00000002
+#endif
+#ifndef WTNCA_NOMIRRORHELP
+#define WTNCA_NOMIRRORHELP 0x00000008
+#endif
+#ifndef WTNCA_NOSYSMENU
+#define WTNCA_NOSYSMENU 0x00000004
+#endif
+
+typedef enum TA_PROPERTY {
+    TAP_FLAGS = 0,
+    TAP_TRANSFORMCOUNT = 1,
+    TAP_STAGGERDELAY = 2,
+    TAP_STAGGERDELAYCAP = 3,
+    TAP_STAGGERDELAYFACTOR = 4,
+    TAP_ZORDER = 5
+} TA_PROPERTY;
+
+typedef enum TA_PROPERTY_FLAG {
+    TAPF_NONE = 0,
+    TAPF_HASSTAGGER = 1,
+    TAPF_ISRTLAWARE = 2,
+    TAPF_ALLOWCOLLECTION = 4,
+    TAPF_HASBACKGROUND = 8,
+    TAPF_HASPERSPECTIVE = 16
+} TA_PROPERTY_FLAG;
+
+typedef enum TA_TIMINGFUNCTION_TYPE {
+    TTFT_UNDEFINED = 0,
+    TTFT_CUBIC_BEZIER = 1
+} TA_TIMINGFUNCTION_TYPE;
+
+typedef enum TA_TRANSFORM_FLAG {
+    TATF_NONE = 0,
+    TATF_TARGETVALUES_USER = 1,
+    TATF_HASINITIALVALUES = 2,
+    TATF_HASORIGINVALUES = 4
+} TA_TRANSFORM_FLAG;
+
+typedef enum TA_TRANSFORM_TYPE {
+    TATT_TRANSLATE_2D = 0,
+    TATT_SCALE_2D = 1,
+    TATT_OPACITY = 2,
+    TATT_CLIP = 3
+} TA_TRANSFORM_TYPE;
+
+typedef struct _WTA_OPTIONS {
+  DWORD dwFlags;
+  DWORD dwMask;
+} WTA_OPTIONS, *PWTA_OPTIONS;
+
+typedef struct TA_TIMINGFUNCTION {
+  TA_TIMINGFUNCTION_TYPE eTimingFunctionType;
+} TA_TIMINGFUNCTION, *PTA_TIMINGFUNCTION;
+
+typedef struct TA_CUBIC_BEZIER {
+  TA_TIMINGFUNCTION header;
+  float rX0;
+  float rY0;
+  float rX1;
+  float rY1;
+} TA_CUBIC_BEZIER, *PTA_CUBIC_BEZIER;
+
+typedef struct TA_TRANSFORM {
+  TA_TRANSFORM_TYPE eTransformType;
+  DWORD dwTimingFunctionId;
+  DWORD dwStartTime;
+  DWORD dwDurationTime;
+  TA_TRANSFORM_FLAG eFlags;
+} TA_TRANSFORM, *PTA_TRANSFORM;
+
+typedef struct TA_TRANSFORM_2D {
+  TA_TRANSFORM header;
+  float rX;
+  float rY;
+  float rInitialX;
+  float rInitialY;
+  float rOriginX;
+  float rOriginY;
+} TA_TRANSFORM_2D, *PTA_TRANSFORM_2D;
+
+typedef struct TA_TRANSFORM_CLIP {
+  TA_TRANSFORM header;
+  float rLeft;
+  float rTop;
+  float rRight;
+  float rBottom;
+  float rInitialLeft;
+  float rInitialTop;
+  float rInitialRight;
+  float rInitialBottom;
+} TA_TRANSFORM_CLIP, *PTA_TRANSFORM_CLIP;
+
+typedef struct TA_TRANSFORM_OPACITY {
+  TA_TRANSFORM header;
+  float rOpacity;
+  float rInitialOpacity;
+} TA_TRANSFORM_OPACITY, *PTA_TRANSFORM_OPACITY;
+
+#define BPBF_COMPOSITED 2
+#define DTBG_VALIDBITS 0x7F
+#define DTT_FLAGS2VALIDBITS 1
+#define GBF_VALIDBITS 3
+#define STAP_VALIDBITS 7
+#define WTNCA_VALIDBITS 0xF
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL WINAPI BeginPanningFeedback(HWND hwnd);
+HRESULT DrawThemeParentBackgroundEx(HWND hwnd, HDC hdc, DWORD dwFlags, const RECT *prc);
+BOOL WINAPI EndPanningFeedback(HWND hwnd, BOOL fAnimateBack);
+HRESULT GetThemeAnimationProperty(HTHEME hTheme, int iStoryboardId, int iTargetId, TA_PROPERTY eProperty, void *pvProperty, DWORD cbSize, DWORD *pcbSizeOut);
+HRESULT GetThemeAnimationTransform(HTHEME hTheme, int iStoryboardId, int iTargetId, DWORD dwTransformIndex, TA_TRANSFORM *pTransform, DWORD cbSize, DWORD *pcbSizeOut);
+HRESULT GetThemeTimingFunction(HTHEME hTheme, int iTimingFunctionId, TA_TIMINGFUNCTION *pTimingFunction, DWORD cbSize, DWORD *pcbSizeOut);
+HRESULT SetWindowThemeNonClientAttributes(HWND hwnd, DWORD dwMask, DWORD dwAttributes);
+BOOL WINAPI UpdatePanningFeedback(HWND hwnd, LONG lTotalOverpanOffsetX, LONG lTotalOverpanOffsetY, BOOL fInInertia);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define BufferedPaintMakeOpaque(hBufferedPaint, prc) BufferedPaintSetAlpha(hBufferedPaint, prc, 255)
 
 #endif

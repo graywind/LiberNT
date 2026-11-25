@@ -260,6 +260,7 @@ public:
     ID3D11BlendState *default_blend_state = NULL;
     ID3D11DepthStencilState *default_depth_stencil_state = NULL;
     ID3D11RasterizerState *default_rasterizer_state = NULL;
+    ID3D11SamplerState *default_sampler_state = NULL;
     void HoldDefaultStates();
     IDXGIAdapter *adapter = NULL;
     D3DKMT_HANDLE km_adapter = 0;
@@ -2100,6 +2101,7 @@ public:
     UINT data_size = 0;
     bool created = false;
     bool ended = false;
+    bool active = false;
     UINT8 pending_polls = 0;
     bool is_predicate = false;
     bool is_counter = false;
@@ -2650,6 +2652,7 @@ void NativeDevice::MaybeDestroy()
     NativeDropDefault(default_blend_state);
     NativeDropDefault(default_depth_stencil_state);
     NativeDropDefault(default_rasterizer_state);
+    NativeDropDefault(default_sampler_state);
 }
 
 ULONG STDMETHODCALLTYPE NativeDevice::Release()
@@ -6770,7 +6773,7 @@ void STDMETHODCALLTYPE NativeContext::SetPredication(ID3D11Predicate *value, BOO
     if (!deferred)
     {
         D3D10DDI_HQUERY handle = {};
-        if (query) handle = query->handle;
+        if (query && !query->active) handle = query->handle;
         device->functions.pfnSetPredication(device->driver_device, handle, expected);
     }
     ReplaceObject(predicate, value);
@@ -6799,6 +6802,13 @@ void STDMETHODCALLTYPE NativeContext::Begin(ID3D11Asynchronous *async)
     if (query->device != device || query->desc.Query == D3D11_QUERY_EVENT || query->desc.Query == D3D11_QUERY_TIMESTAMP) return;
     NativeLock guard(device);
     query->ended = false;
+    /* QueryBegin never reaches the driver for the predicate it predicates on: predication stops until End */
+    if (query->is_predicate && predicate && NativeQuery::FromPredicate(predicate) == query && device->functions.pfnSetPredication)
+    {
+        D3D10DDI_HQUERY none = {};
+        device->functions.pfnSetPredication(device->driver_device, none, predicate_value);
+    }
+    query->active = true;
     device->functions.pfnQueryBegin(device->driver_device, query->handle);
 }
 void STDMETHODCALLTYPE NativeContext::End(ID3D11Asynchronous *async)
@@ -6818,6 +6828,12 @@ void STDMETHODCALLTYPE NativeContext::End(ID3D11Asynchronous *async)
     device->functions.pfnQueryEnd(device->driver_device, query->handle);
     query->ended = true;
     query->pending_polls = 0;
+    if (query->active && query->is_predicate && predicate && NativeQuery::FromPredicate(predicate) == query &&
+        device->functions.pfnSetPredication)
+    {
+        device->functions.pfnSetPredication(device->driver_device, query->handle, predicate_value);
+    }
+    query->active = false;
 }
 HRESULT STDMETHODCALLTYPE NativeContext::GetData(ID3D11Asynchronous *async, void *data, UINT size, UINT flags)
 {
@@ -7084,6 +7100,7 @@ public:
     HRESULT Publish(NativeTexture2D *);
     HRESULT FillTransport(UINT, const DXGI_PRESENT_PARAMETERS *);
     HRESULT CarryForward(const DXGI_PRESENT_PARAMETERS *);
+    HRESULT Scroll(const DXGI_PRESENT_PARAMETERS *);
     HRESULT QueuePublish(const DWM_DX_SURFACE_EXCHANGE &, HANDLE release);
     void SetLayer(DWM_DX_SURFACE_EXCHANGE &) const;
     void Place();
@@ -7634,11 +7651,12 @@ HRESULT NativeSwapChain::RetirePublication()
 static RECT NativePresentDamage(const DXGI_SWAP_CHAIN_DESC1 &desc, const DXGI_PRESENT_PARAMETERS *parameters)
 {
     RECT damage = {0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height)};
-    if (parameters && parameters->DirtyRectsCount)
+    if (parameters && (parameters->DirtyRectsCount || parameters->pScrollRect))
     {
         SetRectEmpty(&damage);
         for (UINT i = 0; i < parameters->DirtyRectsCount; ++i)
             UnionRect(&damage, &damage, &parameters->pDirtyRects[i]);
+        if (parameters->pScrollRect) UnionRect(&damage, &damage, parameters->pScrollRect);
     }
     return damage;
 }
@@ -7708,6 +7726,38 @@ HRESULT NativeSwapChain::CarryForward(const DXGI_PRESENT_PARAMETERS *parameters)
     return device->operation_error;
 }
 
+HRESULT NativeSwapChain::Scroll(const DXGI_PRESENT_PARAMETERS *parameters)
+{
+    UINT count = desc.BufferCount;
+    if (!parameters || !parameters->pScrollRect || count < 2 || !back_presents) return S_OK;
+    RECT pieces[64] = {*parameters->pScrollRect};
+    UINT pieces_count = 1;
+    bool exact = true;
+    for (UINT i = 0; exact && i < parameters->DirtyRectsCount; ++i)
+        exact = NativeSubtractRect(pieces, pieces_count, parameters->pDirtyRects[i]);
+    if (!exact)
+    {
+        RECT dirty = {};
+        for (UINT i = 0; i < parameters->DirtyRectsCount; ++i)
+            UnionRect(&dirty, &dirty, &parameters->pDirtyRects[i]);
+        pieces[0] = *parameters->pScrollRect;
+        pieces_count = 1;
+        /* FIXME: too many dirty rectangles cut the scroll by their bounds, leaving the scrolled pixels between them */
+        NativeSubtractRect(pieces, pieces_count, dirty);
+    }
+    device->BeginCall();
+    for (UINT i = 0; i < pieces_count; ++i)
+    {
+        RECT source = pieces[i];
+        OffsetRect(&source, -parameters->pScrollOffset->x, -parameters->pScrollOffset->y);
+        D3D11_BOX box = {static_cast<UINT>(source.left), static_cast<UINT>(source.top), 0,
+                        static_cast<UINT>(source.right), static_cast<UINT>(source.bottom), 1};
+        device->context->CopySubresourceRegion(buffers[0], 0, pieces[i].left, pieces[i].top, 0,
+                                               buffers[count - 1], 0, &box);
+    }
+    return device->operation_error;
+}
+
 /* Copy the back buffer into a transport DWM has released. That transport
  * holds an older frame, so the damage of every present since is copied. */
 HRESULT NativeSwapChain::FillTransport(UINT flags, const DXGI_PRESENT_PARAMETERS *parameters)
@@ -7739,13 +7789,7 @@ HRESULT NativeSwapChain::FillTransport(UINT flags, const DXGI_PRESENT_PARAMETERS
     }
     RECT full = {0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height)};
     RECT &damage = frame_damage[frame % ARRAYSIZE(frame_damage)];
-    damage = full;
-    if (parameters && parameters->DirtyRectsCount)
-    {
-        SetRectEmpty(&damage);
-        for (UINT i = 0; i < parameters->DirtyRectsCount; ++i)
-            UnionRect(&damage, &damage, &parameters->pDirtyRects[i]);
-    }
+    damage = NativePresentDamage(desc, parameters);
     UINT held = transport_frame[index];
     RECT older = {};
     if (!held || frame - held > ARRAYSIZE(frame_damage)) older = full;
@@ -8921,7 +8965,18 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
             | DXGI_PRESENT_DO_NOT_SEQUENCE | DXGI_PRESENT_ALLOW_TEARING))) return DXGI_ERROR_INVALID_CALL;
     if (parameters && ((parameters->DirtyRectsCount && !parameters->pDirtyRects)
             || (!!parameters->pScrollRect != !!parameters->pScrollOffset))) return DXGI_ERROR_INVALID_CALL;
-    if (parameters && parameters->pScrollRect) return E_NOTIMPL;
+    if (parameters && parameters->pScrollRect)
+    {
+        RECT full = {0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height)};
+        RECT source = *parameters->pScrollRect, inside;
+        OffsetRect(&source, -parameters->pScrollOffset->x, -parameters->pScrollOffset->y);
+        if (desc.SwapEffect != DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL || IsRectEmpty(parameters->pScrollRect)
+                || !IntersectRect(&inside, parameters->pScrollRect, &full) || !EqualRect(&inside, parameters->pScrollRect)
+                || !IntersectRect(&inside, &source, &full) || !EqualRect(&inside, &source))
+            return DXGI_ERROR_INVALID_CALL;
+        /* TODO: scroll a primary or exclusive fullscreen swap chain; refused with E_NOTIMPL */
+        if (primary || exclusive) return E_NOTIMPL;
+    }
     if (!primary && parameters && parameters->DirtyRectsCount
             && (desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD || desc.SwapEffect == DXGI_SWAP_EFFECT_FLIP_DISCARD))
         return DXGI_ERROR_INVALID_CALL;
@@ -8979,6 +9034,8 @@ HRESULT NativeSwapChain::PresentMeasured(UINT interval, UINT flags, const DXGI_P
     {
         NativeWaitPendingRelease(buffers[0]);
         HRESULT hr = CarryForward(parameters);
+        if (FAILED(hr)) return hr;
+        hr = Scroll(parameters);
         if (FAILED(hr)) return hr;
         if (transports[0])
             hr = FillTransport(flags, parameters);

@@ -233,12 +233,14 @@ extern "C" {
 #define TBN_LAST (0U-720U)
 
 #define UDN_FIRST (0U-721U)
-#define UDN_LAST (0U-740U)
+#define UDN_LAST (0U-729U)
 
-#define MCN_FIRST (0U-750U)
-#define MCN_LAST (0U-759U)
-#define DTN_FIRST (0U-760U)
-#define DTN_LAST (0U-799U)
+#define DTN_FIRST (0U-740U)
+#define DTN_LAST (0U-745U)
+#define MCN_FIRST (0U-746U)
+#define MCN_LAST (0U-752U)
+#define DTN_FIRST2 (0U-753U)
+#define DTN_LAST2 (0U-799U)
 #define CBEN_FIRST (0U-800U)
 #define CBEN_LAST (0U-830U)
 #define RBN_FIRST (0U-831U)
@@ -687,6 +689,9 @@ extern "C" {
     int iOrder;
     UINT type;
     void  *pvFilter;
+#if (_WIN32_WINNT >= 0x0600)
+    UINT state;
+#endif
   } HDITEMA,*LPHDITEMA;
 
 #define HDITEMA_V1_SIZE CCSIZEOF_STRUCT(HDITEMA,lParam)
@@ -704,6 +709,9 @@ extern "C" {
     int iOrder;
     UINT type;
     void *pvFilter;
+#if (_WIN32_WINNT >= 0x0600)
+    UINT state;
+#endif
   } HDITEMW,*LPHDITEMW;
 
 #define HDITEM __MINGW_NAME_AW(HDITEM)
@@ -1545,6 +1553,10 @@ typedef struct tagNMBCDROPDOWN {
     UINT cxIdeal;
     LPARAM lParam;
     UINT cxHeader;
+#if (_WIN32_WINNT >= 0x0600)
+    RECT rcChevronLocation;
+    UINT uChevronState;
+#endif
   } REBARBANDINFOA,*LPREBARBANDINFOA;
   typedef REBARBANDINFOA CONST *LPCREBARBANDINFOA;
 
@@ -1574,6 +1586,10 @@ typedef struct tagNMBCDROPDOWN {
     UINT cxIdeal;
     LPARAM lParam;
     UINT cxHeader;
+#if (_WIN32_WINNT >= 0x0600)
+    RECT rcChevronLocation;
+    UINT uChevronState;
+#endif
   } REBARBANDINFOW,*LPREBARBANDINFOW;
 
   typedef REBARBANDINFOW CONST *LPCREBARBANDINFOW;
@@ -2370,6 +2386,10 @@ typedef struct tagNMBCDROPDOWN {
     int iGroupId;
     UINT cColumns;
     PUINT puColumns;
+#if (_WIN32_WINNT >= 0x0600)
+    int *piColFmt;
+    int iGroup;
+#endif
   } LVITEMA,*LPLVITEMA;
 
   typedef struct tagLVITEMW
@@ -2387,6 +2407,10 @@ typedef struct tagNMBCDROPDOWN {
     int iGroupId;
     UINT cColumns;
     PUINT puColumns;
+#if (_WIN32_WINNT >= 0x0600)
+    int *piColFmt;
+    int iGroup;
+#endif
   } LVITEMW,*LPLVITEMW;
 
 #define LVITEM __MINGW_NAME_AW(LVITEM)
@@ -2589,6 +2613,11 @@ typedef struct tagNMBCDROPDOWN {
     int iSubItem;
     int iImage;
     int iOrder;
+#if (_WIN32_WINNT >= 0x0600)
+    int cxMin;
+    int cxDefault;
+    int cxIdeal;
+#endif
   } LVCOLUMNA,*LPLVCOLUMNA;
 
   typedef struct tagLVCOLUMNW {
@@ -3047,6 +3076,9 @@ typedef struct tagNMBCDROPDOWN {
     int iItem;
     UINT cColumns;
     PUINT puColumns;
+#if (_WIN32_WINNT >= 0x0600)
+    int *piColFmt;
+#endif
   } LVTILEINFO,*PLVTILEINFO;
 
 #define LVM_SETTILEVIEWINFO (LVM_FIRST+162)
@@ -3196,7 +3228,7 @@ typedef struct tagNMBCDROPDOWN {
 #define LVKF_CONTROL 0x2
 #define LVKF_SHIFT 0x4
 
-#define NMLVCUSTOMDRAW_V3_SIZE CCSIZEOF_STRUCT(NMLVCUSTOMDRW,clrTextBk)
+#define NMLVCUSTOMDRAW_V3_SIZE CCSIZEOF_STRUCT(NMLVCUSTOMDRAW,clrTextBk)
 
   typedef struct tagNMLVCUSTOMDRAW {
     NMCUSTOMDRAW nmcd;
@@ -4504,7 +4536,7 @@ typedef struct {
     SYSTEMTIME stSelEnd;
   } NMSELCHANGE,*LPNMSELCHANGE;
 
-#define MCN_SELCHANGE (MCN_FIRST+1)
+#define MCN_SELCHANGE (MCN_FIRST - 3)
 
   typedef struct tagNMDAYSTATE {
     NMHDR nmhdr;
@@ -4514,11 +4546,12 @@ typedef struct {
     LPMONTHDAYSTATE prgDayState;
   } NMDAYSTATE,*LPNMDAYSTATE;
 
-#define MCN_GETDAYSTATE (MCN_FIRST+3)
+#define MCN_GETDAYSTATE (MCN_FIRST - 1)
 
   typedef NMSELCHANGE NMSELECT,*LPNMSELECT;
 
-#define MCN_SELECT (MCN_FIRST+4)
+#define MCN_SELECT (MCN_FIRST)
+#define MCN_VIEWCHANGE (MCN_FIRST - 4)
 
 #define MCS_DAYSTATE           0x0001
 #define MCS_MULTISELECT        0x0002
@@ -4580,15 +4613,15 @@ typedef struct {
 #define DTS_APPCANPARSE 0x10
 #define DTS_RIGHTALIGN 0x20
 
-#define DTN_DATETIMECHANGE (DTN_FIRST+1)
+#define DTN_DATETIMECHANGE (DTN_FIRST2 - 6)
   typedef struct tagNMDATETIMECHANGE {
     NMHDR nmhdr;
     DWORD dwFlags;
     SYSTEMTIME st;
   } NMDATETIMECHANGE,*LPNMDATETIMECHANGE;
 
-#define DTN_USERSTRINGA (DTN_FIRST+2)
-#define DTN_USERSTRINGW (DTN_FIRST+15)
+#define DTN_USERSTRINGA (DTN_FIRST2 - 5)
+#define DTN_USERSTRINGW (DTN_FIRST - 5)
   typedef struct tagNMDATETIMESTRINGA {
     NMHDR nmhdr;
     LPCSTR pszUserString;
@@ -4607,8 +4640,8 @@ typedef struct {
 #define NMDATETIMESTRING __MINGW_NAME_AW(NMDATETIMESTRING)
 #define LPNMDATETIMESTRING __MINGW_NAME_AW(LPNMDATETIMESTRING)
 
-#define DTN_WMKEYDOWNA (DTN_FIRST+3)
-#define DTN_WMKEYDOWNW (DTN_FIRST+16)
+#define DTN_WMKEYDOWNA (DTN_FIRST2 - 4)
+#define DTN_WMKEYDOWNW (DTN_FIRST - 4)
   typedef struct tagNMDATETIMEWMKEYDOWNA {
     NMHDR nmhdr;
     int nVirtKey;
@@ -4627,8 +4660,8 @@ typedef struct {
 #define NMDATETIMEWMKEYDOWN __MINGW_NAME_AW(NMDATETIMEWMKEYDOWN)
 #define LPNMDATETIMEWMKEYDOWN __MINGW_NAME_AW(LPNMDATETIMEWMKEYDOWN)
 
-#define DTN_FORMATA (DTN_FIRST+4)
-#define DTN_FORMATW (DTN_FIRST+17)
+#define DTN_FORMATA (DTN_FIRST2 - 3)
+#define DTN_FORMATW (DTN_FIRST - 3)
   typedef struct tagNMDATETIMEFORMATA {
     NMHDR nmhdr;
     LPCSTR pszFormat;
@@ -4649,8 +4682,8 @@ typedef struct {
 #define NMDATETIMEFORMAT __MINGW_NAME_AW(NMDATETIMEFORMAT)
 #define LPNMDATETIMEFORMAT __MINGW_NAME_AW(LPNMDATETIMEFORMAT)
 
-#define DTN_FORMATQUERYA (DTN_FIRST+5)
-#define DTN_FORMATQUERYW (DTN_FIRST+18)
+#define DTN_FORMATQUERYA (DTN_FIRST2 - 2)
+#define DTN_FORMATQUERYW (DTN_FIRST - 2)
   typedef struct tagNMDATETIMEFORMATQUERYA {
     NMHDR nmhdr;
     LPCSTR pszFormat;
@@ -4667,8 +4700,8 @@ typedef struct {
 #define NMDATETIMEFORMATQUERY __MINGW_NAME_AW(NMDATETIMEFORMATQUERY)
 #define LPNMDATETIMEFORMATQUERY __MINGW_NAME_AW(LPNMDATETIMEFORMATQUERY)
 
-#define DTN_DROPDOWN (DTN_FIRST+6)
-#define DTN_CLOSEUP (DTN_FIRST+7)
+#define DTN_DROPDOWN (DTN_FIRST2 - 1)
+#define DTN_CLOSEUP (DTN_FIRST2)
 
 #define GDTR_MIN 0x1
 #define GDTR_MAX 0x2
@@ -5492,5 +5525,506 @@ HRESULT WINAPI LoadIconWithScaleDown(_In_opt_ HINSTANCE, _In_ PCWSTR, _In_ int, 
 #endif
 
 #endif /* !NOUSER */
+
+#ifndef CBES_EX_TEXTENDELLIPSIS
+#define CBES_EX_TEXTENDELLIPSIS 0x00000020
+#endif
+#ifndef CDIS_DROPHILITED
+#define CDIS_DROPHILITED 0x1000
+#endif
+#ifndef CDIS_NEARHOT
+#define CDIS_NEARHOT 0x0400
+#endif
+#ifndef CDIS_OTHERSIDEHOT
+#define CDIS_OTHERSIDEHOT 0x0800
+#endif
+#ifndef ES_EX_ALLOWEOL_LF
+#define ES_EX_ALLOWEOL_LF 0x0002L
+#endif
+#ifndef ES_EX_CONVERT_EOL_ON_PASTE
+#define ES_EX_CONVERT_EOL_ON_PASTE 0x0004L
+#endif
+#ifndef ES_EX_ZOOMABLE
+#define ES_EX_ZOOMABLE 0x0010L
+#endif
+#ifndef HDFT_ISDATE
+#define HDFT_ISDATE 0x0002
+#endif
+#ifndef HDIS_FOCUSED
+#define HDIS_FOCUSED 0x00000001
+#endif
+#ifndef HDI_STATE
+#define HDI_STATE 0x0200
+#endif
+#ifndef HDSIL_STATE
+#define HDSIL_STATE 1
+#endif
+#ifndef HHT_ONDROPDOWN
+#define HHT_ONDROPDOWN 0x2000
+#endif
+#ifndef HHT_ONITEMSTATEICON
+#define HHT_ONITEMSTATEICON 0x1000
+#endif
+#ifndef HHT_ONOVERFLOW
+#define HHT_ONOVERFLOW 0x4000
+#endif
+#ifndef IDB_HIST_DISABLED
+#define IDB_HIST_DISABLED 14
+#endif
+#ifndef IDB_HIST_HOT
+#define IDB_HIST_HOT 13
+#endif
+#ifndef IDB_HIST_NORMAL
+#define IDB_HIST_NORMAL 12
+#endif
+#ifndef IDB_HIST_PRESSED
+#define IDB_HIST_PRESSED 15
+#endif
+#ifndef ILC_HIGHQUALITYSCALE
+#define ILC_HIGHQUALITYSCALE 0x00020000
+#endif
+#ifndef ILC_ORIGINALSIZE
+#define ILC_ORIGINALSIZE 0x00010000
+#endif
+#ifndef ILD_ASYNC
+#define ILD_ASYNC 0x00008000
+#endif
+#ifndef ILGT_ASYNC
+#define ILGT_ASYNC 0x00000001
+#endif
+#ifndef ILGT_NORMAL
+#define ILGT_NORMAL 0x00000000
+#endif
+#ifndef I_CHILDRENAUTO
+#define I_CHILDRENAUTO (-2)
+#endif
+#ifndef LVBKIF_FLAG_ALPHABLEND
+#define LVBKIF_FLAG_ALPHABLEND 0x20000000
+#endif
+#ifndef LVCDI_ITEMSLIST
+#define LVCDI_ITEMSLIST 0x00000002
+#endif
+#ifndef LVIF_COLFMT
+#define LVIF_COLFMT 0x00010000
+#endif
+#ifndef LVNI_PREVIOUS
+#define LVNI_PREVIOUS 0x0020
+#endif
+#ifndef LVNI_SAMEGROUPONLY
+#define LVNI_SAMEGROUPONLY 0x0080
+#endif
+#ifndef LVNI_VISIBLEONLY
+#define LVNI_VISIBLEONLY 0x0040
+#endif
+#ifndef LVNI_VISIBLEORDER
+#define LVNI_VISIBLEORDER 0x0010
+#endif
+#ifndef LVNSCH_ERROR
+#define LVNSCH_ERROR (-2)
+#endif
+#ifndef LVNSCH_IGNORE
+#define LVNSCH_IGNORE (-3)
+#endif
+#ifndef LVTVIF_EXTENDED
+#define LVTVIF_EXTENDED 0x00000004
+#endif
+#ifndef LWS_NOPREFIX
+#define LWS_NOPREFIX 0x0004
+#endif
+#ifndef LWS_RIGHT
+#define LWS_RIGHT 0x0020
+#endif
+#ifndef LWS_USECUSTOMTEXT
+#define LWS_USECUSTOMTEXT 0x0010
+#endif
+#ifndef LWS_USEVISUALSTYLE
+#define LWS_USEVISUALSTYLE 0x0008
+#endif
+#ifndef MCGIF_DATE
+#define MCGIF_DATE 0x00000001
+#endif
+#ifndef MCGIF_NAME
+#define MCGIF_NAME 0x00000004
+#endif
+#ifndef MCGIF_RECT
+#define MCGIF_RECT 0x00000002
+#endif
+#ifndef MCGIP_CALENDAR
+#define MCGIP_CALENDAR 4
+#endif
+#ifndef MCGIP_CALENDARBODY
+#define MCGIP_CALENDARBODY 6
+#endif
+#ifndef MCGIP_CALENDARCELL
+#define MCGIP_CALENDARCELL 8
+#endif
+#ifndef MCGIP_CALENDARCONTROL
+#define MCGIP_CALENDARCONTROL 0
+#endif
+#ifndef MCGIP_CALENDARHEADER
+#define MCGIP_CALENDARHEADER 5
+#endif
+#ifndef MCGIP_CALENDARROW
+#define MCGIP_CALENDARROW 7
+#endif
+#ifndef MCGIP_FOOTER
+#define MCGIP_FOOTER 3
+#endif
+#ifndef MCGIP_NEXT
+#define MCGIP_NEXT 1
+#endif
+#ifndef MCGIP_PREV
+#define MCGIP_PREV 2
+#endif
+#ifndef MCHT_CALENDARCONTROL
+#define MCHT_CALENDARCONTROL 0x00100000
+#endif
+#ifndef MCMV_CENTURY
+#define MCMV_CENTURY 3
+#endif
+#ifndef MCMV_DECADE
+#define MCMV_DECADE 2
+#endif
+#ifndef MCMV_MONTH
+#define MCMV_MONTH 0
+#endif
+#ifndef MCMV_YEAR
+#define MCMV_YEAR 1
+#endif
+#ifndef RBBIM_CHEVRONLOCATION
+#define RBBIM_CHEVRONLOCATION 0x00001000
+#endif
+#ifndef RBBIM_CHEVRONSTATE
+#define RBBIM_CHEVRONSTATE 0x00002000
+#endif
+#ifndef RBHT_SPLITTER
+#define RBHT_SPLITTER 0x0010
+#endif
+#ifndef TBCDRF_USECDCOLORS
+#define TBCDRF_USECDCOLORS 0x00800000
+#endif
+#ifndef TBS_NOTIFYBEFOREMOVE
+#define TBS_NOTIFYBEFOREMOVE 0x0800
+#endif
+#ifndef TBS_TRANSPARENTBKGND
+#define TBS_TRANSPARENTBKGND 0x1000
+#endif
+#ifndef TTS_USEVISUALSTYLE
+#define TTS_USEVISUALSTYLE 0x100
+#endif
+#ifndef TVGN_NEXTSELECTED
+#define TVGN_NEXTSELECTED 0x000B
+#endif
+#ifndef TVIS_EX_ALL
+#define TVIS_EX_ALL 0x0002
+#endif
+#ifndef TVIS_EX_DISABLED
+#define TVIS_EX_DISABLED 0x0002
+#endif
+#ifndef TVIS_EX_FLAT
+#define TVIS_EX_FLAT 0x0001
+#endif
+#ifndef TVS_EX_AUTOHSCROLL
+#define TVS_EX_AUTOHSCROLL 0x0020
+#endif
+#ifndef TVS_EX_DIMMEDCHECKBOXES
+#define TVS_EX_DIMMEDCHECKBOXES 0x0200
+#endif
+#ifndef TVS_EX_DOUBLEBUFFER
+#define TVS_EX_DOUBLEBUFFER 0x0004
+#endif
+#ifndef TVS_EX_DRAWIMAGEASYNC
+#define TVS_EX_DRAWIMAGEASYNC 0x0400
+#endif
+#ifndef TVS_EX_EXCLUSIONCHECKBOXES
+#define TVS_EX_EXCLUSIONCHECKBOXES 0x0100
+#endif
+#ifndef TVS_EX_FADEINOUTEXPANDOS
+#define TVS_EX_FADEINOUTEXPANDOS 0x0040
+#endif
+#ifndef TVS_EX_MULTISELECT
+#define TVS_EX_MULTISELECT 0x0002
+#endif
+#ifndef TVS_EX_NOINDENTSTATE
+#define TVS_EX_NOINDENTSTATE 0x0008
+#endif
+#ifndef TVS_EX_NOSINGLECOLLAPSE
+#define TVS_EX_NOSINGLECOLLAPSE 0x0001
+#endif
+#ifndef TVS_EX_PARTIALCHECKBOXES
+#define TVS_EX_PARTIALCHECKBOXES 0x0080
+#endif
+#ifndef TVS_EX_RICHTOOLTIP
+#define TVS_EX_RICHTOOLTIP 0x0010
+#endif
+
+typedef enum EC_ENDOFLINE {
+    EC_ENDOFLINE_DETECTFROMCONTENT = 0,
+    EC_ENDOFLINE_CRLF = 1,
+    EC_ENDOFLINE_CR = 2,
+    EC_ENDOFLINE_LF = 3
+} EC_ENDOFLINE;
+
+typedef enum EC_SEARCHWEB_ENTRYPOINT {
+    EC_SEARCHWEB_ENTRYPOINT_EXTERNAL = 0,
+    EC_SEARCHWEB_ENTRYPOINT_CONTEXTMENU = 1
+} EC_SEARCHWEB_ENTRYPOINT;
+
+typedef struct tagNMBCDROPDOWN * LPNMBCDROPDOWN;
+
+typedef struct NMSEARCHWEB {
+  NMHDR hdr;
+  EC_SEARCHWEB_ENTRYPOINT entrypoint;
+  BOOL hasQueryText;
+  BOOL invokeSucceeded;
+} NMSEARCHWEB;
+
+typedef struct tagDATETIMEPICKERINFO {
+  DWORD cbSize;
+  RECT rcCheck;
+  DWORD stateCheck;
+  RECT rcButton;
+  DWORD stateButton;
+  HWND hwndEdit;
+  HWND hwndUD;
+  HWND hwndDropDown;
+} DATETIMEPICKERINFO, *LPDATETIMEPICKERINFO;
+
+typedef struct tagMCGRIDINFO {
+  UINT cbSize;
+  DWORD dwPart;
+  DWORD dwFlags;
+  int iCalendar;
+  int iRow;
+  int iCol;
+  BOOL bSelected;
+  SYSTEMTIME stStart;
+  SYSTEMTIME stEnd;
+  RECT rc;
+  PWSTR pszName;
+  size_t cchName;
+} MCGRIDINFO, *PMCGRIDINFO;
+
+typedef struct tagNMCUSTOMSPLITRECTINFO {
+  NMHDR hdr;
+  RECT rcClient;
+  RECT rcButton;
+  RECT rcSplit;
+} NMCUSTOMSPLITRECTINFO, *LPNMCUSTOMSPLITRECTINFO;
+
+typedef struct tagNMCUSTOMTEXT {
+  NMHDR hdr;
+  HDC hDC;
+  LPCWSTR lpString;
+  int nCount;
+  LPRECT lpRect;
+  UINT uFormat;
+  BOOL fLink;
+} NMCUSTOMTEXT, *LPNMCUSTOMTEXT;
+
+typedef struct tagNMLVLINK {
+  NMHDR hdr;
+  LITEM link;
+  int iItem;
+  int iSubItem;
+} NMLVLINK, *PNMLVLINK;
+
+typedef struct tagNMREBARSPLITTER {
+  NMHDR hdr;
+  RECT rcSizing;
+} NMREBARSPLITTER, *LPNMREBARSPLITTER;
+
+typedef struct tagNMTVSTATEIMAGECHANGING {
+  NMHDR hdr;
+  HTREEITEM hti;
+  int iOldStateImageIndex;
+  int iNewStateImageIndex;
+} NMTVSTATEIMAGECHANGING, *LPNMTVSTATEIMAGECHANGING;
+
+typedef struct tagNMVIEWCHANGE {
+  NMHDR nmhdr;
+  DWORD dwOldView;
+  DWORD dwNewView;
+} NMVIEWCHANGE, *LPNMVIEWCHANGE;
+
+typedef struct tagTRBTHUMBPOSCHANGING {
+  NMHDR hdr;
+  DWORD dwPos;
+  int nReason;
+} NMTRBTHUMBPOSCHANGING;
+
+#define ACM_ISPLAYING 0x468
+#ifdef _WIN64
+#define BCCL_NOGLYPH (-1)
+#else
+#define BCCL_NOGLYPH 0xFFFFFFFF
+#endif
+#define CB_GETCUEBANNER 0x1704
+#define CB_SETCUEBANNER 0x1703
+#define DTM_CLOSEMONTHCAL 0x100D
+#define DTM_GETDATETIMEPICKERINFO 0x100E
+#define DTM_GETMCSTYLE 0x100C
+#define DTM_SETMCSTYLE 0x100B
+#define EM_ENABLESEARCHWEB 0x150E
+#define EM_FILELINEFROMCHAR 0x1513
+#define EM_FILELINEINDEX 0x1514
+#define EM_FILELINELENGTH 0x1515
+#define EM_GETCARETINDEX 0x1512
+#define EM_GETENDOFLINE 0x150D
+#define EM_GETEXTENDEDSTYLE 0x150B
+#define EM_GETFILELINE 0x1516
+#define EM_GETFILELINECOUNT 0x1517
+#define EM_GETHILITE 0x1506
+#define EM_NOSETFOCUS 0x1507
+#define EM_SEARCHWEB 0x150F
+#define EM_SETCARETINDEX 0x1511
+#define EM_SETENDOFLINE 0x150C
+#define EM_SETEXTENDEDSTYLE 0x150A
+#define EM_SETHILITE 0x1505
+#define EM_TAKEFOCUS 0x1508
+#define EN_FIRST 0xFFFFFA10
+#define EN_LAST 0xFFFFF9FC
+#define EN_SEARCHWEB 0xFFFFFA10
+#define ES_EX_ALLOWEOL_ALL 3
+#define ES_EX_ALLOWEOL_CR 0x0001L
+#ifdef _WIN64
+#define HBITMAP_CALLBACK (-1)
+#else
+#define HBITMAP_CALLBACK 0xFFFFFFFF
+#endif
+#define HDM_GETFOCUSEDITEM 0x121B
+#define HDM_GETITEMDROPDOWNRECT (HDM_FIRST + 25)
+#define HDM_GETOVERFLOWRECT 0x121A
+#define HDM_SETFOCUSEDITEM 0x121C
+#define HDM_TRANSLATEACCELERATOR CCM_TRANSLATEACCELERATOR
+#define HDSIL_NORMAL 0
+#if (!(defined(UNICODE)))
+#ifdef _WIN64
+#define LVITEM_V5_SIZE 0x48
+#else
+#define LVITEM_V5_SIZE 0x34
+#endif
+#endif
+#ifdef _WIN64
+#define LVITEMA_V5_SIZE 0x48
+#else
+#define LVITEMA_V5_SIZE 0x34
+#endif
+#ifdef _WIN64
+#define LVITEMW_V5_SIZE 0x48
+#else
+#define LVITEMW_V5_SIZE 0x34
+#endif
+#if (!(defined(UNICODE)))
+#define LVN_INCREMENTALSEARCH 0xFFFFFF5E
+#else
+#define LVN_INCREMENTALSEARCH 0xFFFFFF5D
+#endif
+#define LVNI_DIRECTIONMASK 0xF00
+#define LVNI_STATEMASK 0xF
+#define LVNSCH_DEFAULT - 1
+#ifdef _WIN64
+#define LVTILEINFO_V5_SIZE 0x18
+#else
+#define LVTILEINFO_V5_SIZE 0x10
+#endif
+#define MCHT_CALENDARDATEMAX 0x20005
+#define MCHT_CALENDARDATEMIN 0x20004
+#define MCM_GETCALENDARGRIDINFO 0x1018
+#define MCM_GETCALID 0x101B
+#define MCM_SETCALID 0x101C
+#define MCM_SETCURRENTVIEW 0x1020
+#define MCMV_MAX 3
+#define NM_CUSTOMTEXT 0xFFFFFFE8
+#define NM_FONTCHANGED 0xFFFFFFE9
+#define NM_GETCUSTOMSPLITRECT 0xFFFFFB21
+#define NM_TVSTATEIMAGECHANGING 0xFFFFFFE8
+#define PGM_SETSCROLLINFO 0x140D
+#define RB_GETEXTENDEDSTYLE 0x42A
+#define RB_SETBANDWIDTH 0x42C
+#define RB_SETEXTENDEDSTYLE 0x429
+#define RBN_SPLITTERDRAG 0xFFFFFCB6
+#if (!(defined(UNICODE)))
+#ifdef _WIN64
+#define REBARBANDINFO_V6_SIZE 0x6C
+#else
+#define REBARBANDINFO_V6_SIZE 0x50
+#endif
+#endif
+#define TB_GETITEMDROPDOWNRECT 0x467
+#define TB_GETPRESSEDIMAGELIST 0x469
+#define TB_SETPRESSEDIMAGELIST 0x468
+#define TBM_SETPOSNOTIFY 0x422
+#define TRBN_FIRST 0xFFFFFA23
+#define TRBN_LAST 0xFFFFFA11
+#define TRBN_THUMBPOSCHANGING 0xFFFFFA22
+#if (!(defined(UNICODE)))
+#define TVN_ITEMCHANGED 0xFFFFFE5E
+#define TVN_ITEMCHANGING 0xFFFFFE60
+#else
+#define TVN_ITEMCHANGED 0xFFFFFE5D
+#define TVN_ITEMCHANGING 0xFFFFFE5F
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+HRESULT WINAPI TaskDialog(HWND hwndOwner, HINSTANCE hInstance, PCWSTR pszWindowTitle, PCWSTR pszMainInstruction, PCWSTR pszContent, TASKDIALOG_COMMON_BUTTON_FLAGS dwCommonButtons, PCWSTR pszIcon, int *pnButton);
+
+#ifdef __cplusplus
+}
+#endif
+
+#define Animate_IsPlaying(hwnd) (BOOL) SNDMSG(hwnd, ACM_ISPLAYING, 0, 0)
+#define Button_GetNote(hwnd, psz, pcc) (BOOL) SNDMSG((hwnd), BCM_GETNOTE, (WPARAM) pcc, (LPARAM) psz)
+#define Button_GetNoteLength(hwnd) (LRESULT) SNDMSG((hwnd), BCM_GETNOTELENGTH, 0, 0)
+#define Button_GetSplitInfo(hwnd, pInfo) (BOOL) SNDMSG((hwnd), BCM_GETSPLITINFO, 0, (LPARAM) (pInfo))
+#define Button_SetDropDownState(hwnd, fDropDown) (BOOL) SNDMSG((hwnd), BCM_SETDROPDOWNSTATE, (WPARAM) (fDropDown), 0)
+#define Button_SetNote(hwnd, psz) (BOOL) SNDMSG((hwnd), BCM_SETNOTE, 0, (LPARAM) (psz))
+#define Button_SetSplitInfo(hwnd, pInfo) (BOOL) SNDMSG((hwnd), BCM_SETSPLITINFO, 0, (LPARAM) (pInfo))
+#define ComboBox_GetCueBannerText(hwnd, lpwText, cchText) (BOOL) SNDMSG((hwnd), CB_GETCUEBANNER, (WPARAM) (lpwText), (LPARAM) (cchText))
+#define ComboBox_SetCueBannerText(hwnd, lpcwText) (BOOL) SNDMSG((hwnd), CB_SETCUEBANNER, 0, (LPARAM) (lpcwText))
+#define DateTime_CloseMonthCal(hdp) SNDMSG(hdp, DTM_CLOSEMONTHCAL, 0, 0)
+#define DateTime_GetDateTimePickerInfo(hdp, pdtpi) SNDMSG(hdp, DTM_GETDATETIMEPICKERINFO, 0, (LPARAM) (pdtpi))
+#define DateTime_GetIdealSize(hdp, psize) (BOOL) SNDMSG((hdp), DTM_GETIDEALSIZE, 0, (LPARAM) (psize))
+#define DateTime_GetMonthCalStyle(hdp) SNDMSG(hdp, DTM_GETMCSTYLE, 0, 0)
+#define DateTime_SetMonthCalStyle(hdp, dwStyle) SNDMSG(hdp, DTM_SETMCSTYLE, 0, (LPARAM) dwStyle)
+#define Edit_EnableSearchWeb(hwndCtl, enable) (BOOL) SNDMSG((hwndCtl), EM_ENABLESEARCHWEB, (WPARAM) (enable), 0)
+#define Edit_GetCaretIndex(hwndCtl) (DWORD) SNDMSG((hwndCtl), EM_GETCARETINDEX, 0, 0)
+#define Edit_GetEndOfLine(hwndCtl) (EC_ENDOFLINE) SNDMSG((hwndCtl), EM_GETENDOFLINE, 0, 0)
+#define Edit_GetExtendedStyle(hwndCtl) (DWORD) SNDMSG((hwndCtl), EM_GETEXTENDEDSTYLE, 0, 0)
+#define Edit_GetFileLine(hwndCtl, lineNumber, textBuffer) (DWORD) SNDMSG((hwndCtl), EM_GETFILELINE, (WPARAM) (lineNumber), (LPARAM) (textBuffer))
+#define Edit_GetFileLineCount(hwndCtl) (DWORD) SNDMSG((hwndCtl), EM_GETFILELINECOUNT, 0, 0)
+#define Edit_GetFileLineFromChar(hwndCtl, characterIndex) (DWORD) SNDMSG((hwndCtl), EM_FILELINEFROMCHAR, (WPARAM) (characterIndex), 0)
+#define Edit_GetFileLineIndex(hwndCtl, lineNumber) (DWORD) SNDMSG((hwndCtl), EM_FILELINEINDEX, (WPARAM) (lineNumber), 0)
+#define Edit_GetFileLineLength(hwndCtl, characterIndex) (DWORD) SNDMSG((hwndCtl), EM_FILELINELENGTH, (WPARAM) (characterIndex), 0)
+#define Edit_GetHilite(hwndCtl) ((DWORD) SNDMSG((hwndCtl), EM_GETHILITE, 0L, 0L))
+#define Edit_GetZoom(hwndCtl, numerator, denominator) (BOOL) SNDMSG((hwndCtl), EM_GETZOOM, (WPARAM) (numerator), (LPARAM) (denominator))
+#define Edit_NoSetFocus(hwndCtl) ((DWORD) SNDMSG((hwndCtl), EM_NOSETFOCUS, 0L, 0L))
+#define Edit_SearchWeb(hwndCtl) (BOOL) SNDMSG((hwndCtl), EM_SEARCHWEB, 0, 0)
+#define Edit_SetCueBannerTextFocused(hwnd, lpcwText, fDrawFocused) (BOOL) SNDMSG((hwnd), EM_SETCUEBANNER, (WPARAM) fDrawFocused, (LPARAM) lpcwText)
+#define Edit_SetEndOfLine(hwndCtl, eolType) (DWORD) SNDMSG((hwndCtl), EM_SETENDOFLINE, (eolType), 0)
+#define Edit_SetExtendedStyle(hwndCtl, dw, dwMask) (DWORD) SNDMSG((hwndCtl), EM_SETEXTENDEDSTYLE, (dwMask), (dw))
+#define Edit_SetHilite(hwndCtl, ichStart, ichEnd) ((void) SNDMSG((hwndCtl), EM_SETHILITE, (ichStart), (ichEnd)))
+#define Edit_SetZoom(hwndCtl, numerator, denominator) (BOOL) SNDMSG((hwndCtl), EM_SETZOOM, (WPARAM) (numerator), (LPARAM) (denominator))
+#define Edit_TakeFocus(hwndCtl) ((DWORD) SNDMSG((hwndCtl), EM_TAKEFOCUS, 0L, 0L))
+#define Header_GetFocusedItem(hwnd) (int) SNDMSG((hwnd), HDM_GETFOCUSEDITEM, (WPARAM) (0), (LPARAM) (0))
+#define Header_GetItemDropDownRect(hwnd, iItem, lprc) (BOOL) SNDMSG((hwnd), HDM_GETITEMDROPDOWNRECT, (WPARAM) (iItem), (LPARAM) (lprc))
+#define Header_GetOverflowRect(hwnd, lprc) (BOOL) SNDMSG((hwnd), HDM_GETOVERFLOWRECT, 0, (LPARAM) (lprc))
+#define Header_GetStateImageList(hwnd) (HIMAGELIST) SNDMSG((hwnd), HDM_GETIMAGELIST, HDSIL_STATE, 0)
+#define Header_SetFocusedItem(hwnd, iItem) (BOOL) SNDMSG((hwnd), HDM_SETFOCUSEDITEM, (WPARAM) (0), (LPARAM) (iItem))
+#define Header_SetStateImageList(hwnd, himl) (HIMAGELIST) SNDMSG((hwnd), HDM_SETIMAGELIST, HDSIL_STATE, (LPARAM) (himl))
+#define IImageListToHIMAGELIST(himl) ((HIMAGELIST) (himl))
+#define ListView_HitTestEx(hwndLV, pinfo) (int) SNDMSG((hwndLV), LVM_HITTEST, (WPARAM) - 1, (LPARAM) (LV_HITTESTINFO *) (pinfo))
+#define ListView_SubItemHitTestEx(hwnd, plvhti) (int) SNDMSG((hwnd), LVM_SUBITEMHITTEST, (WPARAM) - 1, (LPARAM) (LPLVHITTESTINFO) (plvhti))
+#define MonthCal_GetCalendarBorder(hmc) (int) SNDMSG(hmc, MCM_GETCALENDARBORDER, 0, 0)
+#define MonthCal_GetCalendarGridInfo(hmc, pmcGridInfo) (BOOL) SNDMSG(hmc, MCM_GETCALENDARGRIDINFO, 0, (LPARAM) (PMCGRIDINFO) (pmcGridInfo))
+#define MonthCal_GetCALID(hmc) (CALID) SNDMSG(hmc, MCM_GETCALID, 0, 0)
+#define MonthCal_SetCalendarBorder(hmc, fset, xyborder) SNDMSG(hmc, MCM_SETCALENDARBORDER, (WPARAM) (fset), (LPARAM) (xyborder))
+#define MonthCal_SetCALID(hmc, calid) SNDMSG(hmc, MCM_SETCALID, (WPARAM) (calid), 0)
+#define MonthCal_SetCurrentView(hmc, dwNewView) (BOOL) SNDMSG(hmc, MCM_SETCURRENTVIEW, 0, (LPARAM) (dwNewView))
+#define Pager_SetScrollInfo(hwnd, cTimeOut, cLinesPer, cPixelsPerLine) (void) SNDMSG((hwnd), PGM_SETSCROLLINFO, cTimeOut, MAKELONG(cLinesPer, cPixelsPerLine))
+#define TreeView_GetNextSelected(hwnd, hitem) TreeView_GetNextItem(hwnd, hitem, TVGN_NEXTSELECTED)
 
 #endif /* _INC_COMMCTRL */

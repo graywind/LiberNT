@@ -57,7 +57,6 @@ enum {
 	AMMSF_RUN                = 0x00000008
 };
 
-
 typedef [v1_enum] enum {
 	Disabled = 0,
 	ReadData = 1,
@@ -118,7 +117,6 @@ interface IAMMultiMediaStream : IMultiMediaStream
 		[in] DWORD dwFlags);
 }
 
-
 [
 object,
 uuid(BEBE595D-9A6F-11d0-8FDE-00C04FD9189D),
@@ -144,7 +142,6 @@ interface IAMMediaStream : IMediaStream
 	HRESULT JoinFilterGraph(
 		[in] IFilterGraph *pFilterGraph);
 }
-
 
 [
 object,
@@ -183,7 +180,6 @@ interface IMediaStreamFilter : IBaseFilter
 	HRESULT EndOfStream();
 }
 
-
 [
 object,
 local,
@@ -194,7 +190,6 @@ interface IDirectDrawMediaSampleAllocator : IUnknown
 {
 	HRESULT GetDirectDraw(IDirectDraw **ppDirectDraw);
 }
-
 
 [
 object,
@@ -210,7 +205,6 @@ interface IDirectDrawMediaSample : IUnknown
 
 	HRESULT LockMediaSamplePointer(void);
 }
-
 
 [
 object,
@@ -242,7 +236,6 @@ interface IAMMediaTypeStream : IMediaStream
 	HRESULT SetStreamAllocatorRequirements(
 		[in] ALLOCATOR_PROPERTIES *pProps);
 }
-
 
 [
 object,
@@ -316,3 +309,12 @@ cpp_quote("DEFINE_GUID(CLSID_AMAudioStream,       0x8496e040, 0xaf4c, 0x11d0, 0x
 cpp_quote("DEFINE_GUID(CLSID_AMAudioData,         0xf2468580, 0xaf8a, 0x11d0, 0x82, 0x12, 0x00, 0xc0, 0x4f, 0xc3, 0x2c, 0x45);")
 cpp_quote("DEFINE_GUID(CLSID_AMMediaTypeStream,   0xcf0f2f7c, 0xf7bf, 0x11d0, 0x90, 0x0d, 0x00, 0xc0, 0x4f, 0xd9, 0x18, 0x9d);")
 cpp_quote("DEFINE_GUID(CLSID_MediaStreamFilter,   0x49c47ce0, 0x9ba4, 0x11d0, 0x82, 0x12, 0x00, 0xc0, 0x4f, 0xc3, 0x2c, 0x45);")
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+
+

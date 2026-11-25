@@ -36,3 +36,4 @@ interface IPersistHistory : IPersist
 
     HRESULT GetPositionCookie([out] DWORD *pdwPositioncookie);
 }
+

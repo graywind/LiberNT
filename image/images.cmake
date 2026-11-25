@@ -166,7 +166,7 @@ set(ISO_BOOT_FILES_OPTIONS
 # ISO_BOOT_OPTIONS
 
 # BIOS-based PC boot entry (x86/x64 only)
-if((ARCH STREQUAL "i386" OR ARCH STREQUAL "amd64") AND NOT MSVC)
+if(BOOTLOADER_UEFI AND (ARCH STREQUAL "i386" OR ARCH STREQUAL "amd64") AND NOT MSVC)
     set(ISO_BOOT_OPTIONS
         -eltorito-platform x86 -eltorito-boot boot/etfsboot.com -no-emul-boot -boot-load-size 4)
 endif()
@@ -189,7 +189,7 @@ if(DEFINED EFI_PLATFORM_ID)
     string(SUBSTRING "${_bootcd_disk}" 0 8 _bootcd_signature)
     set(BOOTCD_HYBRID_DEPENDS native-mkdiskimg)
     set(BOOTCD_HYBRID_COMMAND
-        COMMAND native-mkdiskimg -cd ${REACTOS_BINARY_DIR}/bootcd.iso -signature ${_bootcd_signature} -diskid ${_bootcd_disk})
+        COMMAND native-mkdiskimg -cd ${REACTOS_BINARY_DIR}/LiberNT.iso -signature ${_bootcd_signature} -diskid ${_bootcd_disk})
 endif()
 
 
@@ -345,14 +345,41 @@ endforeach()
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootcd.cmake.lst "${CMAKE_CURRENT_BINARY_DIR}/empty\n")
 
 image_list_command(bootcd _bootcd_list_command)
-add_custom_target(bootcd
+image_list_command(preinstall _preinstall_list_command)
+add_custom_target(preinstall_files)
+set(_bootcd_wim_command)
+set(_bootcd_wim_depends)
+if(BOOTLOADER_UEFI AND BOOTLOADER_WIM_RAMDISK)
+    set(_bootcd_wim_command
+        COMMAND ${_preinstall_list_command}
+        COMMAND ${CMAKE_COMMAND}
+            -DLIST=${CMAKE_CURRENT_BINARY_DIR}/bootcd.effective.lst
+            "-DKEEP=^/?(loader/|efi/|boot/|bootmgr=|setup[.]exe=)"
+            -DWIM=${CMAKE_CURRENT_BINARY_DIR}/bootcd.wim
+            -DSTAGE=${CMAKE_CURRENT_BINARY_DIR}/bootcd.stage
+            -DINSTALL_LIST=${CMAKE_CURRENT_BINARY_DIR}/preinstall.effective.lst
+            -DINSTALL_STAGE=${CMAKE_CURRENT_BINARY_DIR}/bootcd.install.stage
+            -DWIMAGE=$<TARGET_FILE:native-wimage>
+            -P ${REACTOS_SOURCE_DIR}/image/bcd/medialist.cmake)
+    set(_bootcd_wim_depends native-wimage)
+endif()
+add_custom_target(liberntiso ALL
     COMMAND ${_bootcd_list_command}
-    COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/bootcd.iso
+    ${_bootcd_wim_command}
+    COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/LiberNT.iso
         ${ISO_COMMON_OPTIONS} ${ISO_BOOT_OPTIONS} ${ISO_BOOT_FILES_OPTIONS} ${ISO_LAYOUT_OPTIONS}
         -path-list ${CMAKE_CURRENT_BINARY_DIR}/bootcd.effective.lst
     ${BOOTCD_HYBRID_COMMAND}
-    DEPENDS ${BOOTCD_HYBRID_DEPENDS} native-mkisofs ${_livecd_overlay_deps}
+    DEPENDS ${BOOTCD_HYBRID_DEPENDS} native-mkisofs ${_bootcd_wim_depends} ${_livecd_overlay_deps}
     VERBATIM)
+string(ASCII 27 _escape)
+add_custom_target(bootcd
+    COMMAND ${CMAKE_COMMAND} -E echo "${_escape}[33mWarning bootcd is deprecated as ninja liberntiso now builds LiberNT.iso${_escape}[0m"
+    VERBATIM)
+add_dependencies(bootcd liberntiso)
+if(_bootcd_wim_command)
+    add_dependencies(liberntiso preinstall_files)
+endif()
 
 
 ## LiberNTImg
@@ -721,7 +748,7 @@ if(BOOTLOADER_OFW)
         -add ${REACTOS_BINARY_DIR}/bootloader/image/standard/BCD Boot/BCD)
     list(APPEND _preinstall_partition_deps bootmgrppc bootloaderstandardbcd)
     libernt_standard_disk_ids()
-    # TODO: boot the PowerPC boot CD; bootmgr reads no ISO 9660 and bootcd.iso carries no BCD
+    # TODO: boot the PowerPC boot CD; bootmgr reads no ISO 9660 and LiberNT.iso carries no BCD
 endif()
 if((ARCH STREQUAL "i386" OR ARCH STREQUAL "amd64") AND NOT MSVC)
     set(_preinstall_boot_partition_fs fat32)
@@ -769,7 +796,6 @@ if(DEFINED EFI_PLATFORM_ID)
     endif()
 endif()
 
-image_list_command(preinstall _preinstall_list_command)
 add_custom_target(preinstall_partition
     COMMAND ${_preinstall_list_command}
     COMMAND ${CMAKE_COMMAND} -E rm -f
@@ -806,6 +832,7 @@ add_custom_target(preinstall_partition
         ${REACTOS_SOURCE_DIR}/image/data/filesecurity.txt
     DEPENDS ${_preinstall_partition_deps}
     VERBATIM)
+add_dependencies(preinstall_partition preinstall_files)
 
 add_custom_target(liberntimg
     COMMAND ${CMAKE_COMMAND} -E rm -f ${_preinstall_image_file}

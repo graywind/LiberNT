@@ -13,7 +13,7 @@
 #include <win32k.h>
 #include "composition.h"
 #include "dcomposition.h"
-#include <reactos/dwmframe.h>
+#include <libernt/dwmframe.h>
 #include "captioncache.h"
 #if defined(REACTOS_GRAPHICS_DRIVER_MODEL_WDDM)
 #include "drivers/wddm/wddm_bridge.h"
@@ -3456,7 +3456,9 @@ IntCompositionDwmGetFrame(_In_ PVOID pUser)
             (e->Redirect.FrontSection == NULL &&
              e->Redirect.FrontGlobalShare == 0))
         {
-            if (e->Damaged && !PaintDeferred && !HiddenMinimized)
+            if (PaintDeferred)
+                PaintDamageDeferred = TRUE;
+            else if (e->Damaged && !HiddenMinimized)
                 DeferredDamage = TRUE;
             continue;
         }

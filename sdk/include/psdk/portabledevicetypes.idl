@@ -304,3 +304,8 @@ library PortableDeviceTypesLib
         [default] interface IPortableDeviceValuesCollection;
     }
 }
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")

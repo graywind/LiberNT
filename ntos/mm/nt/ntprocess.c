@@ -245,7 +245,8 @@ MiSelectBottomUpBase(
     ULONG64 HighEntropyLimit;
     ULONG Seed;
 
-    if (!Control->Image || !(DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE))
+    if (!Control->Image || !(DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) ||
+        (Control->ImageInformation.ImageCharacteristics & IMAGE_FILE_RELOCS_STRIPPED))
     {
         Process->MitigationFlagsValues.StackRandomizationDisabled = 1;
         return;
@@ -310,6 +311,76 @@ MiInitializeExecuteOptions(
     Process->Pcb.ExecuteOptions = Options;
     MiSpaceOfProcess(Process)->ExecuteData = (BOOLEAN)((Options & MEM_EXECUTE_OPTION_ENABLE) != 0);
 }
+
+NTSTATUS
+MmCreateProcessCfgBitmap(
+    _In_ PEPROCESS Process,
+    _In_ PVOID Section,
+    _In_ ULONGLONG MitigationOptions)
+{
+    PMI_CONTROL_AREA Control = ((PMI_SECTION_OBJECT)Section)->Control;
+    PMI_ADDRESS_SPACE Space = MiSpaceOfProcess(Process);
+    ULONG Policy = (ULONG)((MitigationOptions >> 40) & 3);
+    ULONG64 ImageBase = (ULONG_PTR)Control->BasedAddress;
+    ULONG64 Base, Size, Highest, Vpn;
+    NTSTATUS Status = STATUS_NO_MEMORY;
+
+    if (!Control->Image || Control->ImageInformation.Machine != IMAGE_FILE_MACHINE_NATIVE ||
+        Control->ImageInformation.Machine != IMAGE_FILE_MACHINE_AMD64 || Policy == 2 ||
+        (!Policy && !(Control->ImageInformation.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_GUARD_CF)))
+        return STATUS_SUCCESS;
+
+    Size = ROUND_TO_PAGES((Space->HighestVa >> 6) + 1);
+    Highest = Space->HighestVa - MI_NT_TOP_DOWN_GAP;
+    MI_RW_ACQUIRE_EXCLUSIVE(&Space->Lock);
+    while (MiSpaceFindEmptyRange(Space, Size >> PAGE_SHIFT, Space->Granularity >> PAGE_SHIFT,
+                                 0, Highest >> PAGE_SHIFT, TRUE, &Vpn))
+    {
+        Base = Vpn << PAGE_SHIFT;
+        if (ImageBase < Base + Size && (ImageBase >= Base || Base - ImageBase < Control->ImageSize))
+        {
+            ULONG64 ImagePage = ImageBase & ~(ULONG64)(PAGE_SIZE - 1);
+            if (ImagePage <= Space->LowestVa)
+                break;
+            Highest = ImagePage - 1;
+            continue;
+        }
+        Status = MiCfgCreateBitmapLocked(Space, Base, Size);
+        if (NT_SUCCESS(Status))
+            Space->CfgExportSuppression = (BOOLEAN)(Policy == 3 || Control->Segment->CfgExportSuppression);
+        break;
+    }
+    MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
+    if (NT_SUCCESS(Status))
+    {
+        Process->VirtualSize += (SIZE_T)Size;
+        Process->PeakVirtualSize = max(Process->PeakVirtualSize, Process->VirtualSize);
+    }
+    return Status;
+}
+
+#ifdef _M_AMD64
+NTSTATUS
+MmGetSystemDllCfgInformation(PEPROCESS Process, PVOID ImageBase, PULONG64 Page,
+                             PULONG64 Bitmap, PULONG64 Size, PBOOLEAN ExportSuppression)
+{
+    PMI_ADDRESS_SPACE Space = MiSpaceOfProcess(Process);
+    PMI_VAD Vad;
+    NTSTATUS Status = STATUS_INVALID_IMAGE_FORMAT;
+    MI_RW_ACQUIRE_SHARED(&Space->Lock);
+    Vad = MiVadLocate(Space, (ULONG_PTR)ImageBase);
+    if (Vad && Vad->CfgScp && Vad->Segment == ((PMI_SECTION_OBJECT)PspSystemDllSection)->Control->Segment)
+    {
+        *Page = Vad->Node.EndingVpn << PAGE_SHIFT;
+        *Bitmap = Space->CfgBitmap ? Space->CfgBitmap->Node.StartingVpn << PAGE_SHIFT : 0;
+        *Size = Space->CfgBitmap ? ((Space->CfgBitmap->Node.EndingVpn + 1) << PAGE_SHIFT) - *Bitmap : 0;
+        *ExportSuppression = Space->CfgExportSuppression;
+        Status = STATUS_SUCCESS;
+    }
+    MI_RW_RELEASE_SHARED(&Space->Lock);
+    return Status;
+}
+#endif
 
 NTSTATUS
 NTAPI
@@ -507,6 +578,9 @@ MiCreatePebOrTeb(
                                            MI_MEM_RESERVE | MI_MEM_COMMIT, MI_PROT_READWRITE, HighestAddress);
     } while (NT_SUCCESS(MiWaitForMemory(Status, &Attempts)) && Status == STATUS_NO_MEMORY);
 
+    if (NT_SUCCESS(Status))
+        MiSetVadNoChange(MiSpaceOfProcess(Process), Address, TRUE);
+
     *Base = (ULONG_PTR)Address;
     return Status;
 }
@@ -557,7 +631,7 @@ MmCreatePeb(
         Peb->OSPlatformId = VER_PLATFORM_WIN32_NT;
         Peb->OSCSDVersion = (USHORT)CmNtCSDVersion;
         Peb->NumberOfProcessors = KeNumberProcessors;
-        Peb->ImageProcessAffinityMask = 0;
+        Peb->ActiveProcessAffinityMask = 0;
         Peb->BeingDebugged = (BOOLEAN)(Process->DebugPort != NULL);
         Peb->NtGlobalFlag = NtGlobalFlag;
         Peb->HeapSegmentReserve = MmHeapSegmentReserve;
@@ -583,15 +657,17 @@ MmCreatePeb(
             PVOID Config = RtlImageDirectoryEntryToData(Peb->ImageBaseAddress, TRUE,
                                                         IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG, &ConfigSize);
 
-            if (Config != NULL && Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+            if (Config != NULL && Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC &&
+                ConfigSize >= RTL_SIZEOF_THROUGH_FIELD(IMAGE_LOAD_CONFIG_DIRECTORY32, CSDVersion))
             {
-                ProbeForRead(Config, sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32), sizeof(ULONG));
+                ProbeForRead(Config, RTL_SIZEOF_THROUGH_FIELD(IMAGE_LOAD_CONFIG_DIRECTORY32, CSDVersion), sizeof(ULONG));
                 CsdVersion = ((PIMAGE_LOAD_CONFIG_DIRECTORY32)Config)->CSDVersion;
                 AffinityMask = ((PIMAGE_LOAD_CONFIG_DIRECTORY32)Config)->ProcessAffinityMask;
             }
-            else if (Config != NULL)
+            else if (Config != NULL && Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC &&
+                     ConfigSize >= RTL_SIZEOF_THROUGH_FIELD(IMAGE_LOAD_CONFIG_DIRECTORY64, CSDVersion))
             {
-                ProbeForRead(Config, sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64), sizeof(ULONG));
+                ProbeForRead(Config, RTL_SIZEOF_THROUGH_FIELD(IMAGE_LOAD_CONFIG_DIRECTORY64, CSDVersion), sizeof(ULONG));
                 CsdVersion = ((PIMAGE_LOAD_CONFIG_DIRECTORY64)Config)->CSDVersion;
                 AffinityMask = (ULONG_PTR)((PIMAGE_LOAD_CONFIG_DIRECTORY64)Config)->ProcessAffinityMask;
             }
@@ -625,11 +701,11 @@ MmCreatePeb(
             }
 
             if (AffinityMask != 0)
-                Peb->ImageProcessAffinityMask = AffinityMask;
+                Peb->ActiveProcessAffinityMask = AffinityMask;
 
             if (NtHeaders->FileHeader.Characteristics & IMAGE_FILE_UP_SYSTEM_ONLY)
             {
-                Peb->ImageProcessAffinityMask = AFFINITY_MASK(MiRotatingUniprocessorNumber);
+                Peb->ActiveProcessAffinityMask = AFFINITY_MASK(MiRotatingUniprocessorNumber);
                 MiRotatingUniprocessorNumber = (MiRotatingUniprocessorNumber + 1) % KeNumberProcessors;
             }
         }
@@ -701,7 +777,7 @@ MmCreatePeb32(
         Peb->OSPlatformId = VER_PLATFORM_WIN32_NT;
         Peb->OSCSDVersion = (USHORT)CmNtCSDVersion;
         Peb->NumberOfProcessors = KeNumberProcessors;
-        Peb->ImageProcessAffinityMask = (ULONG)Process->Peb->ImageProcessAffinityMask;
+        Peb->ActiveProcessAffinityMask = (ULONG)Process->Peb->ActiveProcessAffinityMask;
         Peb->NtGlobalFlag = NtGlobalFlag;
         Peb->HeapSegmentReserve = (ULONG)MmHeapSegmentReserve;
         Peb->HeapSegmentCommit = (ULONG)MmHeapSegmentCommit;

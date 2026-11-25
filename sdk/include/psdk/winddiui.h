@@ -155,4 +155,135 @@ BOOL WINAPI DevQueryPrintEx(PDEVQUERYPRINT_INFO);
 } /* extern "C" */
 #endif
 
+#ifndef BOOKLET_PRINT
+#define BOOKLET_PRINT 0x00000002
+#endif
+#ifndef BORDER_PRINT
+#define BORDER_PRINT 0x00000000
+#endif
+#ifndef CDM_CONVERT
+#define CDM_CONVERT 0x01
+#endif
+#ifndef CDM_CONVERT351
+#define CDM_CONVERT351 0x02
+#endif
+#ifndef CDM_DRIVER_DEFAULT
+#define CDM_DRIVER_DEFAULT 0x04
+#endif
+#ifndef COLOR_OPTIMIZATION
+#define COLOR_OPTIMIZATION 0x00000001
+#endif
+#ifndef DM_INVALIDATE_DRIVER_CACHE
+#define DM_INVALIDATE_DRIVER_CACHE 0x20000000
+#endif
+#ifndef DM_PROMPT_NON_MODAL
+#define DM_PROMPT_NON_MODAL 0x40000000
+#endif
+#ifndef DM_RESERVED
+#define DM_RESERVED 0x80000000
+#endif
+#ifndef NO_BORDER_PRINT
+#define NO_BORDER_PRINT 0x00000001
+#endif
+#ifndef NO_COLOR_OPTIMIZATION
+#define NO_COLOR_OPTIMIZATION 0x00000000
+#endif
+#ifndef PRINTER_EVENT_ADD_CONNECTION_NO_UI
+#define PRINTER_EVENT_ADD_CONNECTION_NO_UI 9
+#endif
+#ifndef PRINTER_EVENT_CONFIGURATION_CHANGE
+#define PRINTER_EVENT_CONFIGURATION_CHANGE 0
+#endif
+#ifndef PRINTER_EVENT_CONFIGURATION_UPDATE
+#define PRINTER_EVENT_CONFIGURATION_UPDATE 8
+#endif
+#ifndef PRINTER_EVENT_DELETE_CONNECTION_NO_UI
+#define PRINTER_EVENT_DELETE_CONNECTION_NO_UI 10
+#endif
+#ifndef QCP_DEVICEPROFILE
+#define QCP_DEVICEPROFILE 0x0000
+#endif
+#ifndef QCP_PROFILEDISK
+#define QCP_PROFILEDISK 0x0002
+#endif
+#ifndef QCP_PROFILEMEMORY
+#define QCP_PROFILEMEMORY 0x0001
+#endif
+#ifndef QCP_SOURCEPROFILE
+#define QCP_SOURCEPROFILE 0x0001
+#endif
+
+typedef struct _ATTRIBUTE_INFO_1 {
+  DWORD dwJobNumberOfPagesPerSide;
+  DWORD dwDrvNumberOfPagesPerSide;
+  DWORD dwNupBorderFlags;
+  DWORD dwJobPageOrderFlags;
+  DWORD dwDrvPageOrderFlags;
+  DWORD dwJobNumberOfCopies;
+  DWORD dwDrvNumberOfCopies;
+} ATTRIBUTE_INFO_1, *PATTRIBUTE_INFO_1;
+
+typedef struct _ATTRIBUTE_INFO_2 {
+  DWORD dwJobNumberOfPagesPerSide;
+  DWORD dwDrvNumberOfPagesPerSide;
+  DWORD dwNupBorderFlags;
+  DWORD dwJobPageOrderFlags;
+  DWORD dwDrvPageOrderFlags;
+  DWORD dwJobNumberOfCopies;
+  DWORD dwDrvNumberOfCopies;
+  DWORD dwColorOptimization;
+} ATTRIBUTE_INFO_2, *PATTRIBUTE_INFO_2;
+
+typedef struct _DRIVER_UPGRADE_INFO_1 {
+  LPTSTR pPrinterName;
+  LPTSTR pOldDriverDirectory;
+} DRIVER_UPGRADE_INFO_1, *PDRIVER_UPGRADE_INFO_1;
+
+typedef struct _DRIVER_UPGRADE_INFO_2 {
+  LPTSTR pPrinterName;
+  LPTSTR pOldDriverDirectory;
+  DWORD cVersion;
+  LPTSTR pName;
+  LPTSTR pEnvironment;
+  LPTSTR pDriverPath;
+  LPTSTR pDataFile;
+  LPTSTR pConfigFile;
+  LPTSTR pHelpFile;
+  LPTSTR pDependentFiles;
+  LPTSTR pMonitorName;
+  LPTSTR pDefaultDataType;
+  LPTSTR pszzPreviousNames;
+} DRIVER_UPGRADE_INFO_2, *PDRIVER_UPGRADE_INFO_2;
+
+typedef struct _PRINTER_EVENT_ATTRIBUTES_INFO {
+  DWORD cbSize;
+  DWORD dwOldAttributes;
+  DWORD dwNewAttributes;
+} PRINTER_EVENT_ATTRIBUTES_INFO, *PPRINTER_EVENT_ATTRIBUTES_INFO;
+
+#define _WINDDIUI_
+#define SPLPRINTER_USER_MODE_PRINTER_DRIVER TEXT("SPLUserModePrinterDriver")
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL WINAPI DrvConvertDevMode(LPTSTR pPrinterName, PDEVMODE pdmIn, PDEVMODE pdmOut, PLONG pcbNeeded, DWORD fMode);
+BOOL WINAPI DrvQueryColorProfile(HANDLE hPrinter, PDEVMODEW pdevmode, ULONG ulQueryMode, void *pvProfileData, ULONG *pcbProfileData, FLONG *pflProfileData);
+BOOL WINAPI DrvQueryJobAttributes(HANDLE hPrinter, PDEVMODE pDevMode, DWORD dwLevel, LPBYTE lpAttributeInfo);
+void WINAPI DrvSplAbort(HANDLE hDriver);
+void WINAPI DrvSplClose(HANDLE hDriver);
+DWORD DrvSplDeviceCaps(HANDLE hPrinter, PWSTR pszDeviceName, WORD Capability, PVOID pOutput, DWORD cchBufSize, PDEVMODE pDevmode);
+void WINAPI DrvSplEndDoc(HANDLE hDriver);
+BOOL WINAPI DrvSplEndPage(HANDLE hDriver);
+HANDLE WINAPI DrvSplStartDoc(HANDLE hPrinter, DWORD JobId);
+BOOL WINAPI DrvSplStartPage(HANDLE hDriver);
+BOOL WINAPI DrvSplWritePrinter(HANDLE hDriver, LPVOID pBuf, DWORD cbBuf, LPDWORD pcWritten);
+BOOL WINAPI DrvUpgradePrinter(DWORD Level, LPBYTE pDriverUpgradeInfo);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __WINE_WINDDIUI_H */

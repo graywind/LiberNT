@@ -91,4 +91,16 @@ SearchPathW(
 }
 #endif
 
+#ifdef UNICODE
+#define NeedCurrentDirectoryForExePath NeedCurrentDirectoryForExePathW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define NeedCurrentDirectoryForExePath NeedCurrentDirectoryForExePathW
+#else
+#define NeedCurrentDirectoryForExePath NeedCurrentDirectoryForExePathA
+#endif
+#endif
+#endif
+
 #endif

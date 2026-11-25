@@ -29,18 +29,12 @@ CcFlushCache(
 
         if (NT_SUCCESS(Status))
         {
-            ULONG64 FileSize = NtMap->Map.FileSize;
-            ULONG64 SegmentBytes = (Bytes == (ULONG64)-1)
-                                       ? (ULONG64)MI_ATOMIC_READ64(&NtMap->Control->Segment->SizeInBytes) - Offset
-                                       : Bytes;
+            ULONG64 Size = (ULONG64)MI_ATOMIC_READ64(&NtMap->Control->Segment->SizeInBytes);
 
-            if (Offset < FileSize)
-            {
-                if (SegmentBytes > FileSize - Offset)
-                    SegmentBytes = FileSize - Offset;
-
-                Status = MiSegmentFlush(NtMap->Control->Segment, Offset, SegmentBytes);
-            }
+            if (Bytes != (ULONG64)-1)
+                Status = MiSegmentFlush(NtMap->Control->Segment, Offset, Bytes);
+            else if (Offset < Size)
+                Status = MiSegmentFlush(NtMap->Control->Segment, Offset, Size - Offset);
         }
 
         CcNtDereferenceMap(NtMap);
@@ -76,8 +70,10 @@ CcPurgeCacheSection(
     _In_ ULONG Flags)
 {
     PCC_NT_MAP NtMap = CcNtReferenceMap(SectionObjectPointer);
+    PMI_CONTROL_AREA Control = (NtMap == NULL) ? MiReferenceDataControlArea(SectionObjectPointer) : NULL;
     ULONG64 Offset = (FileOffset != NULL) ? (ULONG64)FileOffset->QuadPart : 0;
     ULONG64 Bytes = (FileOffset != NULL && Length != 0) ? Length : 0;
+    BOOLEAN ImageClosed;
     BOOLEAN Purged = TRUE;
 
     if (Bytes != 0)
@@ -89,10 +85,14 @@ CcPurgeCacheSection(
         CC_ASSERT(Bytes != 0 && (Bytes & (PAGE_SIZE - 1)) == 0);
     }
 
+    /* Releasing the data section may close the file and free SectionObjectPointer */
+    ImageClosed = (FileOffset != NULL) || MmFlushImageSection(SectionObjectPointer, MmFlushForWrite);
+
     if (NtMap != NULL)
     {
         ULONG64 End = (Bytes == 0) ? (ULONG64)-1 : Offset + Bytes;
 
+        CC_ASSERT(Control == NULL);
         if (CcBcbRangeBusy(&NtMap->Map, Offset, End))
         {
             CcNtDereferenceMap(NtMap);
@@ -106,22 +106,14 @@ CcPurgeCacheSection(
             NtMap->PurgeOnClose = TRUE;
         CcNtDereferenceMap(NtMap);
     }
-    else
+    else if (Control != NULL)
     {
-        PMI_CONTROL_AREA Control = MiReferenceDataControlArea(SectionObjectPointer);
-
-        if (Control != NULL)
-        {
-            Purged = MiSegmentPurge(Control->Segment, Offset, Bytes);
-            if (Purged && Offset == 0 && Bytes == 0)
-                MiSegmentDereferenceAndClose(Control->Segment);
-            else
-                MiDereferenceControlArea(Control);
-        }
+        Purged = MiSegmentPurge(Control->Segment, Offset, Bytes);
+        if (Purged && Offset == 0 && Bytes == 0)
+            MiSegmentDereferenceAndClose(Control->Segment);
+        else
+            MiDereferenceControlArea(Control);
     }
 
-    if (Purged && FileOffset == NULL && !MmFlushImageSection(SectionObjectPointer, MmFlushForWrite))
-        Purged = FALSE;
-
-    return Purged;
+    return Purged && ImageClosed;
 }

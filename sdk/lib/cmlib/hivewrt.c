@@ -240,13 +240,13 @@ HvpWriteLog(
     RegistryHive->Free(Buffer, BufferSize);
     if (!Success)
     {
-        DPRINT1("Failed to write the hive log entry (sequence 0x%x)\n", Sequence);
+        DPRINT("Failed to write the hive log entry (sequence 0x%x)\n", Sequence);
         return FALSE;
     }
 
     if (!CmpFileFlush(RegistryHive, HFILE_TYPE_LOG, NULL, 0))
     {
-        DPRINT1("Failed to flush the hive log\n");
+        DPRINT("Failed to flush the hive log\n");
         return FALSE;
     }
 
@@ -265,7 +265,7 @@ HvpWriteLog(
                   CmpFileFlush(RegistryHive, HFILE_TYPE_PRIMARY, NULL, 0);
         if (!Success)
         {
-            DPRINT1("Failed to mark the primary hive as logged\n");
+            DPRINT("Failed to mark the primary hive as logged\n");
             BaseBlock->Sequence1 = Sequence - 1;
             BaseBlock->CheckSum = HvpHiveHeaderChecksum(BaseBlock);
             return FALSE;
@@ -364,13 +364,13 @@ HvpWriteHive(
                                           sizeof(HBASE_BLOCK));
         if (!Success)
         {
-            DPRINT1("Failed to write the base block header to primary hive (primary sequence)\n");
+            DPRINT("Failed to write the base block header to primary hive (primary sequence)\n");
             return FALSE;
         }
 
         if (!CmpFileFlush(RegistryHive, FileType, NULL, 0))
         {
-            DPRINT1("Failed to flush the primary hive base block\n");
+            DPRINT("Failed to flush the primary hive base block\n");
             return FALSE;
         }
     }
@@ -407,7 +407,7 @@ HvpWriteHive(
                                           &FileOffset, Block, HBLOCK_SIZE);
         if (!Success)
         {
-            DPRINT1("Failed to write hive block to primary hive file (block 0x%p, block index 0x%x)\n",
+            DPRINT("Failed to write hive block to primary hive file (block 0x%p, block index 0x%x)\n",
                     Block, BlockIndex);
             return FALSE;
         }
@@ -423,7 +423,7 @@ HvpWriteHive(
     Success = CmpFileFlush(RegistryHive, FileType, NULL, 0);
     if (!Success)
     {
-        DPRINT1("Failed to flush the primary hive\n");
+        DPRINT("Failed to flush the primary hive\n");
         return FALSE;
     }
 
@@ -444,7 +444,7 @@ HvpWriteHive(
                                       sizeof(HBASE_BLOCK));
     if (!Success)
     {
-        DPRINT1("Failed to write the base block header to primary hive (secondary sequence)\n");
+        DPRINT("Failed to write the base block header to primary hive (secondary sequence)\n");
         return FALSE;
     }
 
@@ -499,7 +499,7 @@ HvSyncHive(
 #if !defined(CMLIB_HOST) && !defined(_BLDR_)
     BOOLEAN HardErrors;
 #endif
-    BOOLEAN LogOnly;
+    BOOLEAN LogOnly, HasLog;
 
     ASSERT(!RegistryHive->ReadOnly);
     ASSERT(RegistryHive->Signature == HV_HHIVE_SIGNATURE);
@@ -537,6 +537,7 @@ HvSyncHive(
 
 #if !defined(CMLIB_HOST) && !defined(_BLDR_)
     LogOnly = HvpIsLogOnlyHive(RegistryHive);
+    HasLog = LogOnly;
     if (LogOnly && !HvpPrepareUnreconciledVector(RegistryHive))
     {
         if (RegistryHive->CurrentLogOffset && !HvpReconcileHive(RegistryHive))
@@ -548,10 +549,12 @@ HvSyncHive(
     }
 #else
     LogOnly = FALSE;
+    HasLog = TRUE;
 #endif
-    if (!HvpWriteLog(RegistryHive, LogOnly))
+    /* A hive whose log file could not be opened is written straight to its primary file */
+    if (HasLog && !HvpWriteLog(RegistryHive, LogOnly))
     {
-        DPRINT1("Failed to write the hive log\n");
+        DPRINT("Failed to write the hive log\n");
 #if !defined(CMLIB_HOST) && !defined(_BLDR_)
         IoSetThreadHardErrorMode(HardErrors);
 #endif
@@ -566,7 +569,7 @@ HvSyncHive(
         {
             if (!HvpReconcileHive(RegistryHive))
             {
-                DPRINT1("Failed to reconcile the primary hive\n");
+                DPRINT("Failed to reconcile the primary hive\n");
                 IoSetThreadHardErrorMode(HardErrors);
                 return FALSE;
             }
@@ -578,7 +581,7 @@ HvSyncHive(
         /* Update the primary hive file */
         if (!HvpWriteHive(RegistryHive, TRUE, HFILE_TYPE_PRIMARY, FALSE, &RegistryHive->DirtyVector))
         {
-            DPRINT1("Failed to write the primary hive\n");
+            DPRINT("Failed to write the primary hive\n");
 #if !defined(CMLIB_HOST) && !defined(_BLDR_)
             IoSetThreadHardErrorMode(HardErrors);
 #endif
@@ -653,7 +656,7 @@ HvWriteHive(
     if (!HvpWriteHive(RegistryHive, FALSE, HFILE_TYPE_PRIMARY, FALSE, &RegistryHive->DirtyVector) ||
         !CmpFileFlush(RegistryHive, HFILE_TYPE_PRIMARY, NULL, 0))
     {
-        DPRINT1("Failed to write the hive\n");
+        DPRINT("Failed to write the hive\n");
         return FALSE;
     }
 

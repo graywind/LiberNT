@@ -19,7 +19,13 @@ ULONG (*FrLdrDbgPrint)(const char *Format, ...);
 
 KSPIN_LOCK KiFreezeExecutionLock;
 
-KIPCR KiInitialPcr;
+static struct
+{
+    KIPCR Pcr;
+    REQUEST_MAILBOX RequestMailboxTail[KI_EXTRA_REQUEST_MAILBOXES];
+} KiInitialPcrBlock;
+C_ASSERT(FIELD_OFFSET(KIPCR, Prcb.RequestMailbox) + sizeof(REQUEST_MAILBOX) == sizeof(KIPCR));
+#define KiInitialPcr KiInitialPcrBlock.Pcr
 
 UCHAR DECLSPEC_ALIGN(16) KiP0BootStackData[KERNEL_STACK_SIZE] = {0};
 UCHAR DECLSPEC_ALIGN(16) KiP0DoubleFaultStackData[KERNEL_STACK_SIZE] = {0};
@@ -385,13 +391,13 @@ KiInitializeKernelMachineDependent(
 #endif
 }
 
-static LDR_DATA_TABLE_ENTRY LdrCoreEntries[3];
+static KLDR_DATA_TABLE_ENTRY LdrCoreEntries[3];
 
 void
 KiInitModuleList(
     _In_ PLOADER_PARAMETER_BLOCK LoaderBlock)
 {
-    PLDR_DATA_TABLE_ENTRY LdrEntry;
+    PKLDR_DATA_TABLE_ENTRY LdrEntry;
     PLIST_ENTRY Entry;
     ULONG i;
 
@@ -402,7 +408,7 @@ KiInitModuleList(
          Entry = Entry->Flink, i++)
     {
         LdrEntry = CONTAINING_RECORD(Entry,
-                                     LDR_DATA_TABLE_ENTRY,
+                                     KLDR_DATA_TABLE_ENTRY,
                                      InLoadOrderLinks);
 
         LdrCoreEntries[i] = *LdrEntry;

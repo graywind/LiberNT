@@ -87,11 +87,13 @@ typedef struct _HIDD_ATTRIBUTES {
   USHORT  VersionNumber;
 } HIDD_ATTRIBUTES, *PHIDD_ATTRIBUTES;
 
+#pragma pack(push, 4)
 typedef struct _HIDD_CONFIGURATION {
   PVOID  cookie;
   ULONG  size;
   ULONG  RingBufferSize;
 } HIDD_CONFIGURATION, *PHIDD_CONFIGURATION;
+#pragma pack(pop)
 
 _Must_inspect_result_
 HIDAPI
@@ -657,6 +659,25 @@ HidP_UsageListDifference(
   _Out_writes_(UsageListLength) PUSAGE BreakUsageList,
   _Out_writes_(UsageListLength) PUSAGE MakeUsageList,
   _In_ ULONG UsageListLength);
+
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _HIDP_BUTTON_ARRAY_DATA {
+  USHORT ArrayIndex;
+  BOOLEAN On;
+} HIDP_BUTTON_ARRAY_DATA, *PHIDP_BUTTON_ARRAY_DATA;
+
+#define HIDP_STATUS_NOT_BUTTON_ARRAY (-1072627679)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+NTSTATUS NTAPI HidP_GetButtonArray(HIDP_REPORT_TYPE ReportType, int UsagePage, USHORT LinkCollection, int Usage, PHIDP_BUTTON_ARRAY_DATA ButtonData, PUSHORT ButtonDataLength, PHIDP_PREPARSED_DATA PreparsedData, PCHAR Report, ULONG ReportLength);
+NTSTATUS NTAPI HidP_SetButtonArray(HIDP_REPORT_TYPE ReportType, int UsagePage, USHORT LinkCollection, int Usage, PHIDP_BUTTON_ARRAY_DATA ButtonData, USHORT ButtonDataLength, PHIDP_PREPARSED_DATA PreparsedData, PCHAR Report, ULONG ReportLength);
 
 #ifdef __cplusplus
 }

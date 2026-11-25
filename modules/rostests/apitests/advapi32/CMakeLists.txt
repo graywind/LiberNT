@@ -1,6 +1,6 @@
 
-include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl ${CMAKE_CURRENT_BINARY_DIR})
-add_rpc_files(client ${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl/seclogon.idl)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/libernt/idl ${CMAKE_CURRENT_BINARY_DIR})
+add_rpc_files(client ${REACTOS_SOURCE_DIR}/sdk/include/libernt/idl/seclogon.idl)
 
 list(APPEND SOURCE
     BcdStoreAccess.c
@@ -35,6 +35,7 @@ list(APPEND SOURCE
     PrivilegeNames.c
     QueryServiceConfig.c
     QueryServiceConfig2.c
+    RegCreateKeyBackupRestore.c
     RegCreateKeyEx.c
     RegCreateKeyTransacted.c
     RegEnumKey.c

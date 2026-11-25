@@ -6,7 +6,7 @@
  */
 
 #include <kmt_test.h>
-#include <reactos/drivers/acpi/acpi.h>
+#include <libernt/drivers/acpi/acpi.h>
 
 #define NDEBUG
 #include <debug.h>
@@ -237,7 +237,7 @@ RtlGenerateClass5Guid(
 NTSTATUS
 NTAPI
 RtlGetSystemGlobalData(
-    _In_ ULONG DataId,
+    _In_ RTL_SYSTEM_GLOBAL_DATA_ID DataId,
     _Out_writes_bytes_(Size) PVOID Buffer,
     _In_ ULONG Size);
 

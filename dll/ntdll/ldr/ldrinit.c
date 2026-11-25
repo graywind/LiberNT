@@ -12,7 +12,7 @@
 #include <ntdll.h>
 #include <compat_undoc.h>
 #include <compatguid_undoc.h>
-#include <reactos/wow64shared.h>
+#include <libernt/wow64shared.h>
 
 #define NDEBUG
 #include <debug.h>
@@ -58,7 +58,13 @@ LIST_ENTRY LdrpTlsList;
 ULONG LdrpNumberOfTlsEntries;
 ULONG LdrpNumberOfProcessors;
 PVOID NtDllBase;
-SYSTEM_DLL_INIT_BLOCK LdrSystemDllInitBlock = { 0xf0 };
+#ifdef _MSC_VER
+#pragma section(".mrdata", read, write)
+__declspec(allocate(".mrdata"))
+#else
+__attribute__((section(".mrdata")))
+#endif
+SYSTEM_DLL_INIT_BLOCK LdrSystemDllInitBlock = { sizeof(SYSTEM_DLL_INIT_BLOCK) };
 extern LARGE_INTEGER RtlpTimeout;
 extern BOOLEAN RtlpTimeoutDisable;
 LIST_ENTRY LdrpHashTable[LDR_HASH_TABLE_ENTRIES];
@@ -108,7 +114,6 @@ RTL_CRITICAL_SECTION LdrpLoaderLock =
     0
 };
 RTL_SRWLOCK LdrpModuleDatatableLock = RTL_SRWLOCK_INIT;
-RTL_SRWLOCK LdrpLoadCountWalkLock = RTL_SRWLOCK_INIT;
 RTL_CRITICAL_SECTION FastPebLock;
 
 BOOLEAN ShowSnaps;
@@ -146,6 +151,15 @@ static VOID (WINAPI *LdrpWow64LdrpInitialize)(PCONTEXT);
 #endif
 
 /* FUNCTIONS *****************************************************************/
+
+static NTSTATUS
+LdrpProtectSystemDllInitBlock(VOID)
+{
+    PVOID Base = &LdrSystemDllInitBlock;
+    SIZE_T Size = sizeof(LdrSystemDllInitBlock);
+    ULONG OldProtection;
+    return NtProtectVirtualMemory(NtCurrentProcess(), &Base, &Size, PAGE_READONLY, &OldProtection);
+}
 
 #ifdef _WIN64
 
@@ -233,6 +247,9 @@ LdrpInitializeWow64(
     WCHAR PathBuffer[MAX_PATH];
     UNICODE_STRING Path, SystemRoot;
     PVOID Wow64Ntdll, Wow64Module;
+    PSYSTEM_DLL_INIT_BLOCK GuestBlock;
+    const SIZE_T SharedBytes = RTL_SIZEOF_THROUGH_FIELD(SYSTEM_DLL_INIT_BLOCK, pRtlpFreezeTimeBias) -
+                               FIELD_OFFSET(SYSTEM_DLL_INIT_BLOCK, Wow64SharedInformation);
     VOID (WINAPI *Wow64LdrpInitialize)(PCONTEXT);
     PVOID Wow64PrepareForException;
     NTSTATUS Status;
@@ -240,8 +257,6 @@ LdrpInitializeWow64(
     Status = LdrpMapWow64Ntdll(&Wow64Ntdll);
     if (!NT_SUCCESS(Status)) return Status;
 
-    RtlZeroMemory(&LdrSystemDllInitBlock, sizeof(LdrSystemDllInitBlock));
-    LdrSystemDllInitBlock.version = 0xf0;
     LdrSystemDllInitBlock.ntdll_handle = (ULONG_PTR)Wow64Ntdll;
     Status = LdrpGetWow64Export(Wow64Ntdll, "LdrInitializeThunk", &LdrSystemDllInitBlock.pLdrInitializeThunk, TRUE);
     if (!NT_SUCCESS(Status)) return Status;
@@ -259,7 +274,12 @@ LdrpInitializeWow64(
     if (!NT_SUCCESS(Status)) return Status;
     Status = LdrpGetWow64Export(Wow64Ntdll, "RtlpFreezeTimeBias", &LdrSystemDllInitBlock.pRtlpFreezeTimeBias, FALSE);
     if (!NT_SUCCESS(Status)) return Status;
-    RtlCopyMemory((PVOID)(ULONG_PTR)LdrSystemDllInitBlock.pLdrSystemDllInitBlock, &LdrSystemDllInitBlock, sizeof(LdrSystemDllInitBlock));
+    GuestBlock = (PSYSTEM_DLL_INIT_BLOCK)(ULONG_PTR)LdrSystemDllInitBlock.pLdrSystemDllInitBlock;
+    if (GuestBlock->Size < RTL_SIZEOF_THROUGH_FIELD(SYSTEM_DLL_INIT_BLOCK, pRtlpFreezeTimeBias))
+        return STATUS_INVALID_IMAGE_FORMAT;
+    RtlCopyMemory(GuestBlock->Wow64SharedInformation, LdrSystemDllInitBlock.Wow64SharedInformation, SharedBytes);
+    Status = LdrpProtectSystemDllInitBlock();
+    if (!NT_SUCCESS(Status)) return Status;
 
     RtlInitEmptyUnicodeString(&Path, PathBuffer, sizeof(PathBuffer));
     RtlInitUnicodeString(&SystemRoot, SharedUserData->NtSystemRoot);
@@ -836,6 +856,22 @@ Exit:
     DPRINT("LdrpInitializeThread() done\n");
 }
 
+static VOID
+LdrpPublishInitializedNode(PLDR_DDAG_NODE Node)
+{
+    PLIST_ENTRY Link;
+    if (Node->State < LdrModulesMapping || Node->State == LdrModulesReadyToRun)
+        return;
+    for (Link = Node->Modules.Flink; Link != &Node->Modules; Link = Link->Flink)
+    {
+        PLDR_DATA_TABLE_ENTRY Entry = CONTAINING_RECORD(Link, LDR_DATA_TABLE_ENTRY, NodeModuleLink);
+        if (!LdrpIsModuleReady(Entry) ||
+            ((Entry->Flags & LDRP_IMAGE_DLL) && !(Entry->Flags & LDRP_PROCESS_ATTACH_CALLED)))
+            return;
+    }
+    WriteRelease((volatile LONG *)&Node->State, LdrModulesReadyToRun);
+}
+
 NTSTATUS
 NTAPI
 LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
@@ -864,7 +900,7 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
     LdrpEnsureLoaderLockIsHeld();
 
      /* Get the number of entries to call */
-    if ((Count = LdrpClearLoadInProgress()))
+    if ((Count = LdrpCountUnprocessedEntries()))
     {
         /* Check if we can use our local buffer */
         if (Count > 16)
@@ -905,12 +941,12 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
         /* Get the Data Entry */
         LdrEntry = CONTAINING_RECORD(NextEntry, LDR_DATA_TABLE_ENTRY, InInitializationOrderLinks);
 
-        /* Register this module's TLS (and grow every live thread's vector
-         * for it) before any of its code can touch thread-locals — even on
-         * rounds that call no init routines (LdrRootEntry == NULL), because
-         * LDRP_ENTRY_PROCESSED is set below regardless */
-        if (LdrpLdrDatabaseIsSetup &&
-            !(LdrEntry->Flags & LDRP_ENTRY_PROCESSED) && (LdrEntry->Flags & LDRP_IMAGE_DLL))
+        NextEntry = NextEntry->Flink;
+        /* Apphelp temporarily suppresses startup imports while it loads the shims. */
+        if (LdrpIsModuleReady(LdrEntry) || (LdrEntry->Flags & LDRP_ENTRY_PROCESSED))
+            continue;
+
+        if (LdrpLdrDatabaseIsSetup && (LdrEntry->Flags & LDRP_IMAGE_DLL))
         {
             Status = LdrpHandleTlsData(LdrEntry);
             if (!NT_SUCCESS(Status))
@@ -922,39 +958,17 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
             }
         }
 
-        /* Check if we have a Root Entry */
-        if (LdrRootEntry)
+        LdrpInitSecurityCookie(LdrEntry);
+        LdrpMarkInitializationScheduled(LdrEntry);
+        if (LdrEntry->Flags & LDRP_IMAGE_DLL)
         {
-            /* Check flags */
-            if (!(LdrEntry->Flags & LDRP_ENTRY_PROCESSED))
-            {
-                /* Setup the Cookie for the DLL */
-                LdrpInitSecurityCookie(LdrEntry);
-
-                /* Check for valid entrypoint */
-                if (LdrEntry->EntryPoint)
-                {
-                    /* Write in array */
-                    ASSERT(i < Count);
-                    LdrRootEntry[i] = LdrEntry;
-
-                    /* Display debug message */
-                    if (ShowSnaps)
-                    {
-                        DPRINT1("[%p,%p] LDR: %wZ init routine %p\n",
-                                NtCurrentTeb()->RealClientId.UniqueThread,
-                                NtCurrentTeb()->RealClientId.UniqueProcess,
-                                &LdrEntry->FullDllName,
-                                LdrEntry->EntryPoint);
-                    }
-                    i++;
-                }
-            }
+            ASSERT(i < Count);
+            LdrRootEntry[i++] = LdrEntry;
         }
-
-        /* Set the flag */
-        InterlockedOr((PLONG)&LdrEntry->Flags, LDRP_ENTRY_PROCESSED);
-        NextEntry = NextEntry->Flink;
+        else
+        {
+            LdrpPublishInitializedNode(LdrEntry->DdagNode);
+        }
     }
 
     Status = STATUS_SUCCESS;
@@ -974,11 +988,15 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
         }
         /* Clear it */
         Kernel32ProcessInitPostImportFunction = NULL;
+        if (!NT_SUCCESS(Status))
+        {
+            if (LdrRootEntry && LdrRootEntry != LocalArray)
+                RtlFreeHeap(LdrpHeap, 0, LdrRootEntry);
+            return Status;
+        }
     }
 
-    /* No root entry? return */
-    if (!LdrRootEntry)
-        return Status;
+    ASSERT(i == Count);
 
     /* Set the TLD TEB */
     OldTldTeb = LdrpTopLevelDllBeingLoadedTeb;
@@ -1030,72 +1048,55 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
             DbgBreakPoint();
         }
 
-        /* Make sure we have an entrypoint */
-        if (EntryPoint)
+        /* Save the old Dll Initializer and write the current one */
+        OldInitializer = LdrpCurrentDllInitializer;
+        LdrpCurrentDllInitializer = LdrEntry;
+
+        /* Set up the Act Ctx */
+        ActCtx.Size = sizeof(ActCtx);
+        ActCtx.Format = 1;
+        RtlZeroMemory(&ActCtx.Frame, sizeof(RTL_ACTIVATION_CONTEXT_STACK_FRAME));
+
+        /* Activate the ActCtx */
+        RtlActivateActivationContextUnsafeFast(&ActCtx,
+                                               LdrEntry->EntryPointActivationContext);
+
+        _SEH2_TRY
         {
-            /* Save the old Dll Initializer and write the current one */
-            OldInitializer = LdrpCurrentDllInitializer;
-            LdrpCurrentDllInitializer = LdrEntry;
-
-            /* Set up the Act Ctx */
-            ActCtx.Size = sizeof(ActCtx);
-            ActCtx.Format = 1;
-            RtlZeroMemory(&ActCtx.Frame, sizeof(RTL_ACTIVATION_CONTEXT_STACK_FRAME));
-
-            /* Activate the ActCtx */
-            RtlActivateActivationContextUnsafeFast(&ActCtx,
-                                                   LdrEntry->EntryPointActivationContext);
-
-            /* Check if it has TLS */
-            if (LdrEntry->TlsIndex)
-            {
-                /* Call TLS */
-                LdrpCallTlsInitializers(LdrEntry, DLL_PROCESS_ATTACH);
-            }
-
-            DllInitCompleted = FALSE;
-            _SEH2_TRY
-            {
-                /* Call the Entrypoint */
-                if (ShowSnaps)
-                {
-                    DPRINT1("%wZ - Calling entry point at %p for DLL_PROCESS_ATTACH\n",
-                            &LdrEntry->BaseDllName, EntryPoint);
-                }
-                DllStatus = LdrpCallInitRoutine(EntryPoint,
-                                                LdrEntry->DllBase,
-                                                DLL_PROCESS_ATTACH,
-                                                Context);
-                DllInitCompleted = TRUE;
-            }
-            _SEH2_EXCEPT(LdrpDebugExceptionFilter(_SEH2_GetExceptionInformation()))
-            {
-                DllStatus = FALSE;
-                DPRINT1("WARNING: Exception during LdrpCallInitRoutine(DLL_PROCESS_ATTACH) for %wZ\n",
-                        &LdrEntry->BaseDllName);
-            }
-            _SEH2_END;
-
-            /* Deactivate the ActCtx */
+            if (ShowSnaps)
+                DPRINT1("%wZ - Calling entry point at %p for DLL_PROCESS_ATTACH\n",
+                        &LdrEntry->BaseDllName, EntryPoint);
+            LdrEntry->DdagNode->State = LdrModulesInitializing;
+            DllStatus = LdrpCallProcessCallbacks(LdrEntry, DLL_PROCESS_ATTACH,
+                                                 Context, &DllInitCompleted);
+        }
+        _SEH2_FINALLY
+        {
             RtlDeactivateActivationContextUnsafeFast(&ActCtx);
-
-            /* Save the Current DLL Initializer */
             LdrpCurrentDllInitializer = OldInitializer;
+        }
+        _SEH2_END;
 
-            /* Mark the entry as processed */
-            /* FIXME: a module whose attach fails stays visible to the lock-free LdrLoadDll path until unloaded. */
-            if (DllInitCompleted)
-                InterlockedOr((PLONG)&LdrEntry->Flags, LDRP_PROCESS_ATTACH_CALLED);
+        /* Mark the entry as processed */
+        if (DllInitCompleted)
+            InterlockedOr((PLONG)&LdrEntry->Flags, LDRP_PROCESS_ATTACH_CALLED);
 
-            /* Fail if DLL init failed */
-            if (!DllStatus)
-            {
-                DPRINT1("LDR: DLL_PROCESS_ATTACH for dll \"%wZ\" (InitRoutine: %p) failed\n",
-                    &LdrEntry->BaseDllName, EntryPoint);
+        if (DllStatus)
+            LdrpPublishInitializedNode(LdrEntry->DdagNode);
+        else
+        {
+            InterlockedOr((PLONG)&LdrEntry->Flags, LDRP_PROCESS_ATTACH_FAILED);
+            WriteRelease((volatile LONG *)&LdrEntry->DdagNode->State, LdrModulesInitError);
+        }
 
-                Status = STATUS_DLL_INIT_FAILED;
-                goto Quickie;
-            }
+        /* Fail if DLL init failed */
+        if (!DllStatus)
+        {
+            DPRINT1("LDR: DLL_PROCESS_ATTACH for dll \"%wZ\" (InitRoutine: %p) failed\n",
+                &LdrEntry->BaseDllName, EntryPoint);
+
+            Status = STATUS_DLL_INIT_FAILED;
+            goto Quickie;
         }
     }
 
@@ -1113,6 +1114,9 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
         /* Next entry */
         NextEntry = NextEntry->Flink;
     }
+
+    if (Context)
+        WriteRelease((volatile LONG *)&LdrpImageEntry->DdagNode->State, LdrModulesReadyToRun);
 
     /* Check for TLS */
     if (LdrpImageEntry->TlsIndex && Context)
@@ -1146,7 +1150,7 @@ Quickie:
     LdrpTopLevelDllBeingLoadedTeb = OldTldTeb;
 
     /* Check if the array is in the heap */
-    if (LdrRootEntry != LocalArray)
+    if (LdrRootEntry && LdrRootEntry != LocalArray)
     {
         /* Free the array */
         RtlFreeHeap(LdrpHeap, 0, LdrRootEntry);
@@ -2672,6 +2676,11 @@ LdrpInitializeProcess(IN PCONTEXT Context,
 #ifdef _WIN64
     IsWow64 = Teb->WowTebOffset && NtHeader->FileHeader.Machine == IMAGE_FILE_MACHINE_I386;
 #endif
+    if (!IsWow64)
+    {
+        Status = LdrpProtectSystemDllInitBlock();
+        if (!NT_SUCCESS(Status)) return Status;
+    }
 #if defined(_M_ARM64)
     IsChpe = ChpeIsChpeProcess();
 #endif
@@ -2809,13 +2818,13 @@ LdrpInitializeProcess(IN PCONTEXT Context,
 #undef VALID_CONFIG_FIELD
 
     /* Check for custom affinity mask */
-    if (Peb->ImageProcessAffinityMask)
+    if (Peb->ActiveProcessAffinityMask)
     {
         /* Set it */
         Status = NtSetInformationProcess(NtCurrentProcess(),
                                          ProcessAffinityMask,
-                                         &Peb->ImageProcessAffinityMask,
-                                         sizeof(Peb->ImageProcessAffinityMask));
+                                         &Peb->ActiveProcessAffinityMask,
+                                         sizeof(Peb->ActiveProcessAffinityMask));
     }
 
     /* Check if verbose debugging (ShowSnaps) was requested */
@@ -3086,14 +3095,15 @@ LdrpInitializeProcess(IN PCONTEXT Context,
 
     /* Set it up */
     LdrpImageEntry->EntryPoint = LdrpFetchAddressOfEntryPoint(LdrpImageEntry->DllBase);
-    LdrpImageEntry->LoadCount = -1;
+    LdrpImageEntry->LoadReason = LoadReasonDynamicLoad;
+    LdrpReferenceModule(LdrpImageEntry, TRUE);
     LdrpImageEntry->EntryPointActivationContext = 0;
     LdrpImageEntry->FullDllName = ImageFileName;
 
     if (IsDotNetImage)
-        LdrpImageEntry->Flags = LDRP_COR_IMAGE;
+        LdrpImageEntry->Flags = LDRP_IMAGE_DLL | LDRP_COR_IMAGE;
     else
-        LdrpImageEntry->Flags = 0;
+        LdrpImageEntry->Flags = LDRP_IMAGE_DLL;
 
     /* Check if the name is empty */
     if (!ImageFileName.Buffer[0])
@@ -3133,7 +3143,7 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     /* Processing done, insert it */
     LdrpInsertMemoryTableEntry(LdrpImageEntry);
     LdrpInitSecurityCookie(LdrpImageEntry);
-    LdrpImageEntry->Flags |= LDRP_ENTRY_PROCESSED;
+    LdrpMarkInitializationScheduled(LdrpImageEntry);
 
     /* Now add an entry for NTDLL */
     NtLdrEntry = LdrpAllocateDataTableEntry(SystemArgument1);
@@ -3144,7 +3154,7 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     }
     NtLdrEntry->Flags = LDRP_IMAGE_DLL;
     NtLdrEntry->EntryPoint = LdrpFetchAddressOfEntryPoint(NtLdrEntry->DllBase);
-    NtLdrEntry->LoadCount = -1;
+    LdrpReferenceModule(NtLdrEntry, TRUE);
     NtLdrEntry->EntryPointActivationContext = 0;
 
     NtLdrEntry->FullDllName.Length = FullPath.Length;
@@ -3159,15 +3169,17 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     /* Processing done, insert it */
     LdrpNtDllDataTableEntry = NtLdrEntry;
     LdrpInsertMemoryTableEntry(NtLdrEntry);
+    LdrpMarkInitializationScheduled(NtLdrEntry);
+    NtLdrEntry->DdagNode->State = LdrModulesReadyToRun;
 
-    Status = LdrpInitializeGuard(LdrpImageEntry);
+    Status = LdrpProcessLoadConfig(LdrpImageEntry);
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("LDR: CFG initialization failed for process image, Status = 0x%08lx\n", Status);
         return Status;
     }
 
-    Status = LdrpInitializeGuard(NtLdrEntry);
+    Status = LdrpProcessLoadConfig(NtLdrEntry);
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("LDR: CFG initialization failed for ntdll, Status = 0x%08lx\n", Status);
@@ -3265,6 +3277,9 @@ LdrpInitializeProcess(IN PCONTEXT Context,
                 DPRINT1("LDR: Unable to load %wZ, Status=0x%08lx\n", &Kernel32String, Status);
             return Status;
         }
+
+        Status = LdrAddRefDll(LDR_ADDREF_DLL_PIN, Kernel32BaseAddress);
+        if (!NT_SUCCESS(Status)) return Status;
 
         Status = LdrGetProcedureAddress(Kernel32BaseAddress,
                                         &BaseProcessInitPostImportName,
@@ -3372,14 +3387,13 @@ LdrpInitializeProcess(IN PCONTEXT Context,
         if (!NT_SUCCESS(Status)) return Status;
     }
 
-    /* Lock the DLLs */
+    /* Startup imports retain a loader-entry reference for the process lifetime. */
     ListHead = &Peb->Ldr->InLoadOrderModuleList;
-    NextEntry = ListHead->Flink;
-    while (ListHead != NextEntry)
+    for (NextEntry = ListHead->Flink; NextEntry != ListHead; NextEntry = NextEntry->Flink)
     {
         NtLdrEntry = CONTAINING_RECORD(NextEntry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
-        NtLdrEntry->LoadCount = -1;
-        NextEntry = NextEntry->Flink;
+        if (NtLdrEntry->DdagNode->LoadCount != MAXULONG)
+            InterlockedIncrement((PLONG)&NtLdrEntry->ReferenceCount);
     }
 
     /* Phase 0 is done */

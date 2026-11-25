@@ -25,3 +25,4 @@ interface IUIViewSettingsInterop : IInspectable
 {
     HRESULT GetForWindow([in] HWND hwnd, [in] REFIID riid, [out, retval, iid_is(riid)] void **ppv);
 }
+

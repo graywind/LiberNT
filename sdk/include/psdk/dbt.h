@@ -153,4 +153,82 @@ typedef DEV_BROADCAST_DEVICEINTERFACE_A DEV_BROADCAST_DEVICEINTERFACE, *PDEV_BRO
 #ifdef __cplusplus
 }
 #endif
+#ifndef DBTF_RESOURCE
+#define DBTF_RESOURCE 0x00000001
+#endif
+#ifndef DBTF_SLOWNET
+#define DBTF_SLOWNET 0x00000004
+#endif
+#ifndef DBTF_XPORT
+#define DBTF_XPORT 0x00000002
+#endif
+#ifndef DBT_VPOWERDAPI
+#define DBT_VPOWERDAPI 0x8100
+#endif
+#ifndef LOCKF_LOGICAL_LOCK
+#define LOCKF_LOGICAL_LOCK 0x00
+#endif
+#ifndef LOCKF_PHYSICAL_LOCK
+#define LOCKF_PHYSICAL_LOCK 0x01
+#endif
+#ifndef LOCKP_ALLOW_MEM_MAPPING
+#define LOCKP_ALLOW_MEM_MAPPING 0x00
+#endif
+#ifndef LOCKP_ALLOW_WRITES
+#define LOCKP_ALLOW_WRITES 0x01
+#endif
+#ifndef LOCKP_FAIL_MEM_MAPPING
+#define LOCKP_FAIL_MEM_MAPPING 0x02
+#endif
+#ifndef LOCKP_FAIL_WRITES
+#define LOCKP_FAIL_WRITES 0x00
+#endif
+#ifndef LOCKP_LOCK_FOR_FORMAT
+#define LOCKP_LOCK_FOR_FORMAT 0x04
+#endif
+#ifndef LOCKP_USER_MASK
+#define LOCKP_USER_MASK 0x03
+#endif
+
+typedef struct _DEV_BROADCAST_HANDLE32 {
+  DWORD dbch_size;
+  DWORD dbch_devicetype;
+  DWORD dbch_reserved;
+  ULONG32 dbch_handle;
+  ULONG32 dbch_hdevnotify;
+  GUID dbch_eventguid;
+  LONG dbch_nameoffset;
+  BYTE dbch_data[1];
+} DEV_BROADCAST_HANDLE32, *PDEV_BROADCAST_HANDLE32;
+
+typedef struct _DEV_BROADCAST_HANDLE64 {
+  DWORD dbch_size;
+  DWORD dbch_devicetype;
+  DWORD dbch_reserved;
+  ULONG64 dbch_handle;
+  ULONG64 dbch_hdevnotify;
+  GUID dbch_eventguid;
+  LONG dbch_nameoffset;
+  BYTE dbch_data[1];
+} DEV_BROADCAST_HANDLE64, *PDEV_BROADCAST_HANDLE64;
+
+struct _DEV_BROADCAST_HEADER {
+  DWORD dbcd_size;
+  DWORD dbcd_devicetype;
+  DWORD dbcd_reserved;
+};
+
+typedef struct VolLockBroadcast {
+  struct _DEV_BROADCAST_HDR vlb_dbh;
+  DWORD vlb_owner;
+  BYTE vlb_perms;
+  BYTE vlb_lockType;
+  BYTE vlb_drive;
+  BYTE vlb_flags;
+} VolLockBroadcast;
+
+#define DBTFAR far
+
+typedef VolLockBroadcast *pVolLockBroadcast;
+
 #endif

@@ -1028,4 +1028,185 @@ typedef PSecurityFunctionTableW (SEC_ENTRY *INIT_SECURITY_INTERFACE_W)(void);
 }
 #endif
 
+#ifndef SECPKG_OPTIONS_PERMANENT
+#define SECPKG_OPTIONS_PERMANENT 0x00000001
+#endif
+#ifndef SECPKG_OPTIONS_TYPE_LSA
+#define SECPKG_OPTIONS_TYPE_LSA 1
+#endif
+#ifndef SECPKG_OPTIONS_TYPE_SSPI
+#define SECPKG_OPTIONS_TYPE_SSPI 2
+#endif
+#ifndef SECPKG_OPTIONS_TYPE_UNKNOWN
+#define SECPKG_OPTIONS_TYPE_UNKNOWN 0
+#endif
+#ifndef SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_CREDPROV_DO_NOT_LOAD
+#define SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_CREDPROV_DO_NOT_LOAD 0x10000000
+#endif
+#ifndef SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_CREDPROV_DO_NOT_SAVE
+#define SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_CREDPROV_DO_NOT_SAVE 0x80000000
+#endif
+#ifndef SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_NO_CHECKBOX
+#define SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_NO_CHECKBOX 0x20000000
+#endif
+#ifndef SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_SAVE_CRED_CHECKED
+#define SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_SAVE_CRED_CHECKED 0x40000000
+#endif
+#ifndef SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_USE_MASK
+#define SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_USE_MASK 0xFF000000
+#endif
+#ifndef SSPIPFC_CREDPROV_DO_NOT_LOAD
+#define SSPIPFC_CREDPROV_DO_NOT_LOAD 0x00000004
+#endif
+#ifndef SSPIPFC_USE_CREDUIBROKER
+#define SSPIPFC_USE_CREDUIBROKER 0x00000008
+#endif
+
+typedef enum _SecDelegationType {
+    SecFull = 0,
+    SecService = 1,
+    SecTree = 2,
+    SecDirectory = 3,
+    SecObject = 4
+} SecDelegationType, *PSecDelegationType;
+
+typedef enum _SECPKG_ATTR_LCT_STATUS {
+    SecPkgAttrLastClientTokenYes = 0,
+    SecPkgAttrLastClientTokenNo = 1,
+    SecPkgAttrLastClientTokenMaybe = 2
+} SECPKG_ATTR_LCT_STATUS, *PSECPKG_ATTR_LCT_STATUS;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+SECURITY_STATUS WINAPI DeleteSecurityPackageA(LPSTR pszPackageName);
+SECURITY_STATUS WINAPI DeleteSecurityPackageW(LPWSTR pszPackageName);
+#ifdef __cplusplus
+}
+#endif
+
+typedef struct _SECPKG_APP_MODE_INFO {
+  ULONG UserFunction;
+  ULONG_PTR Argument1;
+  ULONG_PTR Argument2;
+  SecBuffer UserData;
+  BOOLEAN ReturnToLsa;
+} SECPKG_APP_MODE_INFO, *PSECPKG_APP_MODE_INFO;
+
+typedef struct _SecPkgContext_ClientSpecifiedTarget {
+  SEC_WCHAR * sTargetName;
+} SecPkgContext_ClientSpecifiedTarget, *PSecPkgContext_ClientSpecifiedTarget;
+
+typedef struct _SecPkgContext_LastClientTokenStatus {
+  SECPKG_ATTR_LCT_STATUS LastClientTokenStatus;
+} SecPkgContext_LastClientTokenStatus, *PSecPkgContext_LastClientTokenStatus;
+
+typedef struct _SecPkgContext_NegotiatedTlsExtensions {
+  unsigned long ExtensionsCount;
+  unsigned short * Extensions;
+} SecPkgContext_NegotiatedTlsExtensions, *PSecPkgContext_NegotiatedTlsExtensions;
+
+typedef struct _SecPkgCredentials_SSIProviderA {
+  SEC_CHAR * sProviderName;
+  unsigned long ProviderInfoLength;
+  char * ProviderInfo;
+} SecPkgCredentials_SSIProviderA, *PSecPkgCredentials_SSIProviderA;
+
+#ifdef UNICODE
+#define DeleteSecurityPackage DeleteSecurityPackageW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define DeleteSecurityPackage DeleteSecurityPackageW
+#else
+#define DeleteSecurityPackage DeleteSecurityPackageA
+#endif
+#endif
+#endif
+#define SEC_WINNT_AUTH_IDENTITY_FLAGS_SSPIPFC_SAVE_CRED_BY_CALLER 0x80000000
+#define SEC_WINNT_AUTH_IDENTITY_FLAGS_VALID_SSPIPFC_FLAGS 0xF0000000
+#define SECURITY_
+#define SECURITY_ENTRYPOINT16 "INITSECURITYINTERFACEA"
+#define SECURITY_ENTRYPOINTA SEC_TEXT("InitSecurityInterfaceA")
+#define SSPIPFC_SAVE_CRED_BY_CALLER 1
+#define SSPIPFC_VALID_FLAGS 0xF
+
+struct _SECURITY_STRING
+{
+    unsigned short Length;
+    unsigned short MaximumLength;
+    unsigned short *Buffer;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+SECURITY_STATUS WINAPI DelegateSecurityContext(PCtxtHandle phContext, PSECURITY_STRING pTarget, SecDelegationType DelegationType, PTimeStamp pExpiry, PSecBuffer pPackageParameters, PSecBufferDesc pOutput);
+
+#ifdef __cplusplus
+}
+#endif
+
+struct _SEC_WINNT_AUTH_IDENTITY_EX2
+{
+    unsigned long Version;
+    unsigned short cbHeaderLength;
+    unsigned long cbStructureLength;
+    unsigned long UserOffset;
+    unsigned short UserLength;
+    unsigned long DomainOffset;
+    unsigned short DomainLength;
+    unsigned long PackedCredentialsOffset;
+    unsigned short PackedCredentialsLength;
+    unsigned long Flags;
+    unsigned long PackageListOffset;
+    unsigned short PackageListLength;
+};
+
+typedef struct _SEC_WINNT_AUTH_IDENTITY_EX2 SEC_WINNT_AUTH_IDENTITY_EX2;
+
+#ifndef _AUTH_IDENTITY_DEFINED
+#define _AUTH_IDENTITY_DEFINED
+typedef struct _SEC_WINNT_AUTH_IDENTITY_W
+{
+    unsigned short* User;
+    ULONG UserLength;
+    unsigned short* Domain;
+    ULONG DomainLength;
+    unsigned short* Password;
+    ULONG PasswordLength;
+    ULONG Flags;
+} SEC_WINNT_AUTH_IDENTITY_W, *PSEC_WINNT_AUTH_IDENTITY_W;
+#endif
+
+/* FIXME: Windows leaves the ANSI record undefined after ntifs.h has defined _AUTH_IDENTITY_DEFINED; LiberNT always provides it once */
+#ifndef _AUTH_IDENTITY_A_DEFINED
+#define _AUTH_IDENTITY_A_DEFINED
+typedef struct _SEC_WINNT_AUTH_IDENTITY_A
+{
+    unsigned char* User;
+    ULONG UserLength;
+    unsigned char* Domain;
+    ULONG DomainLength;
+    unsigned char* Password;
+    ULONG PasswordLength;
+    ULONG Flags;
+} SEC_WINNT_AUTH_IDENTITY_A, *PSEC_WINNT_AUTH_IDENTITY_A;
+#endif
+
+union _SEC_WINNT_AUTH_IDENTITY_INFO
+{
+    SEC_WINNT_AUTH_IDENTITY_EXW AuthIdExw;
+    SEC_WINNT_AUTH_IDENTITY_EXA AuthIdExa;
+    SEC_WINNT_AUTH_IDENTITY_A AuthId_a;
+    SEC_WINNT_AUTH_IDENTITY_W AuthId_w;
+    SEC_WINNT_AUTH_IDENTITY_EX2 AuthIdEx2;
+};
+
+typedef union _SEC_WINNT_AUTH_IDENTITY_INFO *PSEC_WINNT_AUTH_IDENTITY_INFO;
+
+typedef union _SEC_WINNT_AUTH_IDENTITY_INFO SEC_WINNT_AUTH_IDENTITY_INFO;
+
 #endif /* ndef __WINE_SSPI_H__ */

@@ -128,4 +128,153 @@ INT WINAPI NormalizeFileForPatchSignature(PVOID, ULONG, ULONG, PATCH_OPTION_DATA
 }
 #endif
 
+#ifndef ERROR_PATCH_BIGGER_THAN_COMPRESSED
+#define ERROR_PATCH_BIGGER_THAN_COMPRESSED 0xC00E3105
+#endif
+#ifndef ERROR_PATCH_ENCODE_FAILURE
+#define ERROR_PATCH_ENCODE_FAILURE 0xC00E3101
+#endif
+#ifndef ERROR_PATCH_IMAGEHLP_FAILURE
+#define ERROR_PATCH_IMAGEHLP_FAILURE 0xC00E3106
+#endif
+#ifndef ERROR_PATCH_INVALID_OPTIONS
+#define ERROR_PATCH_INVALID_OPTIONS 0xC00E3102
+#endif
+#ifndef ERROR_PATCH_RETAIN_RANGES_DIFFER
+#define ERROR_PATCH_RETAIN_RANGES_DIFFER 0xC00E3104
+#endif
+#ifndef ERROR_PATCH_SAME_FILE
+#define ERROR_PATCH_SAME_FILE 0xC00E3103
+#endif
+#ifndef PATCH_OPTION_SIGNATURE_MD5
+#define PATCH_OPTION_SIGNATURE_MD5 0x01000000
+#endif
+#ifndef PATCH_OPTION_USE_BEST
+#define PATCH_OPTION_USE_BEST 0x00000000
+#endif
+#ifndef PATCH_OPTION_USE_LZX_BEST
+#define PATCH_OPTION_USE_LZX_BEST 0x00000003
+#endif
+#ifndef PATCH_OPTION_VALID_FLAGS
+#define PATCH_OPTION_VALID_FLAGS 0xC0FF0007
+#endif
+#ifndef PATCH_SYMBOL_NO_FAILURES
+#define PATCH_SYMBOL_NO_FAILURES 0x00000002
+#endif
+#ifndef PATCH_SYMBOL_NO_IMAGEHLP
+#define PATCH_SYMBOL_NO_IMAGEHLP 0x00000001
+#endif
+#ifndef PATCH_SYMBOL_RESERVED1
+#define PATCH_SYMBOL_RESERVED1 0x80000000
+#endif
+#ifndef PATCH_SYMBOL_UNDECORATED_TOO
+#define PATCH_SYMBOL_UNDECORATED_TOO 0x00000004
+#endif
+#ifndef PATCH_TRANSFORM_PE_IRELOC_2
+#define PATCH_TRANSFORM_PE_IRELOC_2 0x00000200
+#endif
+#ifndef PATCH_TRANSFORM_PE_RESOURCE_2
+#define PATCH_TRANSFORM_PE_RESOURCE_2 0x00000100
+#endif
+
+typedef struct _PATCH_OLD_FILE_INFO_A {
+  ULONG SizeOfThisStruct;
+  LPCSTR OldFileName;
+  ULONG IgnoreRangeCount;
+  PPATCH_IGNORE_RANGE IgnoreRangeArray;
+  ULONG RetainRangeCount;
+  PPATCH_RETAIN_RANGE RetainRangeArray;
+} PATCH_OLD_FILE_INFO_A, *PPATCH_OLD_FILE_INFO_A;
+
+typedef struct _PATCH_OLD_FILE_INFO_H {
+  ULONG SizeOfThisStruct;
+  HANDLE OldFileHandle;
+  ULONG IgnoreRangeCount;
+  PPATCH_IGNORE_RANGE IgnoreRangeArray;
+  ULONG RetainRangeCount;
+  PPATCH_RETAIN_RANGE RetainRangeArray;
+} PATCH_OLD_FILE_INFO_H, *PPATCH_OLD_FILE_INFO_H;
+
+typedef struct _PATCH_OLD_FILE_INFO_W {
+  ULONG SizeOfThisStruct;
+  LPCWSTR OldFileName;
+  ULONG IgnoreRangeCount;
+  PPATCH_IGNORE_RANGE IgnoreRangeArray;
+  ULONG RetainRangeCount;
+  PPATCH_RETAIN_RANGE RetainRangeArray;
+} PATCH_OLD_FILE_INFO_W, *PPATCH_OLD_FILE_INFO_W;
+
+#ifdef UNICODE
+#define CreatePatchFile CreatePatchFileW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreatePatchFile CreatePatchFileW
+#else
+#define CreatePatchFile CreatePatchFileA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define CreatePatchFileEx CreatePatchFileExW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define CreatePatchFileEx CreatePatchFileExW
+#else
+#define CreatePatchFileEx CreatePatchFileExA
+#endif
+#endif
+#endif
+#ifdef UNICODE
+#define ExtractPatchHeaderToFile ExtractPatchHeaderToFileW
+#else
+#if (!(defined(UNICODE)))
+#ifdef UNICODE
+#define ExtractPatchHeaderToFile ExtractPatchHeaderToFileW
+#else
+#define ExtractPatchHeaderToFile ExtractPatchHeaderToFileA
+#endif
+#endif
+#endif
+#define PATCHAPI WINAPI
+
+struct _PATCH_OLD_FILE_INFO
+{
+    ULONG SizeOfThisStruct;
+    union
+    {
+        LPCSTR OldFileNameA;
+        LPCWSTR OldFileNameW;
+        HANDLE OldFileHandle;
+    };
+    ULONG IgnoreRangeCount;
+    PPATCH_IGNORE_RANGE IgnoreRangeArray;
+    ULONG RetainRangeCount;
+    PPATCH_RETAIN_RANGE RetainRangeArray;
+};
+
+typedef struct _PATCH_OLD_FILE_INFO PATCH_OLD_FILE_INFO;
+
+typedef struct _PATCH_OLD_FILE_INFO *PPATCH_OLD_FILE_INFO;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* TODO: LiberNT does not implement the functions below yet */
+BOOL CreatePatchFileA(LPCSTR OldFileName, LPCSTR NewFileName, LPCSTR PatchFileName, ULONG OptionFlags, PPATCH_OPTION_DATA OptionData);
+BOOL CreatePatchFileByHandles(HANDLE OldFileHandle, HANDLE NewFileHandle, HANDLE PatchFileHandle, ULONG OptionFlags, PPATCH_OPTION_DATA OptionData);
+BOOL CreatePatchFileByHandlesEx(ULONG OldFileCount, PPATCH_OLD_FILE_INFO_H OldFileInfoArray, HANDLE NewFileHandle, HANDLE PatchFileHandle, ULONG OptionFlags, PPATCH_OPTION_DATA OptionData, PPATCH_PROGRESS_CALLBACK ProgressCallback, PVOID CallbackContext);
+BOOL CreatePatchFileExA(ULONG OldFileCount, PPATCH_OLD_FILE_INFO_A OldFileInfoArray, LPCSTR NewFileName, LPCSTR PatchFileName, ULONG OptionFlags, PPATCH_OPTION_DATA OptionData, PPATCH_PROGRESS_CALLBACK ProgressCallback, PVOID CallbackContext);
+BOOL CreatePatchFileExW(ULONG OldFileCount, PPATCH_OLD_FILE_INFO_W OldFileInfoArray, LPCWSTR NewFileName, LPCWSTR PatchFileName, ULONG OptionFlags, PPATCH_OPTION_DATA OptionData, PPATCH_PROGRESS_CALLBACK ProgressCallback, PVOID CallbackContext);
+BOOL CreatePatchFileW(LPCWSTR OldFileName, LPCWSTR NewFileName, LPCWSTR PatchFileName, ULONG OptionFlags, PPATCH_OPTION_DATA OptionData);
+BOOL ExtractPatchHeaderToFileA(LPCSTR PatchFileName, LPCSTR PatchHeaderFileName);
+BOOL ExtractPatchHeaderToFileByHandles(HANDLE PatchFileHandle, HANDLE PatchHeaderFileHandle);
+BOOL ExtractPatchHeaderToFileW(LPCWSTR PatchFileName, LPCWSTR PatchHeaderFileName);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _PATCHAPI_H_ */

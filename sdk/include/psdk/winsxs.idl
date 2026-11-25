@@ -196,3 +196,20 @@ typedef [public] enum
 
 cpp_quote("HRESULT WINAPI CreateAssemblyCache(IAssemblyCache**,DWORD);")
 cpp_quote("HRESULT WINAPI CreateAssemblyNameObject(LPASSEMBLYNAME *,LPCWSTR,DWORD,LPVOID);")
+
+cpp_quote("enum __MIDL_IAssemblyName_0002")
+cpp_quote("{")
+cpp_quote("    ASM_BINDF_FORCE_CACHE_INSTALL = 1,")
+cpp_quote("    ASM_BINDF_RFS_INTEGRITY_CHECK = 2,")
+cpp_quote("    ASM_BINDF_RFS_MODULE_CHECK = 4,")
+cpp_quote("    ASM_BINDF_BINPATH_PROBE_ONLY = 8,")
+cpp_quote("    ASM_BINDF_SHARED_BINPATH_HINT = 0x10,")
+cpp_quote("    ASM_BINDF_PARENT_ASM_HINT = 0x20,")
+cpp_quote("};")
+cpp_quote("")
+cpp_quote("")
+cpp_quote("")
+
+
+cpp_quote("typedef enum __MIDL_IAssemblyName_0002 ASM_BIND_FLAGS;")
+

@@ -69,9 +69,46 @@ static void Child(int argc, char **argv)
         if (!hModule)
             ExitProcess(RESULT_NOT_LOADED | GetLastError());
     }
+    if (!strcmp(argv[2], "Diamond"))
+    {
+        HMODULE Middle, Leaf;
+        /* Resolving A.Bar adds A->B and A->C. Resolving B.Bar adds B->C. */
+        pfn = GetProcAddress(hModule, "Bar");
+        Middle = GetModuleHandleW(L"ldrfwd_b.dll");
+        Leaf = GetModuleHandleW(L"ldrfwd_c.dll");
+        if (!pfn || !Middle || !Leaf || GetProcAddress(Middle, "Bar") != pfn)
+            ExitProcess(ERROR_PROC_NOT_FOUND);
+        if (!FreeLibrary(Leaf) || GetModuleHandleW(L"ldrfwd_c.dll") != Leaf ||
+            !FreeLibrary(hModule) || GetModuleHandleW(L"ldrfwd_b.dll") ||
+            GetModuleHandleW(L"ldrfwd_c.dll"))
+            ExitProcess(ERROR_INVALID_DATA);
+        ExitProcess(0);
+    }
     pfn = GetProcAddress(hModule, argv[2]);
     if (!pfn)
         ExitProcess(GetLastError());
+    if (NtCurrentPeb()->OSMajorVersion >= 10)
+    {
+        PLDR_DATA_TABLE_ENTRY Entry, Owner;
+        PLDR_DEPENDENCY_RECORD Edge;
+        NTSTATUS Status = LdrFindEntryForAddress((PVOID)pfn, &Entry);
+        if (!NT_SUCCESS(Status) || Entry->ProcessStaticImport ||
+            Entry->LoadReason != LoadReasonDynamicForwarderDependency)
+        {
+            trace("GetProcAddress forwarder has unexpected loader state, status %#lx\n", Status);
+            ExitProcess(ERROR_INVALID_DATA);
+        }
+        if (!Entry->DdagNode || !Entry->DdagNode->IncomingDependencies.Tail ||
+            !NT_SUCCESS(LdrFindEntryForAddress(hModule, &Owner)))
+            ExitProcess(ERROR_INVALID_DATA);
+        Edge = CONTAINING_RECORD(Entry->DdagNode->IncomingDependencies.Tail,
+                                 LDR_DEPENDENCY_RECORD, IncomingDependencyLink);
+        if ((ULONG_PTR)Edge->IncomingDependencyNode != ((ULONG_PTR)Owner->DdagNode | 1))
+        {
+            trace("Wrong owner of the final forwarded export\n");
+            ExitProcess(ERROR_INVALID_DATA);
+        }
+    }
     ExitProcess(((int (WINAPI *)(void))pfn)());
 }
 
@@ -120,6 +157,8 @@ START_TEST(LdrForwarderPath)
 
     ok_long(RunChild("Bar", "8"), 43);
     ok_long(RunChild("Bar", "100"), 43);
+    if (NtCurrentPeb()->OSMajorVersion >= 10)
+        ok_long(RunChild("Diamond", "8"), 0);
     ok_long(RunChild("Foo", "0 8"), ERROR_PROC_NOT_FOUND);
     ok_long(RunChild("Foo", "8 0"), 42);
     ok_long(RunChild("Foo", "800 100"), ERROR_PROC_NOT_FOUND);

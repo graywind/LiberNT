@@ -18,6 +18,9 @@
  */
 
 #include "dxgi_private.h"
+#ifdef __REACTOS__
+#include <winternl.h>
+#endif
 
 WINE_DEFAULT_DEBUG_CHANNEL(dxgi);
 
@@ -254,16 +257,39 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_QueryResourceResidency(IWineDXGIDev
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_SetGPUThreadPriority(IWineDXGIDevice *iface, INT priority)
 {
+#ifdef __REACTOS__
+    struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
+
+    TRACE("iface %p, priority %d.\n", iface, priority);
+
+    if (priority < -7 || priority > 7)
+        return E_INVALIDARG;
+    /* TODO: a wined3d device has no kernel GPU context whose scheduling priority this could set */
+    device->gpu_thread_priority = priority;
+    return S_OK;
+#else
     FIXME("iface %p, priority %d stub!\n", iface, priority);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_GetGPUThreadPriority(IWineDXGIDevice *iface, INT *priority)
 {
+#ifdef __REACTOS__
+    struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
+
+    TRACE("iface %p, priority %p.\n", iface, priority);
+
+    if (!priority)
+        return E_INVALIDARG;
+    *priority = device->gpu_thread_priority;
+    return S_OK;
+#else
     FIXME("iface %p, priority %p stub!\n", iface, priority);
 
     return E_NOTIMPL;
+#endif
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_SetMaximumFrameLatency(IWineDXGIDevice *iface, UINT max_latency)
@@ -317,6 +343,32 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_ReclaimResources(IWineDXGIDevice *i
     return E_NOTIMPL;
 }
 
+#ifdef __REACTOS__
+/* The completion signal needs an event handle with full event access */
+static HRESULT dxgi_device_check_completion_event(HANDLE event)
+{
+    OBJECT_BASIC_INFORMATION basic;
+    union
+    {
+        OBJECT_TYPE_INFORMATION info;
+        BYTE buffer[sizeof(OBJECT_TYPE_INFORMATION) + 64 * sizeof(WCHAR)];
+    } type;
+    static const WCHAR event_type[] = L"Event";
+
+    if (!event)
+        return E_INVALIDARG;
+    if (NtQueryObject(event, ObjectTypeInformation, &type, sizeof(type), NULL) < 0 ||
+            type.info.TypeName.Length != sizeof(event_type) - sizeof(WCHAR) ||
+            memcmp(type.info.TypeName.Buffer, event_type, sizeof(event_type) - sizeof(WCHAR)))
+        return E_INVALIDARG;
+    if (NtQueryObject(event, ObjectBasicInformation, &basic, sizeof(basic), NULL) < 0)
+        return E_INVALIDARG;
+    if ((basic.GrantedAccess & EVENT_ALL_ACCESS) != EVENT_ALL_ACCESS)
+        return E_ACCESSDENIED;
+    return S_OK;
+}
+#endif
+
 static HRESULT STDMETHODCALLTYPE dxgi_device_EnqueueSetEvent(IWineDXGIDevice *iface, HANDLE event)
 {
     struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
@@ -324,6 +376,10 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_EnqueueSetEvent(IWineDXGIDevice *if
 
     TRACE("iface %p, event %p.\n", iface, event);
 
+#ifdef __REACTOS__
+    if ((hr = dxgi_device_check_completion_event(event)) != S_OK)
+        return hr;
+#endif
     wined3d_mutex_lock();
     hr = wined3d_device_enqueue_set_event(device->wined3d_device, event);
     wined3d_mutex_unlock();
@@ -606,6 +662,9 @@ HRESULT dxgi_device_init(struct dxgi_device *device, struct dxgi_device_layer *l
     device->IWineDXGISwapChainFactory_iface.lpVtbl = &dxgi_swapchain_factory_vtbl;
     device->refcount = 1;
     device->max_frame_latency = DXGI_FRAME_LATENCY_DEFAULT;
+#ifdef __REACTOS__
+    device->gpu_thread_priority = 0;
+#endif
     wined3d_mutex_lock();
     wined3d_private_store_init(&device->private_store);
 

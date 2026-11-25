@@ -29,3 +29,15 @@
 #define FLAGS ENUM16
 
 #endif  /* MANAGED_ENUMS */
+
+#define FLAGS16 ENUM16
+
+#define ANALOG_VIDEO_STANDARD_NAMESPACE(x) x
+#define EHRECVR_MGD_NAMESPACE(x) x
+#define ENUMG(g) typedef V1_ENUMG(g) enum
+#define RATATTR(x) x
+#define RATLEVEL(x) x
+#if (!(defined(__midl)))
+#define V1_ENUMG(g)
+#endif
+

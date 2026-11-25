@@ -41,3 +41,6 @@ interface IDownloadManager : IUnknown
         [in] LPCOLESTR pszRedir,
         [in] UINT uiCP);
 }
+
+cpp_quote("#define SID_SDownloadManager IID_IDownloadManager")
+cpp_quote("")

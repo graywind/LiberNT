@@ -304,4 +304,8 @@ SaferSetPolicyInformation(
 } /* extern "C" */
 #endif /* __cplusplus */
 
+#define SRP_POLICY_MANAGEDINSTALLER L"MANAGEDINSTALLER"
+#define SRP_POLICY_WLDPCONFIGCI L"WLDPCONFIGCI"
+
+
 #endif /* _WINSAFER_H */

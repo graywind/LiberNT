@@ -8,9 +8,9 @@
 #include <bl.h>
 #include <fdtacpi.h>
 #include <blefi.h>
-#include <Fdt.h>
+#include <edk2/Fdt.h>
 #include <drivers/acpi/acpi.h>
-#include <reactos/arm64/acpi.h>
+#include <libernt/arm64/acpi.h>
 #include <libernt/fdtlib.h>
 
 #include <debug.h>

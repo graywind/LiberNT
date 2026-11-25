@@ -600,60 +600,7 @@ typedef enum _D3DFOGMODE {
     D3DFOG_FORCE_DWORD          = 0x7fffffff
 } D3DFOGMODE;
 
-typedef enum _D3DFORMAT {
-    D3DFMT_UNKNOWN              =   0,
-
-    D3DFMT_R8G8B8               =  20,
-    D3DFMT_A8R8G8B8             =  21,
-    D3DFMT_X8R8G8B8             =  22,
-    D3DFMT_R5G6B5               =  23,
-    D3DFMT_X1R5G5B5             =  24,
-    D3DFMT_A1R5G5B5             =  25,
-    D3DFMT_A4R4G4B4             =  26,
-    D3DFMT_R3G3B2               =  27,
-    D3DFMT_A8                   =  28,
-    D3DFMT_A8R3G3B2             =  29,
-    D3DFMT_X4R4G4B4             =  30,
-    D3DFMT_A2B10G10R10          =  31,
-    D3DFMT_G16R16               =  34,
-
-    D3DFMT_A8P8                 =  40,
-    D3DFMT_P8                   =  41,
-
-    D3DFMT_L8                   =  50,
-    D3DFMT_A8L8                 =  51,
-    D3DFMT_A4L4                 =  52,
-
-    D3DFMT_V8U8                 =  60,
-    D3DFMT_L6V5U5               =  61,
-    D3DFMT_X8L8V8U8             =  62,
-    D3DFMT_Q8W8V8U8             =  63,
-    D3DFMT_V16U16               =  64,
-    D3DFMT_W11V11U10            =  65,
-    D3DFMT_A2W10V10U10          =  67,
-
-    D3DFMT_UYVY                 =  MAKEFOURCC('U', 'Y', 'V', 'Y'),
-    D3DFMT_YUY2                 =  MAKEFOURCC('Y', 'U', 'Y', '2'),
-    D3DFMT_DXT1                 =  MAKEFOURCC('D', 'X', 'T', '1'),
-    D3DFMT_DXT2                 =  MAKEFOURCC('D', 'X', 'T', '2'),
-    D3DFMT_DXT3                 =  MAKEFOURCC('D', 'X', 'T', '3'),
-    D3DFMT_DXT4                 =  MAKEFOURCC('D', 'X', 'T', '4'),
-    D3DFMT_DXT5                 =  MAKEFOURCC('D', 'X', 'T', '5'),
-
-    D3DFMT_D16_LOCKABLE         =  70,
-    D3DFMT_D32                  =  71,
-    D3DFMT_D15S1                =  73,
-    D3DFMT_D24S8                =  75,
-    D3DFMT_D16                  =  80,
-    D3DFMT_D24X8                =  77,
-    D3DFMT_D24X4S4              =  79,
-
-    D3DFMT_VERTEXDATA           = 100,
-    D3DFMT_INDEX16              = 101,
-    D3DFMT_INDEX32              = 102,
-
-    D3DFMT_FORCE_DWORD          = 0xFFFFFFFF
-} D3DFORMAT;
+#include <d3d8format.h>
 
 typedef enum _D3DLIGHTTYPE {
     D3DLIGHT_POINT          = 1,
@@ -1024,12 +971,15 @@ typedef struct _D3DCLIPSTATUS8 {
    DWORD ClipIntersection;
 } D3DCLIPSTATUS8;
 
+#ifndef D3DCOLORVALUE_DEFINED
 typedef struct _D3DCOLORVALUE {
     float r;
     float g;
     float b;
     float a;
 } D3DCOLORVALUE;
+#define D3DCOLORVALUE_DEFINED
+#endif
 
 typedef struct _D3DDEVICE_CREATION_PARAMETERS {
     UINT          AdapterOrdinal;
@@ -1108,6 +1058,7 @@ typedef struct _D3DMATERIAL8 {
     float           Power;
 } D3DMATERIAL8;
 
+#ifndef D3DMATRIX_DEFINED
 typedef struct _D3DMATRIX {
     union {
         struct {
@@ -1119,6 +1070,8 @@ typedef struct _D3DMATRIX {
         float m[4][4];
     } DUMMYUNIONNAME;
 } D3DMATRIX;
+#define D3DMATRIX_DEFINED
+#endif
 
 #define D3DPRESENT_RATE_DEFAULT 0
 #define D3DPRESENT_RATE_UNLIMITED 0x7fffffff
@@ -1155,12 +1108,15 @@ typedef struct _D3DRASTER_STATUS {
     UINT            ScanLine;
 } D3DRASTER_STATUS;
 
+#ifndef D3DRECT_DEFINED
 typedef struct _D3DRECT {
     LONG x1;
     LONG y1;
     LONG x2;
     LONG y2;
 } D3DRECT;
+#define D3DRECT_DEFINED
+#endif
 
 typedef struct _D3DRECTPATCH_INFO {
     UINT                StartVertexOffsetWidth;

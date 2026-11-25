@@ -159,6 +159,12 @@ NTAPI
 EngpGetPDEV(
     _In_opt_ PUNICODE_STRING pustrDevice);
 
+NTSTATUS
+NTAPI
+EngpGetPrimaryDisplayNtName(
+    _Out_writes_(cchName) PWSTR pwszName,
+    _In_ SIZE_T cchName);
+
 FORCEINLINE
 VOID
 PDEVOBJ_vReference(
@@ -209,6 +215,28 @@ NTAPI
 PDEVOBJ_bSwitchMode(
     PPDEVOBJ ppdev,
     PDEVMODEW pdm);
+
+BOOL
+NTAPI
+PDEVOBJ_bAttachDisplay(
+    _Inout_ PMDEVOBJ *ppmdev,
+    _In_ PGRAPHICS_DEVICE pGraphicsDevice,
+    _In_ PDEVMODEW pdm,
+    _Out_ PPDEVOBJ *pppdevDisplay);
+
+BOOL
+NTAPI
+PDEVOBJ_bDetachDisplay(
+    _Inout_ PMDEVOBJ *ppmdev,
+    _In_ PPDEVOBJ ppdevDisplay,
+    _Out_ PPDEVOBJ *pppdevRemaining);
+
+BOOL
+NTAPI
+PDEVOBJ_bSwitchMultiDisplayMode(
+    _Inout_ PMDEVOBJ pmdev,
+    _Inout_ PPDEVOBJ ppdevDisplay,
+    _In_ PDEVMODEW pdm);
 
 BOOL
 NTAPI

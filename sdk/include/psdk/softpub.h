@@ -242,4 +242,41 @@ typedef struct DRIVER_VER_INFO_
     DWORD                 dwBuildNumberHigh;
 } DRIVER_VER_INFO, *PDRIVER_VER_INFO;
 
+#ifndef CCPI_RESULT_AUDIT
+#define CCPI_RESULT_AUDIT 3
+#endif
+#ifndef CCPI_RESULT_DENY
+#define CCPI_RESULT_DENY 2
+#endif
+
+typedef struct CONFIG_CI_PROV_INFO_RESULT2_ {
+  DWORD cbSize;
+  HRESULT hr;
+  DWORD dwResult;
+  DWORD dwPolicyIndex;
+  BOOLEAN fIsExplicitDeny;
+  DWORD cbCalculatedFileHash;
+  BYTE * pbCalculatedFileHash;
+} CONFIG_CI_PROV_INFO_RESULT2;
+
+typedef struct CONFIG_CI_PROV_INFO_RESULT_ {
+  HRESULT hr;
+  DWORD dwResult;
+  DWORD dwPolicyIndex;
+  BOOLEAN fIsExplicitDeny;
+} CONFIG_CI_PROV_INFO_RESULT;
+
+typedef struct CONFIG_CI_PROV_INFO_ {
+  DWORD cbSize;
+  DWORD dwPolicies;
+  CRYPT_DATA_BLOB * pPolicies;
+  CONFIG_CI_PROV_INFO_RESULT result;
+  DWORD dwScenario;
+  CONFIG_CI_PROV_INFO_RESULT2 * result2;
+} CONFIG_CI_PROV_INFO;
+
+#define CCPI_RESULT_ALLOW 1
+#define CONFIG_CI_ACTION_VERIFY { 0x6078065b, 0x8f22, 0x4b13, { 0xbd, 0x9b, 0x5b, 0x76, 0x27, 0x76, 0xf3, 0x86 } }
+#define HTTPS_CHKCERT_FUNCTION L"HTTPSCheckCertProv"
+
 #endif /* __WINE_SOFTPUB_H */

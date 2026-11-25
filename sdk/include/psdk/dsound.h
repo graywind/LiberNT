@@ -1870,4 +1870,181 @@ enum
 } /* extern "C" */
 #endif /* defined(__cplusplus) */
 
+#ifndef DSBCAPS_TRUEPLAYPOSITION
+#define DSBCAPS_TRUEPLAYPOSITION 0x00080000
+#endif
+#ifndef DSBSIZE_FX_MIN
+#define DSBSIZE_FX_MIN 150
+#endif
+#ifndef DSCFX_AEC_MODE_FULL_DUPLEX
+#define DSCFX_AEC_MODE_FULL_DUPLEX 0x2
+#endif
+#ifndef DSCFX_AEC_MODE_HALF_DUPLEX
+#define DSCFX_AEC_MODE_HALF_DUPLEX 0x1
+#endif
+#ifndef DSCFX_AEC_MODE_PASS_THROUGH
+#define DSCFX_AEC_MODE_PASS_THROUGH 0x0
+#endif
+#ifndef DSCFX_AEC_STATUS_CURRENTLY_CONVERGED
+#define DSCFX_AEC_STATUS_CURRENTLY_CONVERGED 0x8
+#endif
+#ifndef DSCFX_AEC_STATUS_HISTORY_CONTINUOUSLY_CONVERGED
+#define DSCFX_AEC_STATUS_HISTORY_CONTINUOUSLY_CONVERGED 0x1
+#endif
+#ifndef DSCFX_AEC_STATUS_HISTORY_PREVIOUSLY_DIVERGED
+#define DSCFX_AEC_STATUS_HISTORY_PREVIOUSLY_DIVERGED 0x2
+#endif
+#ifndef DSCFX_AEC_STATUS_HISTORY_UNINITIALIZED
+#define DSCFX_AEC_STATUS_HISTORY_UNINITIALIZED 0x0
+#endif
+
+typedef struct IDirectSoundFXChorus * LPDIRECTSOUNDFXCHORUS;
+typedef struct IDirectSoundFXCompressor * LPDIRECTSOUNDFXCOMPRESSOR;
+typedef struct IDirectSoundFXDistortion * LPDIRECTSOUNDFXDISTORTION;
+typedef struct IDirectSoundFXEcho * LPDIRECTSOUNDFXECHO;
+typedef struct IDirectSoundFXFlanger * LPDIRECTSOUNDFXFLANGER;
+typedef struct IDirectSoundFXGargle * LPDIRECTSOUNDFXGARGLE;
+typedef struct IDirectSoundFXParamEq * LPDIRECTSOUNDFXPARAMEQ;
+typedef struct IDirectSoundFXWavesReverb * LPDIRECTSOUNDFXWAVESREVERB;
+
+typedef struct _DSCFXAec {
+  BOOL fEnable;
+  BOOL fNoiseFill;
+  DWORD dwMode;
+} DSCFXAec, *LPDSCFXAec;
+
+typedef struct _DSCFXNoiseSuppress {
+  BOOL fEnable;
+} DSCFXNoiseSuppress, *LPDSCFXNoiseSuppress;
+
+#define _IDirectSoundFullDuplex_
+#define IDirectSoundCaptureFXAec8 IDirectSoundCaptureFXAec
+#define IDirectSoundCaptureFXNoiseSuppress8 IDirectSoundCaptureFXNoiseSuppress
+
+typedef struct IDirectSound3DBufferVtbl IDirectSound3DBufferVtbl;
+
+typedef struct IDirectSound3DListenerVtbl IDirectSound3DListenerVtbl;
+
+typedef struct IDirectSound8Vtbl IDirectSound8Vtbl;
+
+typedef struct IDirectSoundBuffer8Vtbl IDirectSoundBuffer8Vtbl;
+
+typedef struct IDirectSoundBufferVtbl IDirectSoundBufferVtbl;
+
+typedef struct IDirectSoundCaptureBuffer8Vtbl IDirectSoundCaptureBuffer8Vtbl;
+
+typedef struct IDirectSoundCaptureBufferVtbl IDirectSoundCaptureBufferVtbl;
+
+typedef struct IDirectSoundCaptureFXAecVtbl IDirectSoundCaptureFXAecVtbl;
+
+struct IDirectSoundCaptureFXAec
+{
+    struct IDirectSoundCaptureFXAecVtbl *lpVtbl;
+};
+
+typedef struct IDirectSoundCaptureFXNoiseSuppressVtbl IDirectSoundCaptureFXNoiseSuppressVtbl;
+
+struct IDirectSoundCaptureFXNoiseSuppress
+{
+    struct IDirectSoundCaptureFXNoiseSuppressVtbl *lpVtbl;
+};
+
+typedef struct IDirectSoundCaptureVtbl IDirectSoundCaptureVtbl;
+
+typedef struct IDirectSoundFullDuplexVtbl IDirectSoundFullDuplexVtbl;
+
+typedef struct IDirectSoundFXChorusVtbl IDirectSoundFXChorusVtbl;
+
+typedef struct IDirectSoundFXCompressorVtbl IDirectSoundFXCompressorVtbl;
+
+typedef struct IDirectSoundFXDistortionVtbl IDirectSoundFXDistortionVtbl;
+
+typedef struct IDirectSoundFXEchoVtbl IDirectSoundFXEchoVtbl;
+
+typedef struct IDirectSoundFXFlangerVtbl IDirectSoundFXFlangerVtbl;
+
+typedef struct IDirectSoundFXGargleVtbl IDirectSoundFXGargleVtbl;
+
+typedef struct IDirectSoundFXI3DL2ReverbVtbl IDirectSoundFXI3DL2ReverbVtbl;
+
+typedef struct IDirectSoundFXParamEqVtbl IDirectSoundFXParamEqVtbl;
+
+typedef struct IDirectSoundFXWavesReverbVtbl IDirectSoundFXWavesReverbVtbl;
+
+typedef struct IDirectSoundNotifyVtbl IDirectSoundNotifyVtbl;
+
+typedef struct IDirectSoundVtbl IDirectSoundVtbl;
+
+typedef struct IKsPropertySetVtbl IKsPropertySetVtbl;
+
+typedef struct IReferenceClockVtbl IReferenceClockVtbl;
+
+typedef const DSCFXAec *LPCDSCFXAec;
+
+typedef const DSCFXNoiseSuppress *LPCDSCFXNoiseSuppress;
+
+typedef struct IDirectSoundCaptureFXAec *LPDIRECTSOUNDCAPTUREFXAEC;
+
+typedef struct IDirectSoundCaptureFXAec *LPDIRECTSOUNDCAPTUREFXAEC8;
+
+typedef struct IDirectSoundCaptureFXNoiseSuppress *LPDIRECTSOUNDCAPTUREFXNOISESUPPRESS;
+
+typedef struct IDirectSoundCaptureFXNoiseSuppress *LPDIRECTSOUNDCAPTUREFXNOISESUPPRESS8;
+
+#define IID_IDirectSoundCaptureFXAec8 IID_IDirectSoundCaptureFXAec
+
+#define IID_IDirectSoundCaptureFXNoiseSuppress8 IID_IDirectSoundCaptureFXNoiseSuppress
+
+#define IDirectSoundCaptureFXAec_AddRef(p) IUnknown_AddRef(p)
+#define IDirectSoundCaptureFXAec_GetAllParameters(p, a) (p) -> lpVtbl -> GetAllParameters(p, a)
+#define IDirectSoundCaptureFXAec_QueryInterface(p, a, b) IUnknown_QueryInterface(p, a, b)
+#define IDirectSoundCaptureFXAec_Release(p) IUnknown_Release(p)
+#define IDirectSoundCaptureFXAec_SetAllParameters(p, a) (p) -> lpVtbl -> SetAllParameters(p, a)
+#define IDirectSoundCaptureFXNoiseSuppress_AddRef(p) IUnknown_AddRef(p)
+#define IDirectSoundCaptureFXNoiseSuppress_GetAllParameters(p, a) (p) -> lpVtbl -> GetAllParameters(p, a)
+#define IDirectSoundCaptureFXNoiseSuppress_QueryInterface(p, a, b) IUnknown_QueryInterface(p, a, b)
+#define IDirectSoundCaptureFXNoiseSuppress_Release(p) IUnknown_Release(p)
+#define IDirectSoundCaptureFXNoiseSuppress_SetAllParameters(p, a) (p) -> lpVtbl -> SetAllParameters(p, a)
+#if !defined(IReferenceClock_QueryInterface) && \
+    (!defined(WIDL_C_INLINE_WRAPPERS) || !defined(__IReferenceClock_INTERFACE_DEFINED__))
+#if !defined(__cplusplus) || defined(CINTERFACE)
+#define IReferenceClock_QueryInterface(p, riid, out) (p)->lpVtbl->QueryInterface(p, riid, out)
+#define IReferenceClock_AddRef(p) (p)->lpVtbl->AddRef(p)
+#define IReferenceClock_Release(p) (p)->lpVtbl->Release(p)
+#define IReferenceClock_GetTime(p, time) (p)->lpVtbl->GetTime(p, time)
+#define IReferenceClock_AdviseTime(p, base, stream, event, cookie) (p)->lpVtbl->AdviseTime(p, base, stream, event, cookie)
+#define IReferenceClock_AdvisePeriodic(p, start, period, semaphore, cookie) (p)->lpVtbl->AdvisePeriodic(p, start, period, semaphore, cookie)
+#define IReferenceClock_Unadvise(p, cookie) (p)->lpVtbl->Unadvise(p, cookie)
+#else
+#define IReferenceClock_QueryInterface(p, riid, out) (p)->QueryInterface(riid, out)
+#define IReferenceClock_AddRef(p) (p)->AddRef()
+#define IReferenceClock_Release(p) (p)->Release()
+#define IReferenceClock_GetTime(p, time) (p)->GetTime(time)
+#define IReferenceClock_AdviseTime(p, base, stream, event, cookie) (p)->AdviseTime(base, stream, event, cookie)
+#define IReferenceClock_AdvisePeriodic(p, start, period, semaphore, cookie) (p)->AdvisePeriodic(start, period, semaphore, cookie)
+#define IReferenceClock_Unadvise(p, cookie) (p)->Unadvise(cookie)
+#endif
+#endif
+
+#ifndef __IReferenceClock_INTERFACE_DEFINED__
+#define __IReferenceClock_INTERFACE_DEFINED__
+
+typedef LONGLONG REFERENCE_TIME, *LPREFERENCE_TIME;
+DEFINE_GUID(IID_IReferenceClock, 0x56a86897, 0x0ad4, 0x11ce, 0xb0, 0x3a, 0x00, 0x20, 0xaf, 0x0b, 0xa7, 0x70);
+
+#undef INTERFACE
+#define INTERFACE IReferenceClock
+DECLARE_INTERFACE_(IReferenceClock, IUnknown)
+{
+    STDMETHOD(QueryInterface)(THIS_ REFIID riid, void **out) PURE;
+    STDMETHOD_(ULONG, AddRef)(THIS) PURE;
+    STDMETHOD_(ULONG, Release)(THIS) PURE;
+    STDMETHOD(GetTime)(THIS_ REFERENCE_TIME *time) PURE;
+    STDMETHOD(AdviseTime)(THIS_ REFERENCE_TIME base, REFERENCE_TIME stream, HANDLE event, DWORD *cookie) PURE;
+    STDMETHOD(AdvisePeriodic)(THIS_ REFERENCE_TIME start, REFERENCE_TIME period, HANDLE semaphore, DWORD *cookie) PURE;
+    STDMETHOD(Unadvise)(THIS_ DWORD cookie) PURE;
+};
+#undef INTERFACE
+#endif
+
 #endif /* __DSOUND_INCLUDED__ */

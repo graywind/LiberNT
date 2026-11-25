@@ -303,7 +303,13 @@ typedef enum _SE_ADT_PARAMETER_TYPE {
   SeAdtParmTypeLogonIdNoSid,
   SeAdtParmTypeUlongNoConv,
   SeAdtParmTypeSockAddrNoPort,
-  SeAdtParmTypeAccessReason
+  SeAdtParmTypeAccessReason,
+  SeAdtParmTypeStagingReason = 0x1E,
+  SeAdtParmTypeResourceAttribute = 0x1F,
+  SeAdtParmTypeClaims = 0x20,
+  SeAdtParmTypeLogonIdAsSid = 0x21,
+  SeAdtParmTypeMultiSzString = 0x22,
+  SeAdtParmTypeLogonIdEx = 0x23,
 } SE_ADT_PARAMETER_TYPE, *PSE_ADT_PARAMETER_TYPE;
 
 typedef struct _SE_ADT_OBJECT_TYPE {
@@ -488,6 +494,10 @@ typedef enum _WELL_KNOWN_SID_TYPE {
   WinAuthenticationKeyPropertyMFASid = 116,
   WinAuthenticationKeyPropertyAttestationSid = 117,
   WinAuthenticationFreshKeyAuthSid = 118,
+  WinBuiltinDeviceOwnersSid = 0x77,
+  WinBuiltinUserModeHardwareOperatorsSid = 0x78,
+  WinBuiltinOpenSSHUsersSid = 0x79,
+  WinBuiltinCUAUsersSid = 0x7A,
 } WELL_KNOWN_SID_TYPE;
 
 $endif (_NTDDK_ || _WINNT_)
@@ -533,7 +543,8 @@ typedef enum _SID_NAME_USE {
   SidTypeInvalid,
   SidTypeUnknown,
   SidTypeComputer,
-  SidTypeLabel
+  SidTypeLabel,
+  SidTypeLogonSession = 0xB,
 } SID_NAME_USE, *PSID_NAME_USE;
 
 typedef struct _SID_AND_ATTRIBUTES {
@@ -1098,7 +1109,12 @@ typedef enum _ACCESS_REASON_TYPE {
   AccessReasonNullDacl = 0x00500000,
   AccessReasonEmptyDacl = 0x00600000,
   AccessReasonNoSD = 0x00700000,
-  AccessReasonNoGrant = 0x00800000
+  AccessReasonNoGrant = 0x00800000,
+  AccessReasonNotGrantedByCape = 0x50000,
+  AccessReasonNotGrantedByParentCape = 0x60000,
+  AccessReasonNotGrantedToAppContainer = 0x70000,
+  AccessReasonTrustLabel = 0x900000,
+  AccessReasonFilterAce = 0xA00000,
 } ACCESS_REASON_TYPE;
 
 typedef $ULONG ACCESS_REASON;
@@ -1109,7 +1125,8 @@ typedef struct _ACCESS_REASONS {
 
 #define SE_SECURITY_DESCRIPTOR_FLAG_NO_OWNER_ACE 0x00000001
 #define SE_SECURITY_DESCRIPTOR_FLAG_NO_LABEL_ACE 0x00000002
-#define SE_SECURITY_DESCRIPTOR_VALID_FLAGS       0x00000003
+#define SE_SECURITY_DESCRIPTOR_FLAG_NO_ACCESS_FILTER_ACE 0x00000004
+#define SE_SECURITY_DESCRIPTOR_VALID_FLAGS       0x00000007
 
 typedef struct _SE_SECURITY_DESCRIPTOR {
   $ULONG Size;
@@ -1216,7 +1233,9 @@ typedef enum _TOKEN_INFORMATION_CLASS {
   TokenChildProcessFlags,
   TokenIsLessPrivilegedAppContainer,
   TokenIsSandboxed,
-  TokenOriginatingProcessTrustLevel,
+  TokenIsAppSilo,
+  TokenLoggingInformation,
+  TokenLearningMode,
   MaxTokenInfoClass
 } TOKEN_INFORMATION_CLASS, *PTOKEN_INFORMATION_CLASS;
 
@@ -1294,7 +1313,7 @@ typedef struct _TOKEN_APPCONTAINER_INFORMATION {
 #define TOKEN_MANDATORY_POLICY_VALID_MASK (TOKEN_MANDATORY_POLICY_NO_WRITE_UP | \
                                            TOKEN_MANDATORY_POLICY_NEW_PROCESS_MIN)
 
-#define POLICY_AUDIT_SUBCATEGORY_COUNT (56)
+#define POLICY_AUDIT_SUBCATEGORY_COUNT (60)
 
 typedef struct _TOKEN_AUDIT_POLICY {
   $UCHAR PerUserPolicy[((POLICY_AUDIT_SUBCATEGORY_COUNT) >> 1) + 1];
@@ -1307,7 +1326,6 @@ typedef struct _TOKEN_SOURCE {
   LUID SourceIdentifier;
 } TOKEN_SOURCE, *PTOKEN_SOURCE;
 
-#pragma pack(push, 4)
 typedef struct _TOKEN_STATISTICS {
   LUID TokenId;
   LUID AuthenticationId;
@@ -1320,7 +1338,6 @@ typedef struct _TOKEN_STATISTICS {
   $ULONG PrivilegeCount;
   LUID ModifiedId;
 } TOKEN_STATISTICS, *PTOKEN_STATISTICS;
-#pragma pack(pop)
 
 typedef struct _TOKEN_CONTROL {
   LUID TokenId;
