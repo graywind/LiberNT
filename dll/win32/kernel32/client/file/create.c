@@ -155,6 +155,11 @@ HANDLE WINAPI CreateFileW (LPCWSTR			lpFileName,
          if(dwDesiredAccess & GENERIC_WRITE)
             Flags |= FILE_OPEN_REMOTE_INSTANCE;
       }
+
+      if ((dwFlagsAndAttributes & FILE_FLAG_POSIX_SEMANTICS) &&
+          (dwFlagsAndAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+          (dwCreationDisposition == FILE_CREATE))
+         Flags |= FILE_DIRECTORY_FILE;
    }
    else
       Flags |= FILE_NON_DIRECTORY_FILE;
