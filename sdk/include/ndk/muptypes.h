@@ -18,7 +18,7 @@ typedef struct _MUP_PROVIDER_REGISTRATION_INFO
 {
     ULONG RedirectorDeviceNameOffset;
     ULONG RedirectorDeviceNameLength;
-    ULONG Reserved[2];
+    PVOID DeviceObject;
     BOOLEAN MailslotsSupported;
 } MUP_PROVIDER_REGISTRATION_INFO, *PMUP_PROVIDER_REGISTRATION_INFO;
 
