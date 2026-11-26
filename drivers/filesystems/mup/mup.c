@@ -36,9 +36,11 @@ ERESOURCE MupGlobalLock;
 ERESOURCE MupPrefixTableLock;
 ERESOURCE MupCcbListLock;
 ERESOURCE MupVcbLock;
+KSPIN_LOCK MupExFileLock;
 LIST_ENTRY MupProviderList;
 LIST_ENTRY MupPrefixList;
 LIST_ENTRY MupMasterQueryList;
+LIST_ENTRY MupExFileList;
 UNICODE_PREFIX_TABLE MupPrefixTable;
 LARGE_INTEGER MupKnownPrefixTimeout;
 ULONG MupProviderCount;
@@ -51,6 +53,21 @@ NTSTATUS MupOrderedErrorList[] = { STATUS_UNSUCCESSFUL,
                                    STATUS_BAD_NETWORK_NAME,
                                    STATUS_BAD_NETWORK_PATH, 0 };
 
+typedef struct _MUP_EXFILE
+{
+    LIST_ENTRY ListEntry;
+    PFILE_OBJECT FileObject;
+    PDEVICE_OBJECT DeviceObject;
+} MUP_EXFILE, *PMUP_EXFILE;
+
+typedef struct _MUP_FORWARD_CONTEXT
+{
+    PIRP Irp;
+    PDEVICE_OBJECT DeviceObject;
+    PMUP_EXFILE AddExFile;
+    PMUP_EXFILE RemoveExFile;
+} MUP_FORWARD_CONTEXT, *PMUP_FORWARD_CONTEXT;
+
 /* FUNCTIONS ****************************************************************/
 
 CODE_SEG("INIT")
@@ -61,10 +78,12 @@ MupInitializeData(VOID)
     ExInitializeResourceLite(&MupPrefixTableLock);
     ExInitializeResourceLite(&MupCcbListLock);
     ExInitializeResourceLite(&MupVcbLock);
+    KeInitializeSpinLock(&MupExFileLock);
     MupProviderCount = 0;
     InitializeListHead(&MupProviderList);
     InitializeListHead(&MupPrefixList);
     InitializeListHead(&MupMasterQueryList);
+    InitializeListHead(&MupExFileList);
     RtlInitializeUnicodePrefix(&MupPrefixTable);
     MupKnownPrefixTimeout.QuadPart = 9000000000LL;
     MupOrderInitialized = FALSE;
@@ -211,7 +230,7 @@ MupAllocateUncProvider(ULONG RedirectorDeviceNameLength)
 {
     PMUP_UNC UncProvider;
 
-    UncProvider = ExAllocatePoolWithTag(PagedPool, sizeof(MUP_UNC) + RedirectorDeviceNameLength, TAG_MUP);
+    UncProvider = ExAllocatePoolZero(PagedPool, sizeof(MUP_UNC) + RedirectorDeviceNameLength, TAG_MUP);
     if (UncProvider == NULL)
     {
         return NULL;
@@ -416,6 +435,176 @@ VOID
 MupDereferenceUncProvider(PMUP_UNC UncProvider)
 {
     InterlockedExchangeAdd(&UncProvider->NodeReferences, -1);
+}
+
+PMUP_EXFILE
+MupFindExFile(PFILE_OBJECT FileObject)
+{
+    PLIST_ENTRY Entry;
+    PMUP_EXFILE ExFile;
+    KIRQL OldIrql;
+
+    ExFile = NULL;
+    KeAcquireSpinLock(&MupExFileLock, &OldIrql);
+    for (Entry = MupExFileList.Flink; Entry != &MupExFileList; Entry = Entry->Flink)
+    {
+        ExFile = CONTAINING_RECORD(Entry, MUP_EXFILE, ListEntry);
+        if (ExFile->FileObject == FileObject)
+        {
+            break;
+        }
+        ExFile = NULL;
+    }
+    KeReleaseSpinLock(&MupExFileLock, OldIrql);
+
+    return ExFile;
+}
+
+VOID
+MupFreeExFile(PMUP_EXFILE ExFile)
+{
+    ObDereferenceObject(ExFile->DeviceObject);
+    ExFreePoolWithTag(ExFile, TAG_MUP);
+}
+
+static
+NTSTATUS
+NTAPI
+MupForwardCompletion(PDEVICE_OBJECT DeviceObject,
+                     PIRP Irp,
+                     PVOID Context)
+{
+    PMUP_FORWARD_CONTEXT ForwardContext = Context;
+    PIRP OriginalIrp = ForwardContext->Irp;
+    KIRQL OldIrql;
+
+    UNREFERENCED_PARAMETER(DeviceObject);
+
+    OriginalIrp->IoStatus = Irp->IoStatus;
+
+    if (ForwardContext->AddExFile != NULL)
+    {
+        if (NT_SUCCESS(OriginalIrp->IoStatus.Status))
+        {
+            KeAcquireSpinLock(&MupExFileLock, &OldIrql);
+            InsertTailList(&MupExFileList, &ForwardContext->AddExFile->ListEntry);
+            KeReleaseSpinLock(&MupExFileLock, OldIrql);
+        }
+        else
+        {
+            MupFreeExFile(ForwardContext->AddExFile);
+        }
+    }
+
+    if (ForwardContext->RemoveExFile != NULL)
+    {
+        KeAcquireSpinLock(&MupExFileLock, &OldIrql);
+        RemoveEntryList(&ForwardContext->RemoveExFile->ListEntry);
+        KeReleaseSpinLock(&MupExFileLock, OldIrql);
+        MupFreeExFile(ForwardContext->RemoveExFile);
+    }
+
+    ObDereferenceObject(ForwardContext->DeviceObject);
+    ExFreePoolWithTag(ForwardContext, TAG_MUP);
+    IoFreeIrp(Irp);
+    IoCompleteRequest(OriginalIrp, IO_DISK_INCREMENT);
+
+    return STATUS_MORE_PROCESSING_REQUIRED;
+}
+
+static
+NTSTATUS
+MupForwardIrp(PFILE_OBJECT FileObject,
+              PIRP OriginalIrp,
+              PDEVICE_OBJECT DeviceObject,
+              PMUP_EXFILE AddExFile,
+              PMUP_EXFILE RemoveExFile)
+{
+    PIO_STACK_LOCATION OriginalStack, NewStack;
+    PMUP_FORWARD_CONTEXT ForwardContext;
+    PIRP NewIrp;
+
+    ForwardContext = ExAllocatePoolWithTag(NonPagedPool, sizeof(*ForwardContext), TAG_MUP);
+    if (ForwardContext == NULL)
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    NewIrp = IoAllocateIrp(DeviceObject->StackSize, FALSE);
+    if (NewIrp == NULL)
+    {
+        ExFreePoolWithTag(ForwardContext, TAG_MUP);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    OriginalStack = IoGetCurrentIrpStackLocation(OriginalIrp);
+    NewStack = IoGetNextIrpStackLocation(NewIrp);
+    *NewStack = *OriginalStack;
+    NewStack->DeviceObject = DeviceObject;
+    NewStack->FileObject = FileObject;
+
+    NewIrp->Flags = OriginalIrp->Flags;
+    NewIrp->RequestorMode = OriginalIrp->RequestorMode;
+    NewIrp->Tail.Overlay.Thread = OriginalIrp->Tail.Overlay.Thread;
+    NewIrp->Tail.Overlay.OriginalFileObject = FileObject;
+    NewIrp->Overlay.AllocationSize = OriginalIrp->Overlay.AllocationSize;
+    NewIrp->AssociatedIrp.SystemBuffer = OriginalIrp->AssociatedIrp.SystemBuffer;
+    NewIrp->UserBuffer = OriginalIrp->UserBuffer;
+    NewIrp->UserIosb = OriginalIrp->UserIosb;
+
+    ForwardContext->Irp = OriginalIrp;
+    ForwardContext->DeviceObject = DeviceObject;
+    ForwardContext->AddExFile = AddExFile;
+    ForwardContext->RemoveExFile = RemoveExFile;
+    ObReferenceObject(DeviceObject);
+    IoSetCompletionRoutine(NewIrp, MupForwardCompletion, ForwardContext, TRUE, TRUE, TRUE);
+
+    IoMarkIrpPending(OriginalIrp);
+    IoCallDriver(DeviceObject, NewIrp);
+
+    return STATUS_PENDING;
+}
+
+static
+NTSTATUS
+MupForwardCreate(PFILE_OBJECT FileObject,
+                 PIRP OriginalIrp,
+                 PMUP_UNC UncProvider)
+{
+    PDEVICE_OBJECT DeviceObject;
+    PMUP_EXFILE ExFile;
+    NTSTATUS Status;
+
+    ExAcquireResourceExclusiveLite(&MupGlobalLock, TRUE);
+    DeviceObject = UncProvider->DeviceObject;
+    if (DeviceObject != NULL)
+    {
+        ObReferenceObject(DeviceObject);
+    }
+    ExReleaseResourceLite(&MupGlobalLock);
+
+    if (DeviceObject == NULL)
+    {
+        return STATUS_BAD_NETWORK_PATH;
+    }
+
+    ExFile = ExAllocatePoolWithTag(NonPagedPool, sizeof(*ExFile), TAG_MUP);
+    if (ExFile == NULL)
+    {
+        ObDereferenceObject(DeviceObject);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    ExFile->FileObject = FileObject;
+    ExFile->DeviceObject = DeviceObject;
+
+    Status = MupForwardIrp(FileObject, OriginalIrp, DeviceObject, ExFile, NULL);
+    if (!NT_SUCCESS(Status))
+    {
+        MupFreeExFile(ExFile);
+    }
+
+    return Status;
 }
 
 VOID
@@ -778,6 +967,15 @@ MupForwardIoRequest(PDEVICE_OBJECT DeviceObject,
 
     Stack = IoGetCurrentIrpStackLocation(Irp);
 
+    if (MupFindExFile(Stack->FileObject) != NULL)
+    {
+        Irp->IoStatus.Status = STATUS_INVALID_DEVICE_REQUEST;
+        Irp->IoStatus.Information = 0;
+        IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+        return STATUS_INVALID_DEVICE_REQUEST;
+    }
+
     FsRtlEnterFileSystem();
 
     /* Write request is only possible for a mailslot, we need a FCB */
@@ -1077,6 +1275,69 @@ MupCheckForUnregisteredProvider(PUNICODE_STRING RedirectorDeviceName)
     return UncProvider;
 }
 
+static
+NTSTATUS
+MupOpenProviderDevice(PMUP_UNC UncProvider)
+{
+    UNICODE_STRING EmptyName = RTL_CONSTANT_STRING(L"");
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    IO_STATUS_BLOCK IoStatusBlock;
+    OBJECT_HANDLE_INFORMATION HandleInfo;
+    HANDLE DeviceHandle;
+    NTSTATUS Status;
+
+    Status = ObOpenObjectByPointer(UncProvider->DeviceObject,
+                                   OBJ_KERNEL_HANDLE,
+                                   NULL,
+                                   0,
+                                   NULL,
+                                   KernelMode,
+                                   &DeviceHandle);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &EmptyName,
+                               OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+                               DeviceHandle,
+                               NULL);
+    Status = IoCreateFile(&UncProvider->DeviceHandle,
+                          SYNCHRONIZE | FILE_READ_ATTRIBUTES,
+                          &ObjectAttributes,
+                          &IoStatusBlock,
+                          NULL,
+                          0,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          FILE_OPEN,
+                          0,
+                          NULL,
+                          0,
+                          CreateFileTypeNone,
+                          NULL,
+                          IO_NO_PARAMETER_CHECKING);
+    ZwClose(DeviceHandle);
+
+    if (NT_SUCCESS(Status))
+    {
+        Status = ObReferenceObjectByHandle(UncProvider->DeviceHandle,
+                                           0,
+                                           NULL,
+                                           KernelMode,
+                                           (PVOID *)&UncProvider->FileObject,
+                                           &HandleInfo);
+    }
+
+    if (!NT_SUCCESS(Status) && (UncProvider->DeviceHandle != NULL))
+    {
+        ZwClose(UncProvider->DeviceHandle);
+        UncProvider->DeviceHandle = NULL;
+    }
+
+    return Status;
+}
+
 NTSTATUS
 RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
                     PIRP Irp)
@@ -1093,7 +1354,8 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
     OBJECT_ATTRIBUTES ObjectAttributes;
     UNICODE_STRING RedirectorDeviceName;
     OBJECT_HANDLE_INFORMATION HandleInfo;
-    PMUP_PROVIDER_REGISTRATION_INFO RegInfo;
+    PMUP_PROVIDER_REGISTRATION_INFO_PRIVATE RegInfo;
+    ULONG InputLength;
 
     DPRINT1("RegisterUncProvider(%p, %p)\n", DeviceObject, Irp);
     New = FALSE;
@@ -1124,12 +1386,23 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
     }
 
     /* Get the registration information */
-    RegInfo = (PMUP_PROVIDER_REGISTRATION_INFO)Irp->AssociatedIrp.SystemBuffer;
+    RegInfo = (PMUP_PROVIDER_REGISTRATION_INFO_PRIVATE)Irp->AssociatedIrp.SystemBuffer;
+    InputLength = Stack->Parameters.FileSystemControl.InputBufferLength;
     _SEH2_TRY
     {
-        RedirectorDeviceName.Length = RegInfo->RedirectorDeviceNameLength;
+        if ((RegInfo == NULL) ||
+            (InputLength < sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE)) ||
+            (RegInfo->Public.RedirectorDeviceNameOffset > InputLength) ||
+            (RegInfo->Public.RedirectorDeviceNameLength >
+                 InputLength - RegInfo->Public.RedirectorDeviceNameOffset))
+        {
+            Status = STATUS_INVALID_PARAMETER;
+            _SEH2_LEAVE;
+        }
+
+        RedirectorDeviceName.Length = RegInfo->Public.RedirectorDeviceNameLength;
         RedirectorDeviceName.MaximumLength = RedirectorDeviceName.Length;
-        RedirectorDeviceName.Buffer = (PWSTR)((ULONG_PTR)RegInfo + RegInfo->RedirectorDeviceNameOffset);
+        RedirectorDeviceName.Buffer = (PWSTR)((ULONG_PTR)RegInfo + RegInfo->Public.RedirectorDeviceNameOffset);
 
         /* Have we got already a node for it? (Like from previous init) */
         UncProvider = MupCheckForUnregisteredProvider(&RedirectorDeviceName);
@@ -1137,7 +1410,7 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
         {
             /* If we don't, allocate a new one */
             New = TRUE;
-            UncProvider = MupAllocateUncProvider(RegInfo->RedirectorDeviceNameLength);
+            UncProvider = MupAllocateUncProvider(RegInfo->Public.RedirectorDeviceNameLength);
             if (UncProvider == NULL)
             {
                 Status = STATUS_INVALID_USER_BUFFER;
@@ -1151,38 +1424,93 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
 
             /* As it wasn't in registry for order, give the lowest priority possible */
             UncProvider->ProviderOrder = MAXLONG;
-            RtlMoveMemory(UncProvider->DeviceName.Buffer, (PWSTR)((ULONG_PTR)RegInfo + RegInfo->RedirectorDeviceNameOffset), RegInfo->RedirectorDeviceNameLength);
+            RtlMoveMemory(UncProvider->DeviceName.Buffer, (PWSTR)((ULONG_PTR)RegInfo + RegInfo->Public.RedirectorDeviceNameOffset), RegInfo->Public.RedirectorDeviceNameLength);
+        }
+
+        if (UncProvider->DeviceHandle != NULL)
+        {
+            ZwClose(UncProvider->DeviceHandle);
+            UncProvider->DeviceHandle = NULL;
+        }
+        if (UncProvider->FileObject != NULL)
+        {
+            ObDereferenceObject(UncProvider->FileObject);
+            UncProvider->FileObject = NULL;
+        }
+        if (UncProvider->DeviceObject != NULL)
+        {
+            ObDereferenceObject(UncProvider->DeviceObject);
+            UncProvider->DeviceObject = NULL;
         }
 
         /* Continue registration */
-        UncProvider->MailslotsSupported = RegInfo->MailslotsSupported;
+        UncProvider->MailslotsSupported = RegInfo->Public.MailslotsSupported;
+        UncProvider->ExProvider = (RegInfo->DeviceObject != NULL);
         ++UncProvider->NodeReferences;
 
-        /* Open a handle to the device */
-        InitializeObjectAttributes(&ObjectAttributes,
-                                   &UncProvider->DeviceName,
-                                   OBJ_CASE_INSENSITIVE,
-                                   NULL,
-                                   NULL);
-        Status = NtOpenFile(&UncProvider->DeviceHandle,
-                            FILE_TRAVERSE,
-                            &ObjectAttributes,
-                            &IoStatusBlock,
-                            FILE_SHARE_READ | FILE_SHARE_WRITE,
-                            FILE_DIRECTORY_FILE);
-        if (NT_SUCCESS(Status))
+        if (RegInfo->DeviceObject != NULL)
         {
-            Status = IoStatusBlock.Status;
-        }
-
-        /* And return the provider (as CCB) */
-        if (NT_SUCCESS(Status))
-        {
-            Stack->FileObject->FsContext2 = UncProvider;
-            Status = ObReferenceObjectByHandle(UncProvider->DeviceHandle, 0, NULL, KernelMode, (PVOID *)&UncProvider->FileObject, &HandleInfo);
-            if (!NT_SUCCESS(Status))
+            Status = ObReferenceObjectByPointer(RegInfo->DeviceObject,
+                                                0,
+                                                NULL,
+                                                KernelMode);
+            if (NT_SUCCESS(Status))
             {
-                NtClose(UncProvider->DeviceHandle);
+                UncProvider->DeviceObject = RegInfo->DeviceObject;
+                Status = MupOpenProviderDevice(UncProvider);
+                if (!NT_SUCCESS(Status))
+                {
+                    ObDereferenceObject(UncProvider->DeviceObject);
+                    UncProvider->DeviceObject = NULL;
+                    UncProvider->ExProvider = FALSE;
+                }
+            }
+        }
+        else
+        {
+            /* Open a handle to the device */
+            InitializeObjectAttributes(&ObjectAttributes,
+                                       &UncProvider->DeviceName,
+                                       OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+                                       NULL,
+                                       NULL);
+            Status = NtOpenFile(&UncProvider->DeviceHandle,
+                                FILE_TRAVERSE,
+                                &ObjectAttributes,
+                                &IoStatusBlock,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                FILE_DIRECTORY_FILE);
+            if (NT_SUCCESS(Status))
+            {
+                Status = ObReferenceObjectByHandle(UncProvider->DeviceHandle, 0, NULL, KernelMode, (PVOID *)&UncProvider->FileObject, &HandleInfo);
+                if (NT_SUCCESS(Status))
+                {
+                    UncProvider->DeviceObject = IoGetRelatedDeviceObject(UncProvider->FileObject);
+                    if (UncProvider->DeviceObject != NULL)
+                    {
+                        Status = ObReferenceObjectByPointer(UncProvider->DeviceObject,
+                                                            0,
+                                                            NULL,
+                                                            KernelMode);
+                    }
+                    else
+                    {
+                        Status = STATUS_NO_SUCH_DEVICE;
+                    }
+
+                    if (!NT_SUCCESS(Status))
+                    {
+                        ObDereferenceObject(UncProvider->FileObject);
+                        UncProvider->FileObject = NULL;
+                        UncProvider->DeviceObject = NULL;
+                    }
+                }
+
+                if (!NT_SUCCESS(Status))
+                {
+                    ZwClose(UncProvider->DeviceHandle);
+                    UncProvider->DeviceHandle = NULL;
+                }
             }
         }
 
@@ -1192,7 +1520,8 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
         }
         else
         {
-            UncProvider->DeviceObject = IoGetRelatedDeviceObject(UncProvider->FileObject);
+            /* And return the provider (as CCB) */
+            Stack->FileObject->FsContext2 = UncProvider;
 
             /* Now, insert the provider in our global list
              * They are sorted by order
@@ -1344,11 +1673,10 @@ BroadcastOpen(PIRP Irp)
     PLIST_ENTRY Entry;
     PMUP_CCB Ccb = NULL;
     PMUP_UNC UncProvider;
-    UNICODE_STRING FullPath;
     PFILE_OBJECT FileObject;
     PIO_STACK_LOCATION Stack;
     NTSTATUS Status, LastFailed;
-    ULONG TotalLength, LastOrder;
+    ULONG LastOrder;
     IO_STATUS_BLOCK IoStatusBlock;
     OBJECT_ATTRIBUTES ObjectAttributes;
     OBJECT_HANDLE_INFORMATION HandleInfo;
@@ -1387,28 +1715,12 @@ BroadcastOpen(PIRP Irp)
             ExReleaseResourceLite(&MupGlobalLock);
             Locked = FALSE;
 
-            TotalLength = UncProvider->DeviceName.Length + FileObject->FileName.Length;
-            if (UncProvider->MailslotsSupported && TotalLength <= MAXUSHORT)
+            if (UncProvider->MailslotsSupported && (UncProvider->DeviceHandle != NULL))
             {
-                /* Provide the correct name for the mailslot (ie, happened the device name of the provider) */
-                FullPath.Buffer = ExAllocatePoolWithTag(PagedPool, TotalLength, TAG_MUP);
-                if (FullPath.Buffer == NULL)
-                {
-                    ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
-                }
-
-                FullPath.Length = TotalLength;
-                FullPath.MaximumLength = TotalLength;
-                RtlMoveMemory(FullPath.Buffer, UncProvider->DeviceName.Buffer, UncProvider->DeviceName.Length);
-                RtlMoveMemory((PWSTR)((ULONG_PTR)FullPath.Buffer + UncProvider->DeviceName.Length),
-                              FileObject->FileName.Buffer,
-                              FileObject->FileName.Length);
-
-                /* And just forward the creation request */
                 InitializeObjectAttributes(&ObjectAttributes,
-                                           &FullPath,
+                                           &FileObject->FileName,
                                            OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
-                                           NULL,
+                                           UncProvider->DeviceHandle,
                                            NULL);
                 Status = IoCreateFile(&Handle,
                                       Stack->Parameters.Create.SecurityContext->DesiredAccess & FILE_SIMPLE_RIGHTS_MASK,
@@ -1424,8 +1736,6 @@ BroadcastOpen(PIRP Irp)
                                       CreateFileTypeNone,
                                       NULL,
                                       IO_NO_PARAMETER_CHECKING);
-
-                ExFreePoolWithTag(FullPath.Buffer, TAG_MUP);
 
                 /* If opening succeed */
                 if (NT_SUCCESS(Status))
@@ -1610,7 +1920,9 @@ MupDereferenceMasterQueryContext(PMUP_MQC MasterQueryContext)
     LONG References;
     NTSTATUS Status;
     BOOLEAN KeepExtraRef;
+    BOOLEAN Forwarded;
 
+    Forwarded = FALSE;
     ExAcquireResourceExclusiveLite(&MupGlobalLock, TRUE);
     --MasterQueryContext->NodeReferences;
     References = MasterQueryContext->NodeReferences;
@@ -1652,7 +1964,17 @@ MupDereferenceMasterQueryContext(PMUP_MQC MasterQueryContext)
 
             ExReleaseResourceLite(&MupPrefixTableLock);
             /* Reroute & complete :-) */
-            Status = MupRerouteOpen(MasterQueryContext->FileObject, MasterQueryContext->LatestProvider);
+            if (MasterQueryContext->LatestProvider->ExProvider)
+            {
+                Status = MupForwardCreate(MasterQueryContext->FileObject,
+                                          MasterQueryContext->Irp,
+                                          MasterQueryContext->LatestProvider);
+                Forwarded = (Status == STATUS_PENDING);
+            }
+            else
+            {
+                Status = MupRerouteOpen(MasterQueryContext->FileObject, MasterQueryContext->LatestProvider);
+            }
             goto Complete;
         }
         else
@@ -1669,8 +1991,11 @@ MupDereferenceMasterQueryContext(PMUP_MQC MasterQueryContext)
 
 Complete:
     /* In finally, complete the IRP for real! */
-    MasterQueryContext->Irp->IoStatus.Status = Status;
-    IoCompleteRequest(MasterQueryContext->Irp, IO_DISK_INCREMENT);
+    if (!Forwarded)
+    {
+        MasterQueryContext->Irp->IoStatus.Status = Status;
+        IoCompleteRequest(MasterQueryContext->Irp, IO_DISK_INCREMENT);
+    }
 
     MasterQueryContext->Irp = NULL;
     MupFreeMasterQueryContext(MasterQueryContext);
@@ -1694,7 +2019,7 @@ QueryPathCompletionRoutine(PDEVICE_OBJECT DeviceObject,
 
     /* Get all the data from our query to the provider */
     QueryContext = (PQUERY_PATH_CONTEXT)Context;
-    QueryResponse = (PQUERY_PATH_RESPONSE)QueryContext->QueryPathRequest;
+    QueryResponse = (PQUERY_PATH_RESPONSE)QueryContext->QueryResponse;
     MasterQueryContext = QueryContext->MasterQueryContext;
     Status = Irp->IoStatus.Status;
 
@@ -1857,7 +2182,11 @@ QueryPathCompletionRoutine(PDEVICE_OBJECT DeviceObject,
     }
 
 Cleanup:
-    ExFreePoolWithTag(QueryResponse, TAG_MUP);
+    if (QueryContext->QueryResponse != QueryContext->QueryPathRequest)
+    {
+        ExFreePoolWithTag(QueryContext->QueryResponse, TAG_MUP);
+    }
+    ExFreePoolWithTag(QueryContext->QueryPathRequest, TAG_MUP);
     ExFreePoolWithTag(QueryContext, TAG_MUP);
     IoFreeIrp(Irp);
 
@@ -1885,6 +2214,8 @@ CreateRedirectedFile(PIRP Irp,
     PMUP_MQC MasterQueryContext;
     PQUERY_PATH_CONTEXT QueryContext;
     PQUERY_PATH_REQUEST QueryPathRequest;
+    PQUERY_PATH_REQUEST_EX QueryPathRequestEx;
+    PQUERY_PATH_RESPONSE QueryPathResponse;
     PUNICODE_PREFIX_TABLE_ENTRY TableEntry;
     BOOLEAN Locked, Referenced, BreakOnFirst;
 
@@ -1926,6 +2257,21 @@ CreateRedirectedFile(PIRP Irp,
         {
             /* It is: so, update its validity period and reroute file opening */
             MupCalculateTimeout(&Prefix->ValidityTimeout);
+            if (Prefix->UncProvider->ExProvider)
+            {
+                UncProvider = Prefix->UncProvider;
+                ExReleaseResourceLite(&MupPrefixTableLock);
+
+                Status = MupForwardCreate(FileObject, Irp, UncProvider);
+                if (Status != STATUS_PENDING)
+                {
+                    Irp->IoStatus.Status = Status;
+                    IoCompleteRequest(Irp, IO_DISK_INCREMENT);
+                }
+
+                return Status;
+            }
+
             Status = MupRerouteOpen(FileObject, Prefix->UncProvider);
             ExReleaseResourceLite(&MupPrefixTableLock);
 
@@ -2054,10 +2400,57 @@ CreateRedirectedFile(PIRP Irp,
                 Locked = FALSE;
 
                 /* We will obviously only query registered providers */
-                if (UncProvider->Registered)
+                if (UncProvider->Registered && (UncProvider->FileObject != NULL))
                 {
+                    if (UncProvider->ExProvider)
+                    {
+                        QueryPathRequestEx = ExAllocatePoolZero(NonPagedPool, sizeof(QUERY_PATH_REQUEST_EX), TAG_MUP);
+                        QueryPathResponse = ExAllocatePoolZero(NonPagedPool, sizeof(QUERY_PATH_RESPONSE), TAG_MUP);
+                        if ((QueryPathRequestEx == NULL) || (QueryPathResponse == NULL))
+                        {
+                            if (QueryPathRequestEx != NULL) ExFreePoolWithTag(QueryPathRequestEx, TAG_MUP);
+                            if (QueryPathResponse != NULL) ExFreePoolWithTag(QueryPathResponse, TAG_MUP);
+                            ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
+                        }
+
+                        QueryContext = ExAllocatePoolWithTag(PagedPool, sizeof(QUERY_PATH_CONTEXT), TAG_MUP);
+                        if (QueryContext == NULL)
+                        {
+                            ExFreePoolWithTag(QueryPathResponse, TAG_MUP);
+                            ExFreePoolWithTag(QueryPathRequestEx, TAG_MUP);
+                            ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
+                        }
+
+                        QueryPathRequestEx->pSecurityContext = SecurityContext;
+                        QueryPathRequestEx->PathName = FileObject->FileName;
+
+                        InitializeListHead(&QueryContext->QueryPathListEntry);
+                        QueryContext->MasterQueryContext = MasterQueryContext;
+                        QueryContext->QueryPathRequest = QueryPathRequestEx;
+                        QueryContext->QueryResponse = QueryPathResponse;
+
+                        QueryIrp = MupBuildIoControlRequest(UncProvider->FileObject,
+                                                            QueryContext,
+                                                            IRP_MJ_DEVICE_CONTROL,
+                                                            IOCTL_REDIR_QUERY_PATH_EX,
+                                                            QueryPathRequestEx,
+                                                            sizeof(QUERY_PATH_REQUEST_EX),
+                                                            QueryPathResponse,
+                                                            sizeof(QUERY_PATH_RESPONSE),
+                                                            QueryPathCompletionRoutine);
+                        if (QueryIrp == NULL)
+                        {
+                            ExFreePoolWithTag(QueryContext, TAG_MUP);
+                            ExFreePoolWithTag(QueryPathResponse, TAG_MUP);
+                            ExFreePoolWithTag(QueryPathRequestEx, TAG_MUP);
+                            ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
+                        }
+
+                        goto Query;
+                    }
+
                     /* We will issue an IOCTL_REDIR_QUERY_PATH, so allocate input buffer */
-                    QueryPathRequest = ExAllocatePoolWithTag(PagedPool, FileObject->FileName.Length + sizeof(QUERY_PATH_REQUEST), TAG_MUP);
+                    QueryPathRequest = ExAllocatePoolZero(NonPagedPool, FileObject->FileName.Length + sizeof(QUERY_PATH_REQUEST), TAG_MUP);
                     if (QueryPathRequest == NULL)
                     {
                         ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
@@ -2077,6 +2470,7 @@ CreateRedirectedFile(PIRP Irp,
                     InitializeListHead(&QueryContext->QueryPathListEntry);
                     QueryContext->MasterQueryContext = MasterQueryContext;
                     QueryContext->QueryPathRequest = QueryPathRequest;
+                    QueryContext->QueryResponse = QueryPathRequest;
                     QueryPathRequest->PathNameLength = FileObject->FileName.Length;
                     QueryPathRequest->SecurityContext = SecurityContext;
                     RtlMoveMemory(QueryPathRequest->FilePathName, FileObject->FileName.Buffer, FileObject->FileName.Length);
@@ -2098,6 +2492,7 @@ CreateRedirectedFile(PIRP Irp,
                         ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
                     }
 
+Query:
                     QueryIrp->RequestorMode = KernelMode;
                     QueryContext->UncProvider = UncProvider;
                     QueryContext->Irp = QueryIrp;
@@ -2265,10 +2660,22 @@ MupCloseUncProvider(PMUP_UNC UncProvider)
         UncProvider->Registered = FALSE;
         ExReleaseResourceLite(&MupGlobalLock);
 
-        if (UncProvider->FileObject != NULL)
+        if (UncProvider->DeviceHandle != NULL)
         {
             ZwClose(UncProvider->DeviceHandle);
+            UncProvider->DeviceHandle = NULL;
+        }
+
+        if (UncProvider->FileObject != NULL)
+        {
             ObDereferenceObject(UncProvider->FileObject);
+            UncProvider->FileObject = NULL;
+        }
+
+        if (UncProvider->DeviceObject != NULL)
+        {
+            ObDereferenceObject(UncProvider->DeviceObject);
+            UncProvider->DeviceObject = NULL;
         }
     }
     else
@@ -2285,6 +2692,7 @@ MupCleanup(PDEVICE_OBJECT DeviceObject,
     ULONG Type;
     PMUP_FCB Fcb;
     PMUP_CCB Ccb;
+    PMUP_EXFILE ExFile;
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
     PIO_STACK_LOCATION Stack;
 
@@ -2295,6 +2703,13 @@ MupCleanup(PDEVICE_OBJECT DeviceObject,
         {
             return DfsFsdCleanup(DeviceObject, Irp);
         }
+    }
+
+    Stack = IoGetCurrentIrpStackLocation(Irp);
+    ExFile = MupFindExFile(Stack->FileObject);
+    if (ExFile != NULL)
+    {
+        return MupForwardIrp(Stack->FileObject, Irp, ExFile->DeviceObject, NULL, NULL);
     }
 
     FsRtlEnterFileSystem();
@@ -2407,6 +2822,7 @@ MupClose(PDEVICE_OBJECT DeviceObject,
 {
     PMUP_FCB Fcb;
     PMUP_CCB Ccb;
+    PMUP_EXFILE ExFile;
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
     PIO_STACK_LOCATION Stack;
 
@@ -2417,6 +2833,13 @@ MupClose(PDEVICE_OBJECT DeviceObject,
         {
             return DfsFsdClose(DeviceObject, Irp);
         }
+    }
+
+    Stack = IoGetCurrentIrpStackLocation(Irp);
+    ExFile = MupFindExFile(Stack->FileObject);
+    if (ExFile != NULL)
+    {
+        return MupForwardIrp(Stack->FileObject, Irp, ExFile->DeviceObject, NULL, ExFile);
     }
 
     FsRtlEnterFileSystem();

@@ -46,14 +46,15 @@ NTSTATUS
 FsRtlpRegisterProviderWithMUP(
     _In_ HANDLE MupHandle,
     _In_ PCUNICODE_STRING RedirectorDeviceName,
+    _In_opt_ PVOID DeviceObject,
     _In_ BOOLEAN MailslotsSupported)
 {
-    PMUP_PROVIDER_REGISTRATION_INFO Registration;
+    PMUP_PROVIDER_REGISTRATION_INFO_PRIVATE Registration;
     IO_STATUS_BLOCK IoStatus;
     ULONG Length;
     NTSTATUS Status;
 
-    Length = sizeof(MUP_PROVIDER_REGISTRATION_INFO) +
+    Length = sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE) +
              RedirectorDeviceName->Length;
 
     Registration = ExAllocatePoolWithTag(PagedPool, Length, FSRTL_MUP_TAG);
@@ -61,13 +62,15 @@ FsRtlpRegisterProviderWithMUP(
 
     RtlZeroMemory(Registration, Length);
 
-    Registration->RedirectorDeviceNameOffset =
-        sizeof(MUP_PROVIDER_REGISTRATION_INFO);
-    Registration->RedirectorDeviceNameLength = RedirectorDeviceName->Length;
-    Registration->MailslotsSupported = MailslotsSupported;
+    Registration->Public.RedirectorDeviceNameOffset =
+        sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE);
+    Registration->Public.RedirectorDeviceNameLength =
+        RedirectorDeviceName->Length;
+    Registration->DeviceObject = DeviceObject;
+    Registration->Public.MailslotsSupported = MailslotsSupported;
 
     RtlCopyMemory((PUCHAR)Registration +
-                      sizeof(MUP_PROVIDER_REGISTRATION_INFO),
+                      sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE),
                   RedirectorDeviceName->Buffer,
                   RedirectorDeviceName->Length);
 
@@ -87,24 +90,18 @@ FsRtlpRegisterProviderWithMUP(
     return Status;
 }
 
-/* PUBLIC FUNCTIONS ***********************************************************/
-
+static
 NTSTATUS
-NTAPI
-FsRtlRegisterUncProvider(
+FsRtlpRegisterUncProvider(
     _Out_ PHANDLE MupHandle,
     _In_ PCUNICODE_STRING RedirectorDeviceName,
+    _In_opt_ PVOID DeviceObject,
     _In_ BOOLEAN MailslotsSupported)
 {
     HANDLE Handle;
     NTSTATUS Status;
 
     PAGED_CODE();
-
-    if ((MupHandle == NULL) || (RedirectorDeviceName == NULL))
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
 
     *MupHandle = NULL;
 
@@ -113,6 +110,7 @@ FsRtlRegisterUncProvider(
 
     Status = FsRtlpRegisterProviderWithMUP(Handle,
                                            RedirectorDeviceName,
+                                           DeviceObject,
                                            MailslotsSupported);
 
     if (!NT_SUCCESS(Status))
@@ -124,6 +122,59 @@ FsRtlRegisterUncProvider(
     *MupHandle = Handle;
 
     return STATUS_SUCCESS;
+}
+
+/* PUBLIC FUNCTIONS ***********************************************************/
+
+NTSTATUS
+NTAPI
+FsRtlRegisterUncProvider(
+    _Out_ PHANDLE MupHandle,
+    _In_ PCUNICODE_STRING RedirectorDeviceName,
+    _In_ BOOLEAN MailslotsSupported)
+{
+    PAGED_CODE();
+
+    if ((MupHandle == NULL) || (RedirectorDeviceName == NULL))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    return FsRtlpRegisterUncProvider(MupHandle,
+                                     RedirectorDeviceName,
+                                     NULL,
+                                     MailslotsSupported);
+}
+
+NTSTATUS
+NTAPI
+FsRtlRegisterUncProviderEx(
+    _Out_ PHANDLE MupHandle,
+    _In_ PUNICODE_STRING RedirDevName,
+    _In_ PDEVICE_OBJECT DeviceObject,
+    _In_ ULONG Flags)
+{
+    PAGED_CODE();
+
+    if ((MupHandle == NULL) ||
+        (RedirDevName == NULL) ||
+        (RedirDevName->Length == 0) ||
+        (RedirDevName->Buffer == NULL) ||
+        (DeviceObject == NULL))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if (DeviceObject->Type != IO_TYPE_DEVICE)
+    {
+        return STATUS_OBJECT_TYPE_MISMATCH;
+    }
+
+    return FsRtlpRegisterUncProvider(
+               MupHandle,
+               RedirDevName,
+               DeviceObject,
+               (Flags & FSRTL_UNC_PROVIDER_FLAGS_MAILSLOTS_SUPPORTED) != 0);
 }
 
 VOID

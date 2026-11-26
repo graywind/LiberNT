@@ -82,6 +82,7 @@ typedef struct _MUP_UNC
     ULONG ProviderOrder;
     BOOLEAN MailslotsSupported;
     BOOLEAN Registered;
+    BOOLEAN ExProvider;
 } MUP_UNC, *PMUP_UNC;
 
 typedef struct _MUP_PFX
@@ -131,7 +132,8 @@ typedef struct _QUERY_PATH_CONTEXT
 {
     PMUP_MQC MasterQueryContext;
     PMUP_UNC UncProvider;
-    PQUERY_PATH_REQUEST QueryPathRequest;
+    PVOID QueryPathRequest;
+    PVOID QueryResponse;
     LIST_ENTRY QueryPathListEntry;
     PIRP Irp;
 } QUERY_PATH_CONTEXT, *PQUERY_PATH_CONTEXT;
