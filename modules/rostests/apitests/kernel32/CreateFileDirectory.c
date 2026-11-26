@@ -38,6 +38,13 @@ START_TEST(CreateFileDirectory)
         {
             File = CreateFileW(Path, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
                                Dispositions[i], Flags[j], NULL);
+            if (TRUNCATE_EXISTING == Dispositions[i])
+            {
+                ok(INVALID_HANDLE_VALUE == File && ERROR_FILE_NOT_FOUND == GetLastError(),
+                   "CreateFileW(%lu, %#lx) returned %p with %lu\n",
+                   Dispositions[i], Flags[j], File, GetLastError());
+                continue;
+            }
             ok(File != INVALID_HANDLE_VALUE, "CreateFileW(%lu, %#lx) failed with %lu\n",
                Dispositions[i], Flags[j], GetLastError());
             if (INVALID_HANDLE_VALUE == File)
