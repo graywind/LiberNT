@@ -49,6 +49,7 @@ list(APPEND SOURCE
     CpuSetsApi.c
     CreateAfterMissingName.c
     CreateDirectoryRoot.c
+    CreateFileDirectory.c
     CreateProcess.c
     ProcessImageRename.c
     PipeRelisten.c
