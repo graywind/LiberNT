@@ -260,6 +260,7 @@ USBPORT_PdoDevicePowerState(IN PDEVICE_OBJECT PdoDevice,
     PIO_STACK_LOCATION IoStack;
     NTSTATUS Status = STATUS_SUCCESS;
     POWER_STATE State;
+    ULONG Iterations;
 
     PdoExtension = PdoDevice->DeviceExtension;
     FdoDevice = PdoExtension->FdoDevice;
@@ -276,17 +277,26 @@ USBPORT_PdoDevicePowerState(IN PDEVICE_OBJECT PdoDevice,
     {
         if (FdoExtension->CommonExtension.DevicePowerState == PowerDeviceD0)
         {
-            while (FdoExtension->SetPowerLockCounter)
+            for (Iterations = 0;
+                 FdoExtension->SetPowerLockCounter && Iterations < 100;
+                 Iterations++)
             {
                 USBPORT_Wait(FdoDevice, 10);
             }
 
-            USBPORT_ResumeController(FdoDevice);
+            if (FdoExtension->SetPowerLockCounter)
+            {
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                USBPORT_ResumeController(FdoDevice);
 
-            PdoExtension->CommonExtension.DevicePowerState = PowerDeviceD0;
+                PdoExtension->CommonExtension.DevicePowerState = PowerDeviceD0;
 
-            USBPORT_CompletePdoWaitWake(FdoDevice);
-            USBPORT_CompletePendingIdleIrp(PdoDevice);
+                USBPORT_CompletePdoWaitWake(FdoDevice);
+                USBPORT_CompletePendingIdleIrp(PdoDevice);
+            }
         }
         else
         {

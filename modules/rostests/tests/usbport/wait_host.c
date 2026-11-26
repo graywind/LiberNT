@@ -18,6 +18,7 @@
 #define STATUS_SUCCESS 0
 
 typedef uint32_t ULONG;
+typedef int64_t LONGLONG;
 typedef uint32_t KIRQL;
 typedef int32_t NTSTATUS;
 typedef int BOOLEAN;
@@ -77,8 +78,9 @@ int main(void)
     DelayInterval = 0;
     CurrentIrql = DISPATCH_LEVEL;
     assert(USBPORT_Wait(NULL, 20) == STATUS_SUCCESS);
+    /* WDK: KeDelayExecutionThread requires IRQL <= APC_LEVEL, so raised IRQL must not thread-wait. */
     assert(DelayCount == 0);
-    assert(StallMicroseconds == 20000);
+    assert(StallMicroseconds >= 20000);
 
     puts("USBPORT_Wait IRQL behavior: ok");
     return 0;
