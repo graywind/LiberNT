@@ -191,8 +191,14 @@ Apply these rules equally to new code, features and bug fixes.
   cppcheck --project=/tmp/compdb.json --file-filter='*/ntos/alpc/alpcport.c' \
       -D_WIN32 -D_WIN64 -D_M_AMD64 -D__x86_64__ -D__clang__ -D__GNUC__=4 \
       '-D__has_cpp_attribute(x)=0' '-D__has_builtin(x)=0' '-D__has_attribute(x)=0' '-D__has_feature(x)=0' \
+      -D_ERRCODE_DEFINED '-D__cdecl=' '-D__stdcall=' \
       --enable=warning,performance,portability --platform=win64 --inline-suppr --quiet
   ```
+
+  `_ERRCODE_DEFINED` keeps cppcheck's own `errno_t` from colliding in
+  `vcruntime/crtdefs.h`; the two empty calling-convention defines get
+  `psdk/winreg.h` past its `QUERYHANDLER` typedef. Without them the parser stops
+  in the SDK headers rather than reaching the file under test.
 
   Read only the findings in the changed files, and treat each one as a claim to verify in the source. A confirmed defect is a bug found on the way and is fixed under "Fixing bugs"; a false positive stays as it is, without a suppression.
 
