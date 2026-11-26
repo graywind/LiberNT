@@ -68,11 +68,11 @@ i8042KbdQueuePacket(
 	DeviceExtension = (PI8042_KEYBOARD_EXTENSION)Context;
 
 	DeviceExtension->KeyComplete = TRUE;
-	DeviceExtension->KeysInBuffer++;
-	if (DeviceExtension->KeysInBuffer > DeviceExtension->Common.PortDeviceExtension->Settings.KeyboardDataQueueSize)
+	if (DeviceExtension->KeysInBuffer < DeviceExtension->Common.PortDeviceExtension->Settings.KeyboardDataQueueSize)
+		DeviceExtension->KeysInBuffer++;
+	else
 	{
 		WARN_(I8042PRT, "Keyboard buffer overflow\n");
-		DeviceExtension->KeysInBuffer--;
 	}
 
 	TRACE_(I8042PRT, "Irq completes key\n");
@@ -413,6 +413,12 @@ i8042KbdDpcRoutine(
 	ASSERT(KeGetCurrentIrql() == Irql);
 
 	Irql = KeAcquireInterruptSpinLock(PortDeviceExtension->HighestDIRQLInterrupt);
+	if (KeysTransferred > KeysInBufferCopy || KeysTransferred > DeviceExtension->KeysInBuffer)
+	{
+		KeReleaseInterruptSpinLock(PortDeviceExtension->HighestDIRQLInterrupt, Irql);
+		WARN_(I8042PRT, "Invalid keyboard transfer count\n");
+		return;
+	}
 	DeviceExtension->KeysInBuffer -= KeysTransferred;
 	KeReleaseInterruptSpinLock(PortDeviceExtension->HighestDIRQLInterrupt, Irql);
 }
@@ -832,6 +838,7 @@ cleanup:
 static BOOLEAN
 i8042KbdCallIsrHook(
 	IN PI8042_KEYBOARD_EXTENSION DeviceExtension,
+	IN PKEYBOARD_INPUT_DATA InputData,
 	IN UCHAR Status,
 	IN UCHAR Input,
 	OUT PBOOLEAN ToReturn)
@@ -844,7 +851,7 @@ i8042KbdCallIsrHook(
 	{
 		HookReturn = DeviceExtension->KeyboardHook.IsrRoutine(
 			DeviceExtension->KeyboardHook.Context,
-			DeviceExtension->KeyboardBuffer + DeviceExtension->KeysInBuffer,
+			InputData,
 			&DeviceExtension->Common.PortDeviceExtension->Packet,
 			Status,
 			&Input,
@@ -868,6 +875,7 @@ i8042KbdInterruptService(
 	PI8042_KEYBOARD_EXTENSION DeviceExtension;
 	PPORT_DEVICE_EXTENSION PortDeviceExtension;
 	PKEYBOARD_INPUT_DATA InputData;
+	KEYBOARD_INPUT_DATA OverflowInput = {0};
 	ULONG Counter;
 	UCHAR PortStatus = 0, Output = 0;
 	BOOLEAN ToReturn = FALSE;
@@ -878,7 +886,10 @@ i8042KbdInterruptService(
 	__analysis_assume(Context != NULL);
 	DeviceExtension = Context;
 	PortDeviceExtension = DeviceExtension->Common.PortDeviceExtension;
-	InputData = DeviceExtension->KeyboardBuffer + DeviceExtension->KeysInBuffer;
+	if (DeviceExtension->KeysInBuffer < PortDeviceExtension->Settings.KeyboardDataQueueSize)
+		InputData = DeviceExtension->KeyboardBuffer + DeviceExtension->KeysInBuffer;
+	else
+		InputData = &OverflowInput;
 	Counter = PortDeviceExtension->Settings.PollStatusIterations;
 
 	while (Counter)
@@ -956,7 +967,7 @@ i8042KbdInterruptService(
 		}
 	}
 
-	if (i8042KbdCallIsrHook(DeviceExtension, PortStatus, Output, &ToReturn))
+	if (i8042KbdCallIsrHook(DeviceExtension, InputData, PortStatus, Output, &ToReturn))
 		return ToReturn;
 
 	if (i8042PacketIsr(PortDeviceExtension, Output))

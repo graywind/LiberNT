@@ -620,22 +620,74 @@ NtGdiDdDDISetProcessSchedulingPriorityClass(_In_ HANDLE unnamedParam1,
     return D3DKMTSetProcessSchedulingPriorityClass(unnamedParam1, unnamedParam2);
 }
 
+static KSPIN_LOCK D3dkmtSharedPrimaryLocksLock;
+
+static BOOLEAN
+D3dkmtFindSharedPrimaryLock(
+    _In_ PPROCESSINFO Process,
+    _In_ LUID AdapterLuid,
+    _In_ UINT VidPnSourceId,
+    _In_ BOOLEAN Record)
+{
+    BOOLEAN Found = FALSE;
+    KIRQL OldIrql;
+    UINT Index;
+
+    KeAcquireSpinLock(&D3dkmtSharedPrimaryLocksLock, &OldIrql);
+    ASSERT(Process->cSharedPrimaryLocks <= RTL_NUMBER_OF(Process->SharedPrimaryLocks));
+    for (Index = 0; Index < Process->cSharedPrimaryLocks && !Found; ++Index)
+    {
+        Found = Process->SharedPrimaryLocks[Index].AdapterLuid.LowPart == AdapterLuid.LowPart &&
+                Process->SharedPrimaryLocks[Index].AdapterLuid.HighPart == AdapterLuid.HighPart &&
+                Process->SharedPrimaryLocks[Index].VidPnSourceId == VidPnSourceId;
+    }
+    if (!Found && Record && Process->cSharedPrimaryLocks < RTL_NUMBER_OF(Process->SharedPrimaryLocks))
+    {
+        Process->SharedPrimaryLocks[Process->cSharedPrimaryLocks].AdapterLuid = AdapterLuid;
+        Process->SharedPrimaryLocks[Process->cSharedPrimaryLocks].VidPnSourceId = VidPnSourceId;
+        Process->cSharedPrimaryLocks++;
+        Found = TRUE;
+    }
+    /* FIXME: past 8 sources a process keeps no record, so the unlocks Windows 11 would accept are refused */
+    KeReleaseSpinLock(&D3dkmtSharedPrimaryLocksLock, OldIrql);
+    return Found;
+}
+
 NTSTATUS
 APIENTRY
 NtGdiDdDDISharedPrimaryLockNotification(_In_ const D3DKMT_SHAREDPRIMARYLOCKNOTIFICATION* unnamedParam1)
 {
     D3DKMT_SHAREDPRIMARYLOCKNOTIFICATION Captured;
+    PPROCESSINFO Process;
+    NTSTATUS Status;
 
     RETURN_STATUS_IF_NULL(unnamedParam1);
     /* Windows 11 accepts the notification for any adapter LUID, source and rectangle. */
-    return D3dkmtCaptureUserStructure((PVOID)unnamedParam1, sizeof(Captured), &Captured);
+    Status = D3dkmtCaptureUserStructure((PVOID)unnamedParam1, sizeof(Captured), &Captured);
+    if (!NT_SUCCESS(Status))
+        return Status;
+    Process = PsGetCurrentProcessWin32Process();
+    if (Process != NULL)
+        D3dkmtFindSharedPrimaryLock(Process, Captured.AdapterLuid, Captured.VidPnSourceId, TRUE);
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
 APIENTRY
 NtGdiDdDDISharedPrimaryUnLockNotification(_In_ const D3DKMT_SHAREDPRIMARYUNLOCKNOTIFICATION* unnamedParam1)
 {
+    D3DKMT_SHAREDPRIMARYUNLOCKNOTIFICATION Captured;
+    PPROCESSINFO Process;
+    NTSTATUS Status;
+
     RETURN_STATUS_IF_NULL(unnamedParam1);
+    Status = D3dkmtCaptureUserStructure((PVOID)unnamedParam1, sizeof(Captured), &Captured);
+    if (!NT_SUCCESS(Status))
+        return Status;
+    /* Once a process has notified a lock of a source, Windows 11 accepts every later unlock of that source from it */
+    Process = PsGetCurrentProcessWin32Process();
+    if (Process != NULL && D3dkmtFindSharedPrimaryLock(Process, Captured.AdapterLuid, Captured.VidPnSourceId, FALSE))
+        return STATUS_SUCCESS;
     return D3DKMTSharedPrimaryUnLockNotification(unnamedParam1);
 }
 
@@ -911,10 +963,10 @@ NtGdiDdDDICreateOverlay(_Inout_ D3DKMT_CREATEOVERLAY* unnamedParam1)
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDICreateSynchronizationObject(_Inout_ D3DKMT_CREATESYNCHRONIZATIONOBJECT* unnamedParam1)
+NtGdiDdDDICreateSynchronizationObject(_Inout_ D3DKMT_CREATESYNCHRONIZATIONOBJECT2* unnamedParam1)
 {
     RETURN_STATUS_IF_NULL(unnamedParam1);
-    D3DKMT_CALL_CALLBACK(RxgkIntPfnCreateSynchronizationObject, unnamedParam1);
+    D3DKMT_CALL_CALLBACK(RxgkIntPfnCreateSynchronizationObject2, unnamedParam1);
 }
 
 NTSTATUS
@@ -1343,36 +1395,10 @@ NtGdiDdDDIOpenResource2(_Inout_ D3DKMT_OPENRESOURCE* unnamedParam1)
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDICreateSynchronizationObject2(_Inout_ D3DKMT_CREATESYNCHRONIZATIONOBJECT2* unnamedParam1)
-{
-    RETURN_STATUS_IF_NULL(unnamedParam1);
-    D3DKMT_CALL_CALLBACK(RxgkIntPfnCreateSynchronizationObject2, unnamedParam1);
-}
-
-NTSTATUS
-APIENTRY
 NtGdiDdDDIOpenSynchronizationObject(_Inout_ D3DKMT_OPENSYNCHRONIZATIONOBJECT* unnamedParam1)
 {
     RETURN_STATUS_IF_NULL(unnamedParam1);
     D3DKMT_CALL_CALLBACK(RxgkIntPfnOpenSynchronizationObject, unnamedParam1);
-}
-
-NTSTATUS
-APIENTRY
-NtGdiDdDDIWaitForSynchronizationObject2(_In_ const D3DKMT_WAITFORSYNCHRONIZATIONOBJECT2* unnamedParam1)
-{
-    RETURN_STATUS_IF_NULL(unnamedParam1);
-    /* The bridge owns top-level capture and all field validation. */
-    D3DKMT_CALL_CALLBACK(RxgkIntPfnWaitForSynchronizationObject2, unnamedParam1);
-}
-
-NTSTATUS
-APIENTRY
-NtGdiDdDDISignalSynchronizationObject2(_In_ const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2* unnamedParam1)
-{
-    RETURN_STATUS_IF_NULL(unnamedParam1);
-    /* The bridge owns top-level capture and all field validation. */
-    D3DKMT_CALL_CALLBACK(RxgkIntPfnSignalSynchronizationObject2, unnamedParam1);
 }
 
 NTSTATUS
@@ -1484,10 +1510,11 @@ NtGdiDdDDIWaitForIdle(_In_ const D3DKMT_WAITFORIDLE* unnamedParam1)
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIWaitForSynchronizationObject(_In_ const D3DKMT_WAITFORSYNCHRONIZATIONOBJECT* unnamedParam1)
+NtGdiDdDDIWaitForSynchronizationObject(_In_ const D3DKMT_WAITFORSYNCHRONIZATIONOBJECT2* unnamedParam1)
 {
     RETURN_STATUS_IF_NULL(unnamedParam1);
-    D3DKMT_CALL_CALLBACK(RxgkIntPfnWaitForSynchronizationObject, unnamedParam1);
+    /* The bridge owns top-level capture and all field validation. */
+    D3DKMT_CALL_CALLBACK(RxgkIntPfnWaitForSynchronizationObject2, unnamedParam1);
 }
 
 NTSTATUS
@@ -1500,10 +1527,11 @@ NtGdiDdDDIWaitForVerticalBlankEvent(_In_ const D3DKMT_WAITFORVERTICALBLANKEVENT*
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDISignalSynchronizationObject(_In_ const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT* unnamedParam1)
+NtGdiDdDDISignalSynchronizationObject(_In_ const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2* unnamedParam1)
 {
     RETURN_STATUS_IF_NULL(unnamedParam1);
-    D3DKMT_CALL_CALLBACK(RxgkIntPfnSignalSynchronizationObject, unnamedParam1);
+    /* The bridge owns top-level capture and all field validation. */
+    D3DKMT_CALL_CALLBACK(RxgkIntPfnSignalSynchronizationObject2, unnamedParam1);
 }
 
 /* ---- WDDM 1.2 additions ------------------------------------------------ */
@@ -1791,7 +1819,7 @@ NtGdiDdDDISubmitSignalSyncObjectsToHwQueue(
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDISubmitPresentBltToHwQueue(
+NtDxgkSubmitPresentBltToHwQueue(
     _In_ const struct _D3DKMT_SUBMITPRESENTBLTTOHWQUEUE* unnamedParam1)
 {
     NTSTATUS Status = D3dkmtValidateWddmThunk(unnamedParam1);
@@ -1803,7 +1831,7 @@ NtGdiDdDDISubmitPresentBltToHwQueue(
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDISubmitPresentToHwQueue(
+NtDxgkSubmitPresentToHwQueue(
     _Inout_ struct _D3DKMT_SUBMITPRESENTTOHWQUEUE* unnamedParam1)
 {
     NTSTATUS Status = D3dkmtValidateWddmThunk(unnamedParam1);
@@ -2041,8 +2069,8 @@ NtGdiDdDDIOpenResourceFromNtHandle(_Inout_ struct _D3DKMT_OPENRESOURCEFROMNTHAND
     OpenResource.TotalPrivateDriverDataBufferSize =
         Captured.TotalPrivateDriverDataBufferSize;
 
-    Status = D3DKMTOpenResource(&OpenResource);
-    if (!NT_SUCCESS(Status) && Status != STATUS_BUFFER_TOO_SMALL)
+    Status = D3dkmtBridgeOpenResourceEntries2(&OpenResource);
+    if (!NT_SUCCESS(Status))
         return Status;
 
     Captured.NumAllocations = OpenResource.NumAllocations;
@@ -2148,6 +2176,102 @@ NtGdiDdDDIOpenSyncObjectNtHandleFromName(_Inout_ struct _D3DKMT_OPENSYNCOBJECTNT
 {
     RETURN_STATUS_IF_NULL(unnamedParam1);
     return D3DKMTOpenSyncObjectNtHandleFromName(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDICreateSwapChain(_Inout_ struct _D3DKMT_CREATESWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTCreateSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIOpenSwapChain(_Inout_ struct _D3DKMT_OPENSWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTOpenSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIAddSurfaceToSwapChain(_Inout_ struct _D3DKMT_ADDSURFACETOSWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTAddSurfaceToSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIRemoveSurfaceFromSwapChain(_In_ struct _D3DKMT_REMOVESURFACEFROMSWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTRemoveSurfaceFromSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIAbandonSwapChain(_In_ struct _D3DKMT_ABANDONSWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTAbandonSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIUnOrderedPresentSwapChain(_In_ struct _D3DKMT_UNORDEREDPRESENTSWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTUnOrderedPresentSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIAcquireSwapChain(_Inout_ struct _D3DKMT_ACQUIRESWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTAcquireSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIReleaseSwapChain(_Inout_ struct _D3DKMT_RELEASESWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTReleaseSwapChain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIGetSetSwapChainMetadata(_In_ struct _D3DKMT_GETSETSWAPCHAINMETADATA* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTGetSetSwapChainMetadata(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDISetDodIndirectSwapchain(_In_ struct _D3DKMT_SETDODINDIRECTSWAPCHAIN* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTSetDodIndirectSwapchain(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDICreateBundleObject(_Inout_ struct _D3DKMT_CREATEBUNDLEOBJECT* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTCreateBundleObject(unnamedParam1);
+}
+
+NTSTATUS
+APIENTRY
+NtGdiDdDDIExtractBundleObject(_Inout_ struct _D3DKMT_EXTRACTBUNDLEOBJECT* unnamedParam1)
+{
+    RETURN_STATUS_IF_NULL(unnamedParam1);
+    return D3DKMTExtractBundleObject(unnamedParam1);
 }
 
 NTSTATUS
@@ -2547,7 +2671,7 @@ Cleanup:
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIEnumAdapters3(_Inout_ struct _D3DKMT_ENUMADAPTERS3* unnamedParam1)
+NtDxgkEnumAdapters3(_Inout_ struct _D3DKMT_ENUMADAPTERS3* unnamedParam1)
 {
     NTSTATUS Status = D3dkmtValidateWddmThunk(unnamedParam1);
     if (!NT_SUCCESS(Status))
@@ -2602,7 +2726,7 @@ NtGdiDdDDIReleaseKeyedMutex2(_Inout_ struct _D3DKMT_RELEASEKEYEDMUTEX2* unnamedP
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDICancelPresents(_In_ const struct _D3DKMT_CANCEL_PRESENTS* unnamedParam1)
+NtDxgkCancelPresents(_In_ const struct _D3DKMT_CANCEL_PRESENTS* unnamedParam1)
 {
     RETURN_STATUS_IF_NULL(unnamedParam1);
     return D3DKMTCancelPresents((D3DKMT_CANCEL_PRESENTS *)unnamedParam1);
@@ -3278,7 +3402,7 @@ NtGdiDdDDIPresentMultiPlaneOverlay3(_In_ const struct _D3DKMT_PRESENT_MULTIPLANE
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIIsFeatureEnabled(
+NtDxgkIsFeatureEnabled(
     _Inout_ struct _D3DKMT_ISFEATUREENABLED* unnamedParam1)
 {
     NTSTATUS Status = D3dkmtValidateWddmThunk(unnamedParam1);
@@ -3444,63 +3568,63 @@ NtGdiDdDDITrimProcessCommitment(_Inout_ D3DKMT_TRIMPROCESSCOMMITMENT *unnamedPar
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIConnectDoorbell(_In_ D3DKMT_CONNECT_DOORBELL *unnamedParam1)
+NtDxgkConnectDoorbell(_In_ D3DKMT_CONNECT_DOORBELL *unnamedParam1)
 {
     return D3DKMTConnectDoorbell(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDICreateDoorbell(_In_ D3DKMT_CREATE_DOORBELL *unnamedParam1)
+NtDxgkCreateDoorbell(_In_ D3DKMT_CREATE_DOORBELL *unnamedParam1)
 {
     return D3DKMTCreateDoorbell(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDICreateNativeFence(_Inout_ D3DKMT_CREATENATIVEFENCE *unnamedParam1)
+NtDxgkCreateNativeFence(_Inout_ D3DKMT_CREATENATIVEFENCE *unnamedParam1)
 {
     return D3DKMTCreateNativeFence(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIDestroyDoorbell(_In_ D3DKMT_DESTROY_DOORBELL *unnamedParam1)
+NtDxgkDestroyDoorbell(_In_ D3DKMT_DESTROY_DOORBELL *unnamedParam1)
 {
     return D3DKMTDestroyDoorbell(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIGetNativeFenceLogDetail(_Inout_ D3DKMT_GETNATIVEFENCELOGDETAIL *unnamedParam1)
+NtDxgkGetNativeFenceLogDetail(_Inout_ D3DKMT_GETNATIVEFENCELOGDETAIL *unnamedParam1)
 {
     return D3DKMTGetNativeFenceLogDetail(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDINotifyWorkSubmission(_In_ D3DKMT_NOTIFY_WORK_SUBMISSION *unnamedParam1)
+NtDxgkNotifyWorkSubmission(_In_ D3DKMT_NOTIFY_WORK_SUBMISSION *unnamedParam1)
 {
     return D3DKMTNotifyWorkSubmission(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIOpenNativeFenceFromNtHandle(_Inout_ D3DKMT_OPENNATIVEFENCEFROMNTHANDLE *unnamedParam1)
+NtDxgkOpenNativeFenceFromNtHandle(_Inout_ D3DKMT_OPENNATIVEFENCEFROMNTHANDLE *unnamedParam1)
 {
     return D3DKMTOpenNativeFenceFromNtHandle(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIOutputDuplPresentToHwQueue(_In_ const D3DKMT_OUTPUTDUPLPRESENTTOHWQUEUE *unnamedParam1)
+NtDxgkOutputDuplPresentToHwQueue(_In_ const D3DKMT_OUTPUTDUPLPRESENTTOHWQUEUE *unnamedParam1)
 {
     return D3DKMTOutputDuplPresentToHwQueue(unnamedParam1);
 }
 
 NTSTATUS
 APIENTRY
-NtGdiDdDDIRegisterVailProcess(_In_ GUID *unnamedParam1)
+NtDxgkRegisterVailProcess(_In_ GUID *unnamedParam1)
 {
     return D3DKMTRegisterVailProcess(unnamedParam1);
 }

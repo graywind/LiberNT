@@ -23,6 +23,7 @@ void wined3d_get_wddm_adapter_identifier(D3DKMT_HANDLE kmt_adapter,
     D3DKMT_QUERY_DEVICE_IDS ids = {0};
     D3DKMT_UMDFILENAMEINFO umd = {0};
     D3DKMT_ADAPTERREGISTRYINFO registry = {0};
+    D3DKMT_ADAPTERTYPE type = {0};
     D3DKMT_DRIVER_DESCRIPTION *description;
     LARGE_INTEGER version;
     const WCHAR *name;
@@ -68,6 +69,19 @@ void wined3d_get_wddm_adapter_identifier(D3DKMT_HANDLE kmt_adapter,
         free(description);
     }
 
+    query.Type = KMTQAITYPE_ADAPTERTYPE;
+    query.pPrivateDriverData = &type;
+    query.PrivateDriverDataSize = sizeof(type);
+    if (!D3DKMTQueryAdapterInfo(&query) && type.SoftwareDevice)
+    {
+        identifier->vendor_id = 0x1414;
+        identifier->device_id = 0x008c;
+        identifier->subsystem_id = 0;
+        identifier->revision = 0;
+        if (identifier->description_size)
+            lstrcpynA(identifier->description, "Microsoft Basic Render Driver", identifier->description_size);
+    }
+
     umd.Version = KMTUMDVERSION_DX9;
     query.Type = KMTQAITYPE_UMDRIVERNAME;
     query.pPrivateDriverData = &umd;
@@ -86,4 +100,42 @@ void wined3d_get_wddm_adapter_identifier(D3DKMT_HANDLE kmt_adapter,
     query.PrivateDriverDataSize = sizeof(version);
     if (!D3DKMTQueryAdapterInfo(&query) && version.QuadPart)
         identifier->driver_version = version;
+}
+
+BOOL wined3d_get_first_wddm_adapter_luid(LUID *luid)
+{
+    D3DKMT_ENUMADAPTERS2 enum_adapters = {0};
+    D3DKMT_ADAPTERINFO *adapters;
+    D3DKMT_QUERYADAPTERINFO query = {0};
+    D3DKMT_ADAPTERTYPE type;
+    D3DKMT_CLOSEADAPTER close_adapter;
+    BOOL found = FALSE;
+    ULONG i;
+
+    if (D3DKMTEnumAdapters2(&enum_adapters) || !enum_adapters.NumAdapters)
+        return FALSE;
+    if (!(adapters = calloc(enum_adapters.NumAdapters, sizeof(*adapters))))
+        return FALSE;
+    enum_adapters.pAdapters = adapters;
+    if (D3DKMTEnumAdapters2(&enum_adapters))
+        enum_adapters.NumAdapters = 0;
+
+    for (i = 0; i < enum_adapters.NumAdapters; ++i)
+    {
+        memset(&type, 0, sizeof(type));
+        query.hAdapter = adapters[i].hAdapter;
+        query.Type = KMTQAITYPE_ADAPTERTYPE;
+        query.pPrivateDriverData = &type;
+        query.PrivateDriverDataSize = sizeof(type);
+        if (!found && (!D3DKMTQueryAdapterInfo(&query) && type.RenderSupported))
+        {
+            *luid = adapters[i].AdapterLuid;
+            found = TRUE;
+        }
+        close_adapter.hAdapter = adapters[i].hAdapter;
+        D3DKMTCloseAdapter(&close_adapter);
+    }
+
+    free(adapters);
+    return found;
 }

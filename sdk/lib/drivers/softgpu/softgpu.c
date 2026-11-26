@@ -402,6 +402,8 @@ DriverEntry(
     InitData.DxgkDdiStopDevice                      = SoftGpuDdiStopDevice;
     InitData.DxgkDdiRemoveDevice                    = SoftGpuDdiRemoveDevice;
     InitData.DxgkDdiResetDevice                     = SoftGpuDdiResetDevice;
+    InitData.DxgkDdiDispatchIoRequest               = SoftGpuDdiDispatchIoRequest;
+    InitData.DxgkDdiUnload                          = SoftGpuDdiUnload;
     InitData.DxgkDdiSetPowerState                   = SoftGpuDdiSetPowerState;
     InitData.DxgkDdiQueryInterface                  =
         SoftGpuDdiQueryInterface;
@@ -416,8 +418,10 @@ DriverEntry(
 #endif
 
     /* --- Interrupt / DPC ------------------------------------------------- */
-#if defined(SOFTGPU_PLATFORM_HARDWARE_3D)
+#if defined(SOFTGPU_PLATFORM_HARDWARE_3D) || !defined(SOFTGPU_PLATFORM_DRIVER_ENTRY)
     InitData.DxgkDdiInterruptRoutine                = SoftGpuDdiInterruptRoutine;
+#else
+    /* FIXME: the platform connects the device interrupt itself, so the DxgkDdiInterruptRoutine Windows requires is left out */
 #endif
     InitData.DxgkDdiDpcRoutine                      = SoftGpuDdiDpcRoutine;
 
@@ -1898,6 +1902,19 @@ SoftGpuDdiQueryAdapterInfo(
     }
 #endif
 
+#if (REACTOS_WDDM_TARGET_LEVEL >= 2600)
+    case DXGKQAITYPE_WDDMDEVICECAPS:
+        if (pQueryAdapterInfo->pOutputData == NULL)
+            return STATUS_INVALID_PARAMETER;
+        if (pQueryAdapterInfo->OutputDataSize < sizeof(DXGK_WDDMDEVICECAPS))
+            return STATUS_BUFFER_TOO_SMALL;
+
+        /* Asked between AddDevice and StartDevice, so only the static caps are known */
+        RtlZeroMemory(pQueryAdapterInfo->pOutputData, sizeof(DXGK_WDDMDEVICECAPS));
+        ((DXGK_WDDMDEVICECAPS *)pQueryAdapterInfo->pOutputData)->WDDMVersion = SOFTGPU_DRIVER_CAPS.WDDMVersion;
+        return STATUS_SUCCESS;
+#endif
+
     case DXGKQAITYPE_DRIVERCAPS:
         /*
          * Copy the statically-initialised capability record.
@@ -3242,6 +3259,33 @@ SoftGpuDdiResetDevice(
     _In_ PVOID MiniportDeviceContext)
 {
     UNREFERENCED_PARAMETER(MiniportDeviceContext);
+}
+
+NTSTATUS
+APIENTRY
+SoftGpuDdiDispatchIoRequest(
+    _In_ PVOID MiniportDeviceContext,
+    _In_ ULONG VidPnSourceId,
+    _In_ PVIDEO_REQUEST_PACKET VideoRequestPacket)
+{
+    PAGED_CODE();
+    UNREFERENCED_PARAMETER(MiniportDeviceContext);
+    UNREFERENCED_PARAMETER(VidPnSourceId);
+
+    ASSERT(VideoRequestPacket != NULL);
+    if (VideoRequestPacket->StatusBlock != NULL)
+    {
+        VideoRequestPacket->StatusBlock->Status = STATUS_NOT_SUPPORTED;
+        VideoRequestPacket->StatusBlock->Information = 0;
+    }
+    return STATUS_NOT_SUPPORTED;
+}
+
+VOID
+APIENTRY
+SoftGpuDdiUnload(VOID)
+{
+    PAGED_CODE();
 }
 
 

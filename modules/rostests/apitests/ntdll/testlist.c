@@ -123,6 +123,7 @@ extern void func_NtQueryInformationToken(void);
 extern void func_NtQueryKey(void);
 extern void func_ObjectTypeIndex(void);
 extern void func_MemoryImageInformation(void);
+extern void func_ObjectTypeIndex(void);
 extern void func_NtQueryObject(void);
 extern void func_NtQueryObjectName(void);
 extern void func_NtQueryOpenSubKeys(void);
@@ -130,6 +131,7 @@ extern void func_NtQuerySection(void);
 extern void func_NtQuerySecurityObject(void);
 extern void func_NtSetSecurityObjectStatus(void);
 extern void func_NtQuerySystemEnvironmentValue(void);
+extern void func_NtQueryLicenseValue(void);
 extern void func_NtQuerySystemInformation(void);
 extern void func_NtQuerySystemMemoryInformation(void);
 extern void func_NtQueryValueKey(void);
@@ -243,6 +245,7 @@ extern void func_NtWaitForObjects(void);
 extern void func_SatisfiedWait(void);
 extern void func_SharedUserData(void);
 extern void func_StackOverflow(void);
+extern void func_ThreadStackRelease(void);
 extern void func_ScanfSecure(void);
 extern void func_StackProbe(void);
 extern void func_SystemTimeAtBoot(void);
@@ -392,6 +395,7 @@ const struct test winetest_testlist[] =
     { "NtQuerySecurityObject",          func_NtQuerySecurityObject },
     { "NtSetSecurityObjectStatus",      func_NtSetSecurityObjectStatus },
     { "NtQuerySystemEnvironmentValue",  func_NtQuerySystemEnvironmentValue },
+    { "NtQueryLicenseValue",            func_NtQueryLicenseValue },
     { "NtQuerySystemInformation",       func_NtQuerySystemInformation },
     { "NtQuerySystemMemoryInformation", func_NtQuerySystemMemoryInformation },
     { "NtQueryValueKey",                func_NtQueryValueKey },
@@ -412,6 +416,7 @@ const struct test winetest_testlist[] =
     { "NtStartProfile",                 func_NtStartProfile },
     { "NtSystemInformation",            func_NtSystemInformation },
     { "NtTerminateThread",              func_NtTerminateThread },
+    { "ThreadStackRelease",             func_ThreadStackRelease },
     { "NtUnloadDriver",                 func_NtUnloadDriver },
     { "NtWnfState",                     func_NtWnfState },
     { "NtWriteFile",                    func_NtWriteFile },

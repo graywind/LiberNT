@@ -1255,11 +1255,34 @@ MiSetVadNoChange(
 
     MI_RW_ACQUIRE_EXCLUSIVE(&Space->Lock);
     Vad = MiVadLocate(Space, Base);
-    MI_ASSERT(Vad != NULL);
+    /* No VAD at Base is a benign no-op (e.g. OOBE's storage-expansion path when
+     * expansion is not offered), handled by the guard below; only a VAD that
+     * exists must start exactly at Base. */
     MI_ASSERT(Vad == NULL || MI_VAD_START(Vad) == Base);
     if (Vad != NULL)
         Vad->NoChange = NoChange;
     MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
+}
+
+BOOLEAN
+MiClearVadNoChangeIfPresent(
+    _Inout_ PMI_ADDRESS_SPACE Space,
+    _In_ ULONG64 Base)
+{
+    PMI_VAD Vad;
+
+    MI_RW_ACQUIRE_EXCLUSIVE(&Space->Lock);
+    Vad = MiVadLocate(Space, Base);
+    if (Vad == NULL)
+    {
+        MI_ASSERT(MiVadFirst(&Space->VadRoot) == NULL);
+        MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
+        return FALSE;
+    }
+    MI_ASSERT(MI_VAD_START(Vad) == Base);
+    Vad->NoChange = FALSE;
+    MI_RW_RELEASE_EXCLUSIVE(&Space->Lock);
+    return TRUE;
 }
 
 NTSTATUS
