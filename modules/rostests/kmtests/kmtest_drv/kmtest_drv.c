@@ -244,21 +244,28 @@ DriverCleanup(
              IoStackLocation->FileObject->FsContext, IoStackLocation->FileObject->FsContext2);
 
     ASSERT(IoStackLocation->FileObject->FsContext2 == NULL);
-    DeviceExtension = DeviceObject->DeviceExtension;
-    ExAcquireFastMutex(&DeviceExtension->ResultBufferLock);
-    if (DeviceExtension->Mdl && IoStackLocation->FileObject->FsContext == DeviceExtension->Mdl)
+    if (DeviceObject == MainDeviceObject)
     {
-        MmUnlockPages(DeviceExtension->Mdl);
-        IoFreeMdl(DeviceExtension->Mdl);
-        DeviceExtension->Mdl = NULL;
-        ResultBuffer = DeviceExtension->ResultBuffer = NULL;
-        IoStackLocation->FileObject->FsContext = NULL;
+        DeviceExtension = DeviceObject->DeviceExtension;
+        ExAcquireFastMutex(&DeviceExtension->ResultBufferLock);
+        if (DeviceExtension->Mdl && IoStackLocation->FileObject->FsContext == DeviceExtension->Mdl)
+        {
+            MmUnlockPages(DeviceExtension->Mdl);
+            IoFreeMdl(DeviceExtension->Mdl);
+            DeviceExtension->Mdl = NULL;
+            ResultBuffer = DeviceExtension->ResultBuffer = NULL;
+            IoStackLocation->FileObject->FsContext = NULL;
+        }
+        else
+        {
+            ASSERT(IoStackLocation->FileObject->FsContext == NULL);
+        }
+        ExReleaseFastMutex(&DeviceExtension->ResultBufferLock);
     }
     else
     {
         ASSERT(IoStackLocation->FileObject->FsContext == NULL);
     }
-    ExReleaseFastMutex(&DeviceExtension->ResultBufferLock);
 
     Irp->IoStatus.Status = Status;
     Irp->IoStatus.Information = 0;
