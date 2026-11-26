@@ -48,6 +48,7 @@ extern void func_CopyContext(void);
 extern void func_CpuSetsApi(void);
 extern void func_CreateAfterMissingName(void);
 extern void func_CreateDirectoryRoot(void);
+extern void func_CreateFileDirectory(void);
 extern void func_CreateProcess(void);
 extern void func_DefaultActCtx(void);
 extern void func_DeleteFileCase(void);
@@ -286,6 +287,7 @@ const struct test winetest_testlist[] =
     { "CpuSetsApi",                  func_CpuSetsApi },
     { "CreateAfterMissingName",      func_CreateAfterMissingName },
     { "CreateDirectoryRoot",         func_CreateDirectoryRoot },
+    { "CreateFileDirectory",         func_CreateFileDirectory },
     { "CreateProcess",               func_CreateProcess },
     { "DefaultActCtx",               func_DefaultActCtx },
     { "DeleteFileCase",              func_DeleteFileCase },
