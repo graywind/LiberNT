@@ -16,9 +16,11 @@ extern void func_wgl_close_midrender(void);
 extern void func_wgl_front_facing(void);
 extern void func_wgl_scaled_attrib(void);
 extern void func_wgl_depth_blit(void);
+extern void func_wgl_color_blit(void);
 extern void func_wgl_render(void);
 extern void func_wgl_gears(void);
 extern void func_wgl_monitor_off(void);
+extern void func_wgl_quiet_init(void);
 
 const struct test winetest_testlist[] =
 {
@@ -36,9 +38,11 @@ const struct test winetest_testlist[] =
     { "wgl_front_facing", func_wgl_front_facing },
     { "wgl_scaled_attrib", func_wgl_scaled_attrib },
     { "wgl_depth_blit", func_wgl_depth_blit },
+    { "wgl_color_blit", func_wgl_color_blit },
     { "wgl_render", func_wgl_render },
     { "wgl_gears", func_wgl_gears },
     { "wgl_monitor_off", func_wgl_monitor_off },
+    { "wgl_quiet_init", func_wgl_quiet_init },
 
     { 0, 0 }
 };
