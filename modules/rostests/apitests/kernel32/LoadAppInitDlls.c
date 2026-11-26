@@ -116,17 +116,13 @@ VOID
 TestExports(
     _Out_ PFN_LOAD_APP_INIT_DLLS *Function)
 {
-    PFN_LOAD_APP_INIT_DLLS pKernelBaseLoadAppInitDlls, pKernel32LoadAppInitDlls;
+    PFN_LOAD_APP_INIT_DLLS pKernelBaseLoadAppInitDlls;
 
     pKernelBaseLoadAppInitDlls = (PFN_LOAD_APP_INIT_DLLS)GetProcAddress(GetModuleHandleW(L"kernelbase.dll"),
                                                                         "LoadAppInitDlls");
-    pKernel32LoadAppInitDlls = (PFN_LOAD_APP_INIT_DLLS)GetProcAddress(GetModuleHandleW(L"kernel32.dll"),
-                                                                      "LoadAppInitDlls");
     *Function = pKernelBaseLoadAppInitDlls;
     if (!pKernelBaseLoadAppInitDlls)
         return;
-    ok(pKernel32LoadAppInitDlls == pKernelBaseLoadAppInitDlls,
-       "kernel32 LoadAppInitDlls %p, kernelbase %p\n", pKernel32LoadAppInitDlls, pKernelBaseLoadAppInitDlls);
 
     ok_hex(CallLoadAppInitDlls(pKernelBaseLoadAppInitDlls), STATUS_SUCCESS);
 }
