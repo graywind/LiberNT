@@ -17,20 +17,31 @@ START_TEST(CreateFileDirectory)
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_POSIX_SEMANTICS | FILE_ATTRIBUTE_DIRECTORY,
         FILE_FLAG_POSIX_SEMANTICS | FILE_ATTRIBUTE_DIRECTORY
     };
-    static const DWORD Dispositions[] =
+    static const struct
     {
-        CREATE_NEW,
-        OPEN_ALWAYS,
-        TRUNCATE_EXISTING,
-        CREATE_ALWAYS
+        DWORD Disposition, Cleanup;
+    } Dispositions[] =
+    {
+        {CREATE_NEW, 1},
+        {OPEN_ALWAYS, 0},
+        {TRUNCATE_EXISTING, 0},
+        {CREATE_ALWAYS, 1}
     };
     WCHAR Path[MAX_PATH], Temp[MAX_PATH];
     BY_HANDLE_FILE_INFORMATION Info;
     HANDLE File;
     UINT i, j;
 
-    GetTempPathW(ARRAYSIZE(Temp), Temp);
-    GetTempFileNameW(Temp, L"psx", 0, Path);
+    if (!GetTempPathW(ARRAYSIZE(Temp), Temp))
+    {
+        ok(0, "GetTempPathW failed with %lu\n", GetLastError());
+        return;
+    }
+    if (!GetTempFileNameW(Temp, L"psx", 0, Path))
+    {
+        ok(0, "GetTempFileNameW failed with %lu\n", GetLastError());
+        return;
+    }
     DeleteFileW(Path);
 
     for (i = 0; i < ARRAYSIZE(Dispositions); i++)
@@ -38,28 +49,28 @@ START_TEST(CreateFileDirectory)
         for (j = 0; j < ARRAYSIZE(Flags); j++)
         {
             File = CreateFileW(Path, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
-                               Dispositions[i], Flags[j], NULL);
-            if (TRUNCATE_EXISTING == Dispositions[i])
-            {
-                ok(INVALID_HANDLE_VALUE == File && ERROR_FILE_NOT_FOUND == GetLastError(),
-                   "CreateFileW(%lu, %#lx) returned %p with %lu\n",
-                   Dispositions[i], Flags[j], File, GetLastError());
-                continue;
-            }
+                               Dispositions[i].Disposition, Flags[j], NULL);
             ok(File != INVALID_HANDLE_VALUE, "CreateFileW(%lu, %#lx) failed with %lu\n",
-               Dispositions[i], Flags[j], GetLastError());
+               Dispositions[i].Disposition, Flags[j], GetLastError());
             if (INVALID_HANDLE_VALUE == File)
                 continue;
 
-            ok(GetFileInformationByHandle(File, &Info), "GetFileInformationByHandle failed with %lu\n",
-               GetLastError());
-            if (CREATE_NEW == Dispositions[i] &&
+            if (!GetFileInformationByHandle(File, &Info))
+            {
+                ok(0, "GetFileInformationByHandle failed with %lu\n", GetLastError());
+                CloseHandle(File);
+                continue;
+            }
+
+            if (CREATE_NEW == Dispositions[i].Disposition &&
                 (FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_POSIX_SEMANTICS | FILE_ATTRIBUTE_DIRECTORY) == Flags[j])
                 ok(0 != (Info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY), "created file is not a directory\n");
             else
                 ok(0 == (Info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY), "created file is a directory\n");
 
             CloseHandle(File);
+            if (!Dispositions[i].Cleanup)
+                continue;
             if (0 != (Info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
                 RemoveDirectoryW(Path);
             else
