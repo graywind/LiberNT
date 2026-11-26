@@ -1,8 +1,9 @@
 /*
- * PROJECT:     LiberNT API Tests
+ * PROJECT:     LiberNT API tests
  * LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE:     Test CreateFileW directory creation with BACKUP/POSIX/DIRECTORY flags
  * COPYRIGHT:   Copyright 2026 LiberNT contributors
+ *              Adapted from Wine dlls/kernel32/tests/file.c (test_posix_semantics), LGPL-2.1-or-later
  */
 
 #include "precomp.h"
