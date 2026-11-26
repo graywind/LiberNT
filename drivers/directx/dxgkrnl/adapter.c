@@ -52,6 +52,7 @@
 /* dxgkrnl_private.h includes NDEBUG, <debug.h>, and "debug.h" via PCH. */
 #include "dxgkrnl_private.h"
 #include "vidmm.h"
+#include "init_data_core.h"
 #include "vidsch.h"
 #include "present.h"
 #include "pnp.h"
@@ -112,7 +113,7 @@ InbvGetGopFrameBufferInfo(
 NTSTATUS
 NTAPI
 InbvSetVirtualFrameBuffer(
-    _In_opt_ PVOID VirtualFrameBuffer);
+    _In_opt_ PINBV_VIRTUAL_FRAME_BUFFER VirtualFrameBuffer);
 
 NTSTATUS
 NTAPI
@@ -149,6 +150,7 @@ DxgkDetachBootScreen(
     _In_ ULONG PageCount)
 {
     LOADER_PARAMETER_FRAMEBUFFER Fb;
+    INBV_VIRTUAL_FRAME_BUFFER Shadow;
     PVOID Copy;
     PVOID Installed;
     NTSTATUS Status;
@@ -184,7 +186,9 @@ DxgkDetachBootScreen(
         Copy = Installed;
     }
 
-    Status = InbvSetVirtualFrameBuffer(Copy);
+    Shadow.Buffer = Copy;
+    Shadow.Size = Fb.FrameBufferSize;
+    Status = InbvSetVirtualFrameBuffer(&Shadow);
     if (!NT_SUCCESS(Status))
     {
         DXGKRNL_ERR("DxgkDetachBootScreen: the boot video driver keeps the window at 0x%I64x, status 0x%08lX\n",
@@ -18767,50 +18771,25 @@ DxgkpInitializeMiniport(
         return STATUS_INVALID_PARAMETER;
     }
 
-    /* The four PnP lifecycle callbacks are required as one transaction. */
-    if (DriverInitializationData->DxgkDdiAddDevice == NULL ||
-        DriverInitializationData->DxgkDdiStartDevice == NULL ||
-        DriverInitializationData->DxgkDdiStopDevice == NULL ||
-        DriverInitializationData->DxgkDdiRemoveDevice == NULL)
+    if (UseDodLayout)
     {
-        DXGKRNL_ERR("DxgkpInitializeMiniport: mandatory lifecycle callback missing (AddDevice=%p StartDevice=%p StopDevice=%p RemoveDevice=%p)\n",
-                    DriverInitializationData->DxgkDdiAddDevice,
-                    DriverInitializationData->DxgkDdiStartDevice,
-                    DriverInitializationData->DxgkDdiStopDevice,
-                    DriverInitializationData->DxgkDdiRemoveDevice);
-        return STATUS_INVALID_PARAMETER;
+        if (DriverInitializationData->DxgkDdiAddDevice == NULL ||
+            DriverInitializationData->DxgkDdiStartDevice == NULL ||
+            DriverInitializationData->DxgkDdiStopDevice == NULL ||
+            DriverInitializationData->DxgkDdiRemoveDevice == NULL)
+        {
+            DXGKRNL_ERR("DxgkpInitializeMiniport: mandatory lifecycle callback missing (AddDevice=%p StartDevice=%p StopDevice=%p RemoveDevice=%p)\n",
+                        DriverInitializationData->DxgkDdiAddDevice,
+                        DriverInitializationData->DxgkDdiStartDevice,
+                        DriverInitializationData->DxgkDdiStopDevice,
+                        DriverInitializationData->DxgkDdiRemoveDevice);
+            return STATUS_INVALID_PARAMETER;
+        }
     }
-
-    /*
-     * WDDM 2.3 replaces CommitVidPn with SetTimingsFromVidPn for full
-     * display miniports. Render-only full-table drivers have no CommitVidPn
-     * surface and are therefore not forced into a display contract.
-     */
-    if (!UseDodLayout &&
-        DxgkCapsCoreInterfaceVersionAtLeast(
-            Version, DXGK_CAPS_CORE_LEVEL_WDDM_2_3) &&
-        DriverInitializationData->DxgkDdiCommitVidPn != NULL &&
-        DriverInitializationData->DxgkDdiSetTimingsFromVidPn == NULL)
+    else if (!DxgkInitDataCoreHasRequiredMembers(DriverInitializationData, DriverInitDataSize))
     {
-        DXGKRNL_ERR("DxgkpInitializeMiniport: WDDM 2.3 display miniport "
-                    "is missing mandatory SetTimingsFromVidPn\n");
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    /*
-     * CollectDiagnosticInfo is a WDDM 2.6 core requirement for full graphics
-     * miniports. Its AddDevice failure form explicitly permits a NULL adapter
-     * context, so registration must establish the callback before any PDO is
-     * handed to the driver.
-     */
-    if (!UseDodLayout &&
-        DxgkCapsCoreInterfaceVersionAtLeast(
-            Version, DXGK_CAPS_CORE_LEVEL_WDDM_2_6) &&
-        DriverInitializationData->DxgkDdiCollectDiagnosticInfo == NULL)
-    {
-        DXGKRNL_ERR("DxgkpInitializeMiniport: WDDM 2.6 miniport "
-                    "is missing mandatory CollectDiagnosticInfo\n");
-        return STATUS_INVALID_PARAMETER;
+        DXGKRNL_ERR("DxgkpInitializeMiniport: a member every full miniport must supply is missing\n");
+        return STATUS_REVISION_MISMATCH;
     }
 
     /* --- One-time global init ------------------------------------------- */

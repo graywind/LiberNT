@@ -2196,7 +2196,7 @@
 @ stub -arch=win64 ExSetLicenseTamperState
 @ stdcall ExSetResourceOwnerPointerEx(ptr ptr long)
 @ stdcall -version=0x603+ ExSetTimer(ptr int64 int64 ptr)
-@ stdcall -version=0x603+ -arch=arm64 ExShareAddressSpaceWithDevice(ptr ptr)
+@ stdcall -version=0x603+ -arch=win64 ExShareAddressSpaceWithDevice(ptr ptr)
 @ stub -arch=arm64 ExShareSystemAddressSpaceWithDevice
 @ stub -arch=win64 ExSizeOfAutoExpandPushLock
 @ stub -arch=arm64 ExStopSharingAddressSpaceWithDevice
@@ -3110,7 +3110,7 @@
 @ stub -arch=win64 RtlRbReplaceNode
 @ stdcall RtlRecordFeatureUsage(long long long ptr)
 @ stdcall RtlRegisterFeatureConfigurationChangeNotification(ptr ptr ptr ptr)
-@ stdcall RtlRegisterFeatureUsageProvider(ptr ptr)
+@ stdcall RtlRegisterFeatureUsageProvider(ptr ptr ptr long)
 @ stub -arch=win64 RtlRemovePointerMapping
 @ stub -arch=win64 RtlRemovePropertyStore
 @ stub -arch=win64 RtlReplaceSidInSd

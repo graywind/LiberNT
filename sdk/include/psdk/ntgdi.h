@@ -3985,7 +3985,7 @@ W32KAPI
 NTSTATUS
 APIENTRY
 NtGdiDdDDICreateSynchronizationObject(
-    _Inout_ D3DKMT_CREATESYNCHRONIZATIONOBJECT* unnamedParam1);
+    _Inout_ D3DKMT_CREATESYNCHRONIZATIONOBJECT2* unnamedParam1);
 
 __kernel_entry
 W32KAPI
@@ -4302,36 +4302,16 @@ W32KAPI
 NTSTATUS
 APIENTRY
 NtGdiDdDDISignalSynchronizationObject(
-    _In_ const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT* unnamedParam1);
+    _In_ const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2* unnamedParam1);
 
 __kernel_entry
 W32KAPI
 NTSTATUS
 APIENTRY
 NtGdiDdDDIWaitForSynchronizationObject(
-    _In_ const D3DKMT_WAITFORSYNCHRONIZATIONOBJECT* unnamedParam1);
-
-/* WDDM 2.0 D3DKMT additions (ReactOS) */
-__kernel_entry
-W32KAPI
-NTSTATUS
-APIENTRY
-NtGdiDdDDICreateSynchronizationObject2(
-    _Inout_ D3DKMT_CREATESYNCHRONIZATIONOBJECT2* unnamedParam1);
-
-__kernel_entry
-W32KAPI
-NTSTATUS
-APIENTRY
-NtGdiDdDDIWaitForSynchronizationObject2(
     _In_ const D3DKMT_WAITFORSYNCHRONIZATIONOBJECT2* unnamedParam1);
 
-__kernel_entry
-W32KAPI
-NTSTATUS
-APIENTRY
-NtGdiDdDDISignalSynchronizationObject2(
-    _In_ const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2* unnamedParam1);
+/* WDDM 2.0 D3DKMT additions (ReactOS) */
 
 /*
  * The WDDM 2.0 residency / paging-queue / video-memory structures are gated
@@ -4658,6 +4638,18 @@ struct _D3DKMT_OPENRESOURCEFROMNTHANDLE;
 struct _D3DKMT_OPENSYNCOBJECTFROMNTHANDLE2;
 struct _D3DKMT_OPENSYNCOBJECTFROMNTHANDLE;
 struct _D3DKMT_OPENSYNCOBJECTNTHANDLEFROMNAME;
+struct _D3DKMT_ABANDONSWAPCHAIN;
+struct _D3DKMT_ACQUIRESWAPCHAIN;
+struct _D3DKMT_ADDSURFACETOSWAPCHAIN;
+struct _D3DKMT_CREATEBUNDLEOBJECT;
+struct _D3DKMT_CREATESWAPCHAIN;
+struct _D3DKMT_EXTRACTBUNDLEOBJECT;
+struct _D3DKMT_GETSETSWAPCHAINMETADATA;
+struct _D3DKMT_OPENSWAPCHAIN;
+struct _D3DKMT_RELEASESWAPCHAIN;
+struct _D3DKMT_REMOVESURFACEFROMSWAPCHAIN;
+struct _D3DKMT_SETDODINDIRECTSWAPCHAIN;
+struct _D3DKMT_UNORDEREDPRESENTSWAPCHAIN;
 struct _D3DKMT_OUTPUTDUPLPRESENT;
 struct _D3DKMT_OUTPUTDUPL_GET_FRAMEINFO;
 struct _D3DKMT_OUTPUTDUPL_GET_POINTER_SHAPE_DATA;
@@ -4740,14 +4732,14 @@ __kernel_entry
 W32KAPI
 NTSTATUS
 APIENTRY
-NtGdiDdDDISubmitPresentBltToHwQueue(
+NtDxgkSubmitPresentBltToHwQueue(
     _In_ const struct _D3DKMT_SUBMITPRESENTBLTTOHWQUEUE* unnamedParam1);
 
 __kernel_entry
 W32KAPI
 NTSTATUS
 APIENTRY
-NtGdiDdDDISubmitPresentToHwQueue(
+NtDxgkSubmitPresentToHwQueue(
     _Inout_ struct _D3DKMT_SUBMITPRESENTTOHWQUEUE* unnamedParam1);
 
 __kernel_entry
@@ -4880,6 +4872,90 @@ __kernel_entry
 W32KAPI
 NTSTATUS
 APIENTRY
+NtGdiDdDDICreateSwapChain(
+    _Inout_ struct _D3DKMT_CREATESWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIOpenSwapChain(
+    _Inout_ struct _D3DKMT_OPENSWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIAddSurfaceToSwapChain(
+    _Inout_ struct _D3DKMT_ADDSURFACETOSWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIRemoveSurfaceFromSwapChain(
+    _In_ struct _D3DKMT_REMOVESURFACEFROMSWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIAbandonSwapChain(
+    _In_ struct _D3DKMT_ABANDONSWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIUnOrderedPresentSwapChain(
+    _In_ struct _D3DKMT_UNORDEREDPRESENTSWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIAcquireSwapChain(
+    _Inout_ struct _D3DKMT_ACQUIRESWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIReleaseSwapChain(
+    _Inout_ struct _D3DKMT_RELEASESWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIGetSetSwapChainMetadata(
+    _In_ struct _D3DKMT_GETSETSWAPCHAINMETADATA* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDISetDodIndirectSwapchain(
+    _In_ struct _D3DKMT_SETDODINDIRECTSWAPCHAIN* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDICreateBundleObject(
+    _Inout_ struct _D3DKMT_CREATEBUNDLEOBJECT* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
+NtGdiDdDDIExtractBundleObject(
+    _Inout_ struct _D3DKMT_EXTRACTBUNDLEOBJECT* unnamedParam1);
+
+__kernel_entry
+W32KAPI
+NTSTATUS
+APIENTRY
 NtGdiDdDDIOpenSyncObjectNtHandleFromName(
     _Inout_ struct _D3DKMT_OPENSYNCOBJECTNTHANDLEFROMNAME* unnamedParam1);
 
@@ -4978,7 +5054,7 @@ __kernel_entry
 W32KAPI
 NTSTATUS
 APIENTRY
-NtGdiDdDDIEnumAdapters3(
+NtDxgkEnumAdapters3(
     _Inout_ struct _D3DKMT_ENUMADAPTERS3* unnamedParam1);
 
 __kernel_entry
@@ -5013,7 +5089,7 @@ __kernel_entry
 W32KAPI
 NTSTATUS
 APIENTRY
-NtGdiDdDDICancelPresents(
+NtDxgkCancelPresents(
     _In_ const struct _D3DKMT_CANCEL_PRESENTS* unnamedParam1);
 
 __kernel_entry
@@ -5111,7 +5187,7 @@ __kernel_entry
 W32KAPI
 NTSTATUS
 APIENTRY
-NtGdiDdDDIIsFeatureEnabled(
+NtDxgkIsFeatureEnabled(
     _Inout_ struct _D3DKMT_ISFEATUREENABLED* unnamedParam1);
 
 __kernel_entry
@@ -5167,15 +5243,15 @@ __kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDIQueryRemoteVidPnSourceFromGdi
 __kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDISetHwProtectionTeardownRecovery(_In_ struct _D3DKMT_SETHWPROTECTIONTEARDOWNRECOVERY* unnamedParam1);
 __kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDISetVidPnSourceHwProtection(_In_ struct _D3DKMT_SETVIDPNSOURCEHWPROTECTION* unnamedParam1);
 __kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDITrimProcessCommitment(_Inout_ struct _D3DKMT_TRIMPROCESSCOMMITMENT* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDIConnectDoorbell(_In_ struct _D3DKMT_CONNECT_DOORBELL* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDICreateDoorbell(_In_ struct _D3DKMT_CREATE_DOORBELL* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDICreateNativeFence(_Inout_ struct _D3DKMT_CREATENATIVEFENCE* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDIDestroyDoorbell(_In_ struct _D3DKMT_DESTROY_DOORBELL* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDIGetNativeFenceLogDetail(_Inout_ struct _D3DKMT_GETNATIVEFENCELOGDETAIL* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDINotifyWorkSubmission(_In_ struct _D3DKMT_NOTIFY_WORK_SUBMISSION* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDIOpenNativeFenceFromNtHandle(_Inout_ struct _D3DKMT_OPENNATIVEFENCEFROMNTHANDLE* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDIOutputDuplPresentToHwQueue(_In_ const struct _D3DKMT_OUTPUTDUPLPRESENTTOHWQUEUE* unnamedParam1);
-__kernel_entry W32KAPI NTSTATUS APIENTRY NtGdiDdDDIRegisterVailProcess(_In_ GUID* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkConnectDoorbell(_In_ struct _D3DKMT_CONNECT_DOORBELL* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkCreateDoorbell(_In_ struct _D3DKMT_CREATE_DOORBELL* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkCreateNativeFence(_Inout_ struct _D3DKMT_CREATENATIVEFENCE* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkDestroyDoorbell(_In_ struct _D3DKMT_DESTROY_DOORBELL* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkGetNativeFenceLogDetail(_Inout_ struct _D3DKMT_GETNATIVEFENCELOGDETAIL* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkNotifyWorkSubmission(_In_ struct _D3DKMT_NOTIFY_WORK_SUBMISSION* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkOpenNativeFenceFromNtHandle(_Inout_ struct _D3DKMT_OPENNATIVEFENCEFROMNTHANDLE* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkOutputDuplPresentToHwQueue(_In_ const struct _D3DKMT_OUTPUTDUPLPRESENTTOHWQUEUE* unnamedParam1);
+__kernel_entry W32KAPI NTSTATUS APIENTRY NtDxgkRegisterVailProcess(_In_ GUID* unnamedParam1);
 
 /* Multi-argument D3DKMT entry points (non-single-struct signatures). */
 __kernel_entry

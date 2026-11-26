@@ -528,10 +528,44 @@ static LONG entryNameCmp(
  *
  * Find and read the element of a storage with the given name.
  */
+#ifdef __REACTOS__
+struct dirref_cycle
+{
+  DirRef saved;
+  ULONG power;
+  ULONG length;
+};
+
+static void dirref_cycle_init(struct dirref_cycle *cycle)
+{
+  cycle->saved = DIRENTRY_NULL;
+  cycle->power = 1;
+  cycle->length = 0;
+}
+
+static BOOL dirref_cycle_step(struct dirref_cycle *cycle, DirRef next)
+{
+  if (next != DIRENTRY_NULL && next == cycle->saved)
+    return TRUE;
+  if (++cycle->length == cycle->power)
+  {
+    cycle->saved = next;
+    cycle->power <<= 1;
+    cycle->length = 0;
+  }
+  return FALSE;
+}
+
+#endif
 static DirRef findElement(StorageBaseImpl *storage, DirRef storageEntry,
     const OLECHAR *name, DirEntry *data)
 {
   DirRef currentEntry;
+#ifdef __REACTOS__
+  struct dirref_cycle cycle;
+
+  dirref_cycle_init(&cycle);
+#endif
 
   /* Read the storage entry to find the root of the tree. */
   StorageBaseImpl_ReadDirEntry(storage, storageEntry, data);
@@ -555,6 +589,10 @@ static DirRef findElement(StorageBaseImpl *storage, DirRef storageEntry,
 
     else if (cmp > 0)
       currentEntry = data->rightChild;
+#ifdef __REACTOS__
+    if (dirref_cycle_step(&cycle, currentEntry))
+      return DIRENTRY_NULL;
+#endif
   }
 
   return currentEntry;
@@ -574,6 +612,9 @@ static HRESULT findTreeParent(StorageBaseImpl *storage, DirRef storageEntry,
     ULONG *relation)
 {
   DirRef childEntry;
+#ifdef __REACTOS__
+  struct dirref_cycle cycle;
+#endif
   DirEntry childData;
 
   /* Read the storage entry to find the root of the tree. */
@@ -583,11 +624,18 @@ static HRESULT findTreeParent(StorageBaseImpl *storage, DirRef storageEntry,
   *relation = DIRENTRY_RELATION_DIR;
 
   childEntry = parentData->dirRootEntry;
+#ifdef __REACTOS__
+  dirref_cycle_init(&cycle);
+#endif
 
   while (childEntry != DIRENTRY_NULL)
   {
     LONG cmp;
 
+#ifdef __REACTOS__
+    if (dirref_cycle_step(&cycle, childEntry))
+      return STG_E_DOCFILECORRUPT;
+#endif
     StorageBaseImpl_ReadDirEntry(storage, childEntry, &childData);
 
     cmp = entryNameCmp(childName, childData.name);
@@ -816,9 +864,18 @@ static HRESULT removeFromTree(
        */
       DirRef newRightChildParent = entryToDelete.leftChild;
       DirEntry newRightChildParentEntry;
+#ifdef __REACTOS__
+      struct dirref_cycle cycle;
+
+      dirref_cycle_init(&cycle);
+#endif
 
       do
       {
+#ifdef __REACTOS__
+        if (dirref_cycle_step(&cycle, newRightChildParent))
+          return STG_E_DOCFILECORRUPT;
+#endif
         hr = StorageBaseImpl_ReadDirEntry(
                 This,
                 newRightChildParent,
@@ -961,6 +1018,11 @@ static HRESULT IEnumSTATSTGImpl_GetNextRef(
   DirEntry entry;
   HRESULT hr;
   WCHAR result_name[DIRENTRY_NAME_MAX_LEN];
+#ifdef __REACTOS__
+  struct dirref_cycle cycle;
+
+  dirref_cycle_init(&cycle);
+#endif
 
   TRACE("%p,%p\n", This, ref);
 
@@ -970,6 +1032,13 @@ static HRESULT IEnumSTATSTGImpl_GetNextRef(
 
   while (SUCCEEDED(hr) && searchNode != DIRENTRY_NULL)
   {
+#ifdef __REACTOS__
+    if (dirref_cycle_step(&cycle, searchNode))
+    {
+      hr = STG_E_DOCFILECORRUPT;
+      break;
+    }
+#endif
     hr = StorageBaseImpl_ReadDirEntry(This->parentStorage, searchNode, &entry);
 
     if (SUCCEEDED(hr))
@@ -3078,7 +3147,19 @@ static HRESULT StorageImpl_LoadFileHeader(
 	hr = STG_E_INVALIDHEADER;
     }
     else
+#ifdef __REACTOS__
+    {
+	STATSTG stat;
+
 	hr = S_OK;
+	if (SUCCEEDED(ILockBytes_Stat(This->lockBytes, &stat, STATFLAG_NONAME)) &&
+	    (This->bigBlockDepotCount > stat.cbSize.QuadPart / This->bigBlockSize ||
+	     This->extBigBlockDepotCount > stat.cbSize.QuadPart / This->bigBlockSize))
+	    hr = STG_E_DOCFILECORRUPT;
+    }
+#else
+	hr = S_OK;
+#endif
   }
 
   return hr;
@@ -3607,8 +3688,28 @@ static HRESULT StorageImpl_WriteDirEntry(
 
 static ULONGLONG StorageImpl_GetBigBlockOffset(StorageImpl* This, ULONG index)
 {
+#ifdef __REACTOS__
+    return ((ULONGLONG)index + 1) * This->bigBlockSize;
+#else
     return (ULONGLONG)(index+1) * This->bigBlockSize;
+#endif
 }
+
+#ifdef __REACTOS__
+static ULONG StorageImpl_GetMaxChainLength(StorageImpl* This)
+{
+    ULONGLONG count = (ULONGLONG)This->bigBlockDepotCount * (This->bigBlockSize / sizeof(ULONG));
+
+    return count > ULONG_MAX ? ULONG_MAX : (ULONG)count;
+}
+
+static ULONG SmallBlockChainStream_GetMaxChainLength(StorageImpl* This)
+{
+    ULONGLONG count = BlockChainStream_GetSize(This->smallBlockDepotChain).QuadPart / sizeof(ULONG);
+
+    return count > ULONG_MAX ? ULONG_MAX : (ULONG)count;
+}
+#endif
 
 static HRESULT StorageImpl_ReadBigBlock(
   StorageImpl* This,
@@ -7294,6 +7395,10 @@ static HRESULT BlockChainStream_UpdateIndexCache(BlockChainStream* This)
 
   while (next_sector != BLOCK_END_OF_CHAIN)
   {
+#ifdef __REACTOS__
+    if (next_offset >= StorageImpl_GetMaxChainLength(This->parentStorage))
+      return STG_E_DOCFILECORRUPT;
+#endif
     if (!last_run || next_sector != last_run->firstSector + next_offset - last_run->firstOffset)
     {
       /* Add the current block to the cache. */
@@ -7643,6 +7748,10 @@ static BOOL BlockChainStream_Enlarge(BlockChainStream* This,
 
     while (blockIndex != BLOCK_END_OF_CHAIN)
     {
+#ifdef __REACTOS__
+      if (This->numBlocks >= StorageImpl_GetMaxChainLength(This->parentStorage))
+        return FALSE;
+#endif
       This->numBlocks++;
       currentBlock = blockIndex;
 
@@ -8531,6 +8640,10 @@ static BOOL SmallBlockChainStream_Enlarge(
    */
   while (blockIndex != BLOCK_END_OF_CHAIN)
   {
+#ifdef __REACTOS__
+    if (oldNumBlocks >= SmallBlockChainStream_GetMaxChainLength(This->parentStorage))
+      return FALSE;
+#endif
     oldNumBlocks++;
     currentBlock = blockIndex;
     if(FAILED(SmallBlockChainStream_GetNextBlockInChain(This, currentBlock, &blockIndex)))
@@ -8604,6 +8717,10 @@ static ULONG SmallBlockChainStream_GetCount(SmallBlockChainStream* This)
 
     while(blockIndex != BLOCK_END_OF_CHAIN)
     {
+#ifdef __REACTOS__
+        if (count >= SmallBlockChainStream_GetMaxChainLength(This->parentStorage))
+            return 0;
+#endif
         count++;
 
         if(FAILED(SmallBlockChainStream_GetNextBlockInChain(This,
