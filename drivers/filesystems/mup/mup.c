@@ -63,6 +63,7 @@ typedef struct _MUP_EXFILE
 typedef struct _MUP_FORWARD_CONTEXT
 {
     PIRP Irp;
+    PDEVICE_OBJECT DeviceObject;
     PMUP_EXFILE AddExFile;
     PMUP_EXFILE RemoveExFile;
 } MUP_FORWARD_CONTEXT, *PMUP_FORWARD_CONTEXT;
@@ -477,6 +478,8 @@ MupForwardCompletion(PDEVICE_OBJECT DeviceObject,
     PIRP OriginalIrp = ForwardContext->Irp;
     KIRQL OldIrql;
 
+    UNREFERENCED_PARAMETER(DeviceObject);
+
     OriginalIrp->IoStatus = Irp->IoStatus;
 
     if (ForwardContext->AddExFile != NULL)
@@ -501,7 +504,7 @@ MupForwardCompletion(PDEVICE_OBJECT DeviceObject,
         MupFreeExFile(ForwardContext->RemoveExFile);
     }
 
-    ObDereferenceObject(DeviceObject);
+    ObDereferenceObject(ForwardContext->DeviceObject);
     ExFreePoolWithTag(ForwardContext, TAG_MUP);
     IoFreeIrp(Irp);
     IoCompleteRequest(OriginalIrp, IO_DISK_INCREMENT);
@@ -550,11 +553,12 @@ MupForwardIrp(PFILE_OBJECT FileObject,
     NewIrp->UserIosb = OriginalIrp->UserIosb;
 
     ForwardContext->Irp = OriginalIrp;
+    ForwardContext->DeviceObject = DeviceObject;
     ForwardContext->AddExFile = AddExFile;
     ForwardContext->RemoveExFile = RemoveExFile;
+    ObReferenceObject(DeviceObject);
     IoSetCompletionRoutine(NewIrp, MupForwardCompletion, ForwardContext, TRUE, TRUE, TRUE);
 
-    ObReferenceObject(DeviceObject);
     IoMarkIrpPending(OriginalIrp);
     IoCallDriver(DeviceObject, NewIrp);
 
