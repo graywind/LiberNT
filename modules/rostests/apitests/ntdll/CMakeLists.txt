@@ -111,6 +111,7 @@ list(APPEND SOURCE
     NtImpersonateAnonymousToken.c
     NtInitializeRegistry.c
     NtLoadUnloadKey.c
+    NtLoadKeyReadOnly.c
     NtMapViewOfSection.c
     NtMapViewOfSection_ImageZeroBits.c
     NtKeDispatcherTransitions.c
