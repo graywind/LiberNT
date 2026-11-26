@@ -349,6 +349,10 @@ SetupCopyFile(
         goto closesrc;
     }
 
+    FileBasic.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+    if (FileBasic.FileAttributes == 0)
+        FileBasic.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+
     if (FileStandard.EndOfFile.QuadPart != 0)
     {
         Status = NtCreateSection(&SourceFileSection,
