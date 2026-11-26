@@ -532,6 +532,8 @@ NTSTATUS NTAPI ExpQueryLogicalProcessorInformation(_Out_opt_ PVOID,
     _In_ ULONG, _Out_ PULONG);
 NTSTATUS NTAPI ExpQueryBootEnvironmentInformation(
     _Out_ PSYSTEM_BOOT_ENVIRONMENT_INFORMATION, _In_ ULONG);
+NTSTATUS NTAPI ExpQueryBootGraphicsInformation(
+    _Out_ PSYSTEM_BOOT_GRAPHICS_INFORMATION, _In_ ULONG, _In_ KPROCESSOR_MODE);
 NTSTATUS NTAPI ExpQueryRegistryQuota(
     _Out_ PSYSTEM_REGISTRY_QUOTA_INFORMATION, _In_ ULONG);
 NTSTATUS NTAPI ExpQueryCpuSetInformation(_In_opt_ PVOID, _In_ ULONG,
@@ -1310,6 +1312,45 @@ NtQuerySystemInformation(
                 ResultLength = sizeof(SYSTEM_BOOT_ENVIRONMENT_INFORMATION);
                 Status = ExpQueryBootEnvironmentInformation(SystemInformation,
                                                             Length);
+                break;
+            }
+
+            case SystemBootGraphicsInformation:
+            {
+                ResultLength = sizeof(SYSTEM_BOOT_GRAPHICS_INFORMATION);
+                Status = ExpQueryBootGraphicsInformation(SystemInformation,
+                                                         Length,
+                                                         PreviousMode);
+                break;
+            }
+
+            case SystemCodeIntegrityInformation:
+            {
+                ResultLength = sizeof(SYSTEM_CODEINTEGRITY_INFORMATION);
+                if (Length != ResultLength)
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    break;
+                }
+
+                /* TODO: kernel-mode code integrity is not enforced, so no option is reported */
+                ((PSYSTEM_CODEINTEGRITY_INFORMATION)SystemInformation)->CodeIntegrityOptions = 0;
+                Status = STATUS_SUCCESS;
+                break;
+            }
+
+            case SystemEdidInformation:
+            {
+                ResultLength = SYSTEM_EDID_INFORMATION_SIZE;
+                if (Length != ResultLength)
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    break;
+                }
+
+                /* TODO: the firmware's EDID block is not handed to the kernel, so the block is reported empty */
+                RtlZeroMemory(SystemInformation, SYSTEM_EDID_INFORMATION_SIZE);
+                Status = STATUS_SUCCESS;
                 break;
             }
 

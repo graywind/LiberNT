@@ -328,6 +328,16 @@ DxgkpDeleteSharedResourceObject(
     }
 }
 
+static NTSTATUS
+DxgkpInitializeSharedObjectTypes(VOID)
+{
+    NTSTATUS Status = DxgkSyncSharedObjectsInitialize();
+
+    if (!NT_SUCCESS(Status))
+        return Status;
+    return DxgkSwapChainInitialize();
+}
+
 NTSTATUS
 DxgkSharedObjectsInitialize(VOID)
 {
@@ -337,14 +347,13 @@ DxgkSharedObjectsInitialize(VOID)
     NTSTATUS Status;
 
     if (DxgkSharedResourceObjectType != NULL)
-        return DxgkSyncSharedObjectsInitialize();
+        return DxgkpInitializeSharedObjectTypes();
 
     GenericMapping.GenericRead = STANDARD_RIGHTS_READ;
     GenericMapping.GenericWrite = STANDARD_RIGHTS_WRITE |
                                   SHARED_ALLOCATION_WRITE;
     GenericMapping.GenericExecute = STANDARD_RIGHTS_EXECUTE;
-    GenericMapping.GenericAll = STANDARD_RIGHTS_ALL |
-                                SHARED_ALLOCATION_WRITE;
+    GenericMapping.GenericAll = SHARED_ALLOCATION_ALL_ACCESS;
 
     RtlZeroMemory(&TypeInitializer, sizeof(TypeInitializer));
     RtlInitUnicodeString(&TypeName, L"DxgkSharedResource");
@@ -367,7 +376,7 @@ DxgkSharedObjectsInitialize(VOID)
                                 &DxgkSharedResourceObjectType);
     if (!NT_SUCCESS(Status))
         return Status;
-    return DxgkSyncSharedObjectsInitialize();
+    return DxgkpInitializeSharedObjectTypes();
 }
 
 POBJECT_TYPE
@@ -678,6 +687,7 @@ DxgkpKmtIoctlMinimumConfiguredLevel(
         case IOCTL_D3DKMT_SHAREOBJECTS:
         case IOCTL_RXGK_RESOLVESHAREDRESOURCENTHANDLE:
         case IOCTL_RXGK_OUTPUTDUPL:
+        case IOCTL_RXGK_SWAPCHAIN:
         case IOCTL_DXGKRNL_GET_DOD_INIT_ENTRY:
             return DXGK_CAPS_CORE_LEVEL_WDDM_1_2;
 
@@ -3618,14 +3628,21 @@ DxgkpQueryRegistryInfo(
                 Overflow = TRUE;
                 RequiredBytes = DataBytes + sizeof(WCHAR);
             }
-            else if ((Repository = wcsstr(PathBuffer, L"FileRepository")) == NULL)
+            else if ((Repository = wcsstr(PathBuffer, L"FileRepository")) != NULL)
+            {
+                DxgkpTrimDriverStorePath(PathBuffer, Repository, &DataBytes);
+            }
+            else if ((Separator = wcsrchr(PathBuffer, L'\\')) == NULL)
             {
                 Status = STATUS_INVALID_PARAMETER;
             }
             else
             {
-                DxgkpTrimDriverStorePath(PathBuffer, Repository, &DataBytes);
+                /* FIXME: Windows 11 answer for a driver image outside the driver store is unmeasured; the image directory is returned */
+                *Separator = UNICODE_NULL;
+                DataBytes = (ULONG)((Separator - PathBuffer) * sizeof(WCHAR));
             }
+            ASSERT(!NT_SUCCESS(Status) || Overflow || DataBytes + sizeof(WCHAR) < Capacity);
         }
         Data = PathBuffer;
     }
@@ -9255,10 +9272,15 @@ DxgkCreateSynchronizationObject2(
     }
     if (pData->Info.Type != D3DDDI_MONITORED_FENCE && pData->Info.Type != D3DDDI_PERIODIC_MONITORED_FENCE)
     {
-        /* Legacy object types share only through the same global namespace;
-         * no other flag applies to them. */
+        /* Legacy object types share through the global namespace or an NT
+         * handle; no other flag applies to them. */
+        if (pData->Info.Flags.NtSecuritySharing && !pData->Info.Flags.Shared)
+            return STATUS_INVALID_PARAMETER;
+        if (pData->Info.Type == D3DDDI_CPU_NOTIFICATION && pData->Info.Flags.Shared)
+            return STATUS_INVALID_PARAMETER;
         RtlZeroMemory(&SupportedFlags, sizeof(SupportedFlags));
         SupportedFlags.Shared = 1;
+        SupportedFlags.NtSecuritySharing = 1;
 #if (REACTOS_WDDM_TARGET_LEVEL >= 3000) && \
     (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WDDM3_0)
         if (pData->Info.Type == D3DDDI_CPU_NOTIFICATION)
@@ -11619,7 +11641,7 @@ DxgkpDispatchPublicOperation(_Inout_ PRXGK_PUBLIC_OPERATION_PACKET Packet)
             ULONG Count = DxgkReferenceStartedAdapters(Adapters, RTL_NUMBER_OF(Adapters));
             ULONG Index;
 
-            /* FIXME: GDI CPU locks of the shared primary are not tracked; Windows 11 refuses the unlock of every source of a known adapter */
+            /* win32k answers the unlocks of sources this process notified a lock for; Windows 11 refuses the others of a known adapter */
             Status = STATUS_SUCCESS;
             for (Index = 0; Index < Count; ++Index)
             {
@@ -11639,8 +11661,8 @@ DxgkpDispatchPublicOperation(_Inout_ PRXGK_PUBLIC_OPERATION_PACKET Packet)
             if (Packet->Value0 == 0 || !NT_SUCCESS(DxgkpValidateDeviceHandleForIoctl(Packet->Handle0, NULL, &Device)))
                 return STATUS_INVALID_PARAMETER;
             DxgkDereferenceDevice(Device);
-            /* TODO: composition surfaces; until they exist no present is queued on one, so nothing is cancelled */
-            return STATUS_SUCCESS;
+            /* TODO: composition surfaces; until they exist no LUID names one, and Windows 11 refuses an unknown surface */
+            return STATUS_INVALID_PARAMETER;
         }
 
         case RxgkPublicOpenNtHandleFromName:
@@ -12633,9 +12655,9 @@ DxgkpDispatchBufferedIoctlWorker(
                 return STATUS_BUFFER_TOO_SMALL;
 
             Status = DxgkOpenResource((D3DKMT_OPENRESOURCE *)SystemBuffer);
-            if (NT_SUCCESS(Status) || Status == STATUS_BUFFER_TOO_SMALL)
+            if (NT_SUCCESS(Status))
                 KmtRequest->Information = sizeof(D3DKMT_OPENRESOURCE);
-            return Status == STATUS_BUFFER_TOO_SMALL ? STATUS_BUFFER_OVERFLOW : Status;
+            return Status;
         }
 
 #if (REACTOS_WDDM_TARGET_LEVEL >= 2000)
@@ -13985,6 +14007,25 @@ DxgkpDispatchBufferedIoctlWorker(
             Status = DxgkpShareObjects(Packet);
             if (NT_SUCCESS(Status))
                 KmtRequest->Information = RXGK_SHAREOBJECTS_PACKET_V3_SIZE;
+            return Status;
+        }
+
+        case IOCTL_RXGK_SWAPCHAIN:
+        {
+            if (!KmtRequest->Internal ||
+                KmtRequest->RequestorMode != KernelMode)
+            {
+                return STATUS_ACCESS_DENIED;
+            }
+            if (InputLength < RXGK_SWAPCHAIN_PACKET_V1_SIZE ||
+                OutputLength < RXGK_SWAPCHAIN_PACKET_V1_SIZE ||
+                SystemBuffer == NULL)
+            {
+                return STATUS_BUFFER_TOO_SMALL;
+            }
+            Status = DxgkSwapChainDispatch((PRXGK_SWAPCHAIN_PACKET)SystemBuffer);
+            if (NT_SUCCESS(Status))
+                KmtRequest->Information = RXGK_SWAPCHAIN_PACKET_V1_SIZE;
             return Status;
         }
 
@@ -15408,6 +15449,7 @@ DxgkpIsBufferedKmtIoctl(
         case IOCTL_D3DKMT_PUBLIC_OPERATION:
         case IOCTL_D3DKMT_SHAREOBJECTS:
         case IOCTL_RXGK_OUTPUTDUPL:
+        case IOCTL_RXGK_SWAPCHAIN:
         case IOCTL_RXGK_RESOLVESHAREDRESOURCENTHANDLE:
         case IOCTL_RXGK_VALIDATESHAREDRESOURCEOWNER:
         case IOCTL_RXGK_SETCOMPOSITORSOURCEOWNER:

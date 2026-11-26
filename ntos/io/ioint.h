@@ -163,8 +163,8 @@ NTSTATUS IopGetDeviceObjectPointer(_In_ PUNICODE_STRING ObjectName,
                                    _Out_ PFILE_OBJECT *FileObject,
                                    _Out_ PDEVICE_OBJECT *DeviceObject,
                                    _In_ ULONG AttachFlag);
-BOOLEAN IopCheckDeviceAndDriver(_In_ POPEN_PACKET OpenPacket,
-                                _In_ PDEVICE_OBJECT DeviceObject);
+NTSTATUS IopCheckDeviceAndDriver(_In_ POPEN_PACKET OpenPacket,
+                                 _In_ PDEVICE_OBJECT DeviceObject);
 NTSTATUS IopSetDeviceSecurityDescriptor(_In_ PDEVICE_OBJECT DeviceObject,
                                         _In_ PSECURITY_INFORMATION SecurityInformation,
                                         _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
@@ -230,6 +230,7 @@ NTSTATUS IopPerformSynchronousRequest(_In_ PDEVICE_OBJECT DeviceObject,
                                       _In_ BOOLEAN SynchIo,
                                       _In_ IOP_TRANSFER_TYPE TransferType);
 VOID IopFreeMiniPacket(_In_ PIOP_MINI_COMPLETION_PACKET Packet);
+BOOLEAN IopInsertPortEntry(_Inout_ PKQUEUE Port, _Inout_ PLIST_ENTRY Entry);
 
 /* iocancel.c */
 

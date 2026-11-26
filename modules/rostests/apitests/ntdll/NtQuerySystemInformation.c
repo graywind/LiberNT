@@ -148,8 +148,81 @@ TestShortModuleBuffer(VOID)
     RtlFreeHeap(RtlGetProcessHeap(), 0, Full);
 }
 
+static
+VOID
+TestBootGraphics(VOID)
+{
+    SYSTEM_BOOT_ENVIRONMENT_INFORMATION Environment;
+    SYSTEM_BOOT_GRAPHICS_INFORMATION Graphics;
+    UCHAR Large[sizeof(Graphics) + 8];
+    ULONG Length;
+    NTSTATUS Status;
+
+    RtlZeroMemory(&Environment, sizeof(Environment));
+    Status = NtQuerySystemInformation(SystemBootEnvironmentInformation, &Environment, sizeof(Environment), NULL);
+    if (!NT_SUCCESS(Status) || Environment.FirmwareType != FirmwareTypeUefi)
+    {
+        skip("boot graphics information is measured on UEFI firmware only\n");
+        return;
+    }
+
+    RtlFillMemory(&Graphics, sizeof(Graphics), 0xA5);
+    Length = 0;
+    Status = NtQuerySystemInformation(SystemBootGraphicsInformation, &Graphics, sizeof(Graphics), &Length);
+    ok_hex(Status, STATUS_SUCCESS);
+    ok_long(Length, sizeof(Graphics));
+    ok(Graphics.FrameBuffer.QuadPart == 0, "user mode was given the framebuffer address\n");
+    ok(Graphics.Width != 0 && Graphics.Height != 0, "no boot framebuffer size\n");
+    ok(Graphics.PixelStride >= Graphics.Width, "pixel stride %lu below the width %lu\n", Graphics.PixelStride, Graphics.Width);
+    ok_long(Graphics.Flags, 0);
+
+    RtlFillMemory(Large, sizeof(Large), 0xA5);
+    Length = 0;
+    Status = NtQuerySystemInformation(SystemBootGraphicsInformation, Large, sizeof(Large), &Length);
+    ok_hex(Status, STATUS_INFO_LENGTH_MISMATCH);
+    ok_long(Length, sizeof(Graphics));
+    ok(Large[0] == 0xA5, "a refused query wrote the buffer\n");
+}
+
+static
+void
+TestCodeIntegrityAndEdid(void)
+{
+    SYSTEM_CODEINTEGRITY_INFORMATION Integrity;
+    UCHAR Edid[SYSTEM_EDID_INFORMATION_SIZE + 16];
+    ULONG Length;
+    NTSTATUS Status;
+
+    Integrity.Length = sizeof(Integrity);
+    Integrity.CodeIntegrityOptions = 0xA5A5A5A5;
+    Length = 0;
+    Status = NtQuerySystemInformation(SystemCodeIntegrityInformation, &Integrity, sizeof(Integrity), &Length);
+    ok_hex(Status, STATUS_SUCCESS);
+    ok_long(Length, sizeof(Integrity));
+    ok(Integrity.CodeIntegrityOptions != 0xA5A5A5A5, "the code integrity options were not written\n");
+
+    /* Windows 11 takes exactly one 128-byte EDID block and names that size when given another */
+    RtlFillMemory(Edid, sizeof(Edid), 0xA5);
+    Length = 0;
+    Status = NtQuerySystemInformation(SystemEdidInformation, Edid, SYSTEM_EDID_INFORMATION_SIZE, &Length);
+    ok_hex(Status, STATUS_SUCCESS);
+    ok_long(Length, SYSTEM_EDID_INFORMATION_SIZE);
+
+    Length = 0;
+    Status = NtQuerySystemInformation(SystemEdidInformation, NULL, 0, &Length);
+    ok_hex(Status, STATUS_INFO_LENGTH_MISMATCH);
+    ok_long(Length, SYSTEM_EDID_INFORMATION_SIZE);
+
+    Length = 0;
+    Status = NtQuerySystemInformation(SystemEdidInformation, Edid, sizeof(Edid), &Length);
+    ok_hex(Status, STATUS_INFO_LENGTH_MISMATCH);
+    ok_long(Length, SYSTEM_EDID_INFORMATION_SIZE);
+}
+
 START_TEST(NtQuerySystemInformation)
 {
+    TestBootGraphics();
+    TestCodeIntegrityAndEdid();
     NTSTATUS Status;
     ULONG Length = 0;
     PRTL_PROCESS_MODULES Modules;

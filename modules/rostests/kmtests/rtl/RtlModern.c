@@ -636,10 +636,13 @@ TestModernKernelExports(VOID)
     ULONG ActiveConsoleId;
     ULONG TestActiveConsoleId;
     ULONG ProductType;
+    ULONG SystemProductType;
     ULONG ServiceSessionId;
+    KAPC_STATE ApcState;
     PVOID Context;
     BOOLEAN Member;
     BOOLEAN Result;
+    BOOLEAN SystemResult;
     NTSTATUS Status;
 
     trace("RTL shared state: suite=0x%lx console=%lu foreground=%I64u multisession=%u root=%S\n",
@@ -718,6 +721,14 @@ TestModernKernelExports(VOID)
     trace("RtlGetProductInfo returned %u, product 0x%lx\n", Result, ProductType);
     ok_eq_bool(Result, TRUE);
     ok(ProductType != PRODUCT_UNDEFINED, "RtlGetProductInfo returned PRODUCT_UNDEFINED\n");
+
+    KeStackAttachProcess((PRKPROCESS)PsInitialSystemProcess, &ApcState);
+    SystemProductType = PRODUCT_UNDEFINED;
+    SystemResult = RtlGetProductInfo(SharedUserData->NtMajorVersion, SharedUserData->NtMinorVersion, 0, 0, &SystemProductType);
+    KeUnstackDetachProcess(&ApcState);
+    trace("RtlGetProductInfo in the system process returned %u, product 0x%lx\n", SystemResult, SystemProductType);
+    ok_eq_bool(SystemResult, Result);
+    ok_eq_ulong(SystemProductType, ProductType);
 }
 
 START_TEST(ExWddmAvl)
@@ -726,8 +737,44 @@ START_TEST(ExWddmAvl)
     TestModernAvlChurn();
 }
 
+/* FIXME: the meaning of the first, second and fourth parameters is INFO_NEEDED */
+NTSTATUS
+NTAPI
+RtlRegisterFeatureUsageProvider(
+    _In_ PVOID Parameter1,
+    _In_opt_ PVOID Parameter2,
+    _Out_ PHANDLE ProviderHandle,
+    _In_ ULONG Parameter4);
+
+NTSTATUS
+NTAPI
+RtlUnregisterFeatureUsageProvider(
+    _In_ HANDLE ProviderHandle);
+
+static
+VOID
+NTAPI
+TestFeatureUsageCallback(VOID)
+{
+}
+
+static
+VOID
+TestFeatureUsageProvider(VOID)
+{
+    HANDLE Handle = NULL;
+    NTSTATUS Status;
+
+    Status = RtlRegisterFeatureUsageProvider((PVOID)TestFeatureUsageCallback, NULL, &Handle, 0x40);
+    ok_eq_hex(Status, STATUS_SUCCESS);
+    ok(Handle != NULL, "no provider handle was returned\n");
+    if (NT_SUCCESS(Status))
+        ok_eq_hex(RtlUnregisterFeatureUsageProvider(Handle), STATUS_SUCCESS);
+}
+
 START_TEST(ExWddmRtl)
 {
+    TestFeatureUsageProvider();
     TestModernBitmaps();
     TestIntegerAtoms();
     TestModernRtlState();

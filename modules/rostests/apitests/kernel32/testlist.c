@@ -50,6 +50,8 @@ extern void func_CreateAfterMissingName(void);
 extern void func_CreateDirectoryRoot(void);
 extern void func_CreateFileDirectory(void);
 extern void func_CreateProcess(void);
+extern void func_ProcessImageRename(void);
+extern void func_PipeRelisten(void);
 extern void func_DefaultActCtx(void);
 extern void func_DeleteFileCase(void);
 extern void func_DeleteFileOpenHandle(void);
@@ -156,8 +158,8 @@ extern void func_ProcessPreferredUILanguages(void);
 extern void func_PseudoConsoleCtrlC(void);
 extern void func_PseudoConsoleVtInput(void);
 extern void func_PssSnapshot(void);
-extern void func_ResourceUILanguage(void);
 extern void func_PssWalk(void);
+extern void func_ResourceUILanguage(void);
 extern void func_OpenFileByIdRename(void);
 extern void func_LoaderLock(void);
 extern void func_PagingFileOpen(void);
@@ -289,6 +291,8 @@ const struct test winetest_testlist[] =
     { "CreateDirectoryRoot",         func_CreateDirectoryRoot },
     { "CreateFileDirectory",         func_CreateFileDirectory },
     { "CreateProcess",               func_CreateProcess },
+    { "ProcessImageRename",          func_ProcessImageRename },
+    { "PipeRelisten",                func_PipeRelisten },
     { "DefaultActCtx",               func_DefaultActCtx },
     { "DeleteFileCase",              func_DeleteFileCase },
     { "DeleteFileOpenHandle",        func_DeleteFileOpenHandle },
@@ -395,9 +399,9 @@ const struct test winetest_testlist[] =
     { "PseudoConsoleCtrlC",          func_PseudoConsoleCtrlC },
     { "PseudoConsoleVtInput",        func_PseudoConsoleVtInput },
     { "PssSnapshot",                 func_PssSnapshot },
+    { "PssWalk", func_PssWalk },
     { "ResourceUILanguage",          func_ResourceUILanguage },
     { "OpenFileByIdRename",          func_OpenFileByIdRename },
-    { "PssWalk", func_PssWalk },
     { "LoaderLock",                  func_LoaderLock },
     { "PagingFileOpen",              func_PagingFileOpen },
     { "PrivMoveFileIdentityW",       func_PrivMoveFileIdentityW },

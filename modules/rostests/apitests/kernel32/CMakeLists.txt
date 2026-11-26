@@ -51,6 +51,8 @@ list(APPEND SOURCE
     CreateDirectoryRoot.c
     CreateFileDirectory.c
     CreateProcess.c
+    ProcessImageRename.c
+    PipeRelisten.c
     DefaultActCtx.c
     DeleteFileCase.c
     DeleteFileOpenHandle.c
@@ -164,8 +166,8 @@ list(APPEND SOURCE
     PseudoConsoleCtrlC.c
     PseudoConsoleVtInput.c
     PssSnapshot.c
-    PrivMoveFileIdentityW.c
     PssWalk.c
+    PrivMoveFileIdentityW.c
     QueueUserAPC.c
     QueryProcessCycleTime.c
     ReadFile.c
