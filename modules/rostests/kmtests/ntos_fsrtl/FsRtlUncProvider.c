@@ -11,12 +11,307 @@
 #define FILE_NAME L"\\??\\UNC\\KmtServer\\Share\\KmtFile"
 #define ACCEPTED_PREFIX L"\\KmtServer\\Share"
 
+#define PROVIDER_SHORT_NAME L"KmtUncProvider"
+#define PROVIDER_KEY L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\KmtUncProvider"
+#define NETWORK_PROVIDER_KEY PROVIDER_KEY L"\\NetworkProvider"
+#define PROVIDER_ORDER_KEY L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\NetworkProvider\\Order"
+#define KMT_UNC_TAG 'cUnK'
+
 static BOOLEAN CreateSeen;
+static ULONG QueryCount;
+static ULONG QueryAccepted;
 static PDEVICE_OBJECT ProviderDevice;
 static PDRIVER_DISPATCH SavedCreate;
 static PDRIVER_DISPATCH SavedDeviceControl;
 static PDRIVER_DISPATCH SavedCleanup;
 static PDRIVER_DISPATCH SavedClose;
+static PWSTR SavedProviderOrder;
+static ULONG SavedProviderOrderLength;
+
+static
+NTSTATUS
+SetStringValue(
+    _In_ HANDLE Key,
+    _In_ PCWSTR Name,
+    _In_ PCWSTR Data)
+{
+    UNICODE_STRING Value;
+
+    RtlInitUnicodeString(&Value, Name);
+    return ZwSetValueKey(Key,
+                         &Value,
+                         0,
+                         REG_SZ,
+                         (PVOID)Data,
+                         (ULONG)((wcslen(Data) + 1) * sizeof(WCHAR)));
+}
+
+static
+NTSTATUS
+CreateProviderRegistration(VOID)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING Name;
+    HANDLE ServiceKey;
+    HANDLE NetworkKey;
+    NTSTATUS Status;
+
+    RtlInitUnicodeString(&Name, PROVIDER_KEY);
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &Name,
+                               OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+                               NULL,
+                               NULL);
+    Status = ZwCreateKey(&ServiceKey,
+                         KEY_ALL_ACCESS,
+                         &ObjectAttributes,
+                         0,
+                         NULL,
+                         REG_OPTION_NON_VOLATILE,
+                         NULL);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    Status = SetStringValue(ServiceKey, L"Group", L"NetworkProvider");
+    if (!NT_SUCCESS(Status))
+    {
+        ZwClose(ServiceKey);
+        return Status;
+    }
+
+    RtlInitUnicodeString(&Name, L"NetworkProvider");
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &Name,
+                               OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+                               ServiceKey,
+                               NULL);
+    Status = ZwCreateKey(&NetworkKey,
+                         KEY_ALL_ACCESS,
+                         &ObjectAttributes,
+                         0,
+                         NULL,
+                         REG_OPTION_NON_VOLATILE,
+                         NULL);
+    if (NT_SUCCESS(Status))
+    {
+        Status = SetStringValue(NetworkKey, L"DeviceName", PROVIDER_NAME);
+        ZwClose(NetworkKey);
+    }
+
+    ZwClose(ServiceKey);
+    return Status;
+}
+
+static
+BOOLEAN
+OrderNamesProvider(
+    _In_z_ PCWSTR Order)
+{
+    SIZE_T Length;
+
+    for (;;)
+    {
+        Length = 0;
+        while ((Order[Length] != L'\0') && (Order[Length] != L','))
+        {
+            Length++;
+        }
+
+        if ((Length == sizeof(PROVIDER_SHORT_NAME) / sizeof(WCHAR) - 1) &&
+            RtlEqualMemory(Order, PROVIDER_SHORT_NAME, Length * sizeof(WCHAR)))
+        {
+            return TRUE;
+        }
+
+        if (Order[Length] == L'\0')
+        {
+            return FALSE;
+        }
+
+        Order += Length + 1;
+    }
+}
+
+static
+NTSTATUS
+AddProviderToOrder(VOID)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING Name;
+    UNICODE_STRING Value;
+    PKEY_VALUE_PARTIAL_INFORMATION Info;
+    PWSTR Order;
+    PWSTR NewOrder;
+    SIZE_T OrderLength;
+    SIZE_T ProviderLength;
+    ULONG Length;
+    HANDLE Key;
+    NTSTATUS Status;
+
+    RtlInitUnicodeString(&Name, PROVIDER_ORDER_KEY);
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &Name,
+                               OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+                               NULL,
+                               NULL);
+    Status = ZwOpenKey(&Key, KEY_QUERY_VALUE | KEY_SET_VALUE, &ObjectAttributes);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    RtlInitUnicodeString(&Value, L"ProviderOrder");
+    Status = ZwQueryValueKey(Key, &Value, KeyValuePartialInformation, NULL, 0, &Length);
+    if (Status != STATUS_BUFFER_TOO_SMALL)
+    {
+        ZwClose(Key);
+        return NT_SUCCESS(Status) ? STATUS_UNSUCCESSFUL : Status;
+    }
+
+    Info = ExAllocatePoolWithTag(PagedPool, Length, KMT_UNC_TAG);
+    if (Info == NULL)
+    {
+        ZwClose(Key);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    Status = ZwQueryValueKey(Key, &Value, KeyValuePartialInformation, Info, Length, &Length);
+    if (!NT_SUCCESS(Status) || (Info->Type != REG_SZ))
+    {
+        if (NT_SUCCESS(Status))
+        {
+            Status = STATUS_OBJECT_TYPE_MISMATCH;
+        }
+        ExFreePoolWithTag(Info, KMT_UNC_TAG);
+        ZwClose(Key);
+        return Status;
+    }
+
+    Order = ExAllocatePoolWithTag(PagedPool,
+                                  Info->DataLength + sizeof(WCHAR),
+                                  KMT_UNC_TAG);
+    if (Order == NULL)
+    {
+        ExFreePoolWithTag(Info, KMT_UNC_TAG);
+        ZwClose(Key);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    RtlCopyMemory(Order, Info->Data, Info->DataLength);
+    Order[Info->DataLength / sizeof(WCHAR)] = UNICODE_NULL;
+    SavedProviderOrderLength = Info->DataLength;
+    ExFreePoolWithTag(Info, KMT_UNC_TAG);
+
+    if (!OrderNamesProvider(Order))
+    {
+        OrderLength = wcslen(Order);
+        ProviderLength = sizeof(PROVIDER_SHORT_NAME) / sizeof(WCHAR) - 1;
+        NewOrder = ExAllocatePoolWithTag(PagedPool,
+                                         (OrderLength + ProviderLength + 2) * sizeof(WCHAR),
+                                         KMT_UNC_TAG);
+        if (NewOrder == NULL)
+        {
+            ExFreePoolWithTag(Order, KMT_UNC_TAG);
+            ZwClose(Key);
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+
+        if (OrderLength == 0)
+        {
+            RtlCopyMemory(NewOrder,
+                          PROVIDER_SHORT_NAME,
+                          (ProviderLength + 1) * sizeof(WCHAR));
+            OrderLength = ProviderLength + 1;
+        }
+        else
+        {
+            RtlCopyMemory(NewOrder, Order, OrderLength * sizeof(WCHAR));
+            NewOrder[OrderLength] = L',';
+            RtlCopyMemory(NewOrder + OrderLength + 1,
+                          PROVIDER_SHORT_NAME,
+                          (ProviderLength + 1) * sizeof(WCHAR));
+            OrderLength += ProviderLength + 2;
+        }
+
+        Status = ZwSetValueKey(Key,
+                               &Value,
+                               0,
+                               REG_SZ,
+                               NewOrder,
+                               (ULONG)(OrderLength * sizeof(WCHAR)));
+        ExFreePoolWithTag(NewOrder, KMT_UNC_TAG);
+        if (!NT_SUCCESS(Status))
+        {
+            ExFreePoolWithTag(Order, KMT_UNC_TAG);
+            ZwClose(Key);
+            return Status;
+        }
+    }
+
+    SavedProviderOrder = Order;
+    ZwClose(Key);
+    return STATUS_SUCCESS;
+}
+
+static
+VOID
+RemoveProviderRegistration(VOID)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING Name;
+    UNICODE_STRING Value;
+    HANDLE Key;
+
+    if (SavedProviderOrder != NULL)
+    {
+        RtlInitUnicodeString(&Name, PROVIDER_ORDER_KEY);
+        InitializeObjectAttributes(&ObjectAttributes,
+                                   &Name,
+                                   OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+                                   NULL,
+                                   NULL);
+        if (NT_SUCCESS(ZwOpenKey(&Key, KEY_SET_VALUE, &ObjectAttributes)))
+        {
+            RtlInitUnicodeString(&Value, L"ProviderOrder");
+            ZwSetValueKey(Key,
+                          &Value,
+                          0,
+                          REG_SZ,
+                          SavedProviderOrder,
+                          SavedProviderOrderLength);
+            ZwClose(Key);
+        }
+
+        ExFreePoolWithTag(SavedProviderOrder, KMT_UNC_TAG);
+        SavedProviderOrder = NULL;
+    }
+
+    RtlInitUnicodeString(&Name, NETWORK_PROVIDER_KEY);
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &Name,
+                               OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+                               NULL,
+                               NULL);
+    if (NT_SUCCESS(ZwOpenKey(&Key, KEY_ALL_ACCESS, &ObjectAttributes)))
+    {
+        ZwDeleteKey(Key);
+        ZwClose(Key);
+    }
+
+    RtlInitUnicodeString(&Name, PROVIDER_KEY);
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &Name,
+                               OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+                               NULL,
+                               NULL);
+    if (NT_SUCCESS(ZwOpenKey(&Key, KEY_ALL_ACCESS, &ObjectAttributes)))
+    {
+        ZwDeleteKey(Key);
+        ZwClose(Key);
+    }
+}
 
 static
 ULONG
@@ -104,6 +399,7 @@ DeviceControlHandler(
         PQUERY_PATH_REQUEST_EX Request =
             IoStackLocation->Parameters.DeviceIoControl.Type3InputBuffer;
 
+        QueryCount++;
         if (Request != NULL)
         {
             Path = Request->PathName;
@@ -114,6 +410,7 @@ DeviceControlHandler(
         PQUERY_PATH_REQUEST Request =
             IoStackLocation->Parameters.DeviceIoControl.Type3InputBuffer;
 
+        QueryCount++;
         if (Request != NULL)
         {
             Path.Buffer = Request->FilePathName;
@@ -129,6 +426,7 @@ DeviceControlHandler(
     if (LengthAccepted != 0)
     {
         Response->LengthAccepted = LengthAccepted;
+        QueryAccepted++;
         Status = STATUS_SUCCESS;
     }
 
@@ -176,17 +474,20 @@ START_TEST(FsRtlUncProviderEx)
     NTSTATUS Status;
 
     CreateSeen = FALSE;
+    QueryCount = 0;
+    QueryAccepted = 0;
 
     Status = IoCreateDevice(KmtDriverObject,
                             0,
                             NULL,
                             FILE_DEVICE_NETWORK_FILE_SYSTEM,
-                            FILE_DEVICE_SECURE_OPEN,
+                            FILE_REMOTE_DEVICE,
                             FALSE,
                             &Device);
     ok(NT_SUCCESS(Status), "IoCreateDevice failed (0x%lx)\n", Status);
     if (!NT_SUCCESS(Status)) return;
 
+    Device->Flags &= ~DO_DEVICE_INITIALIZING;
     ProviderDevice = Device;
     SavedCreate = KmtDriverObject->MajorFunction[IRP_MJ_CREATE];
     SavedDeviceControl = KmtDriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL];
@@ -196,6 +497,14 @@ START_TEST(FsRtlUncProviderEx)
     KmtDriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DeviceControlHandler;
     KmtDriverObject->MajorFunction[IRP_MJ_CLEANUP] = CloseHandler;
     KmtDriverObject->MajorFunction[IRP_MJ_CLOSE] = CloseHandler;
+
+    Status = CreateProviderRegistration();
+    ok(NT_SUCCESS(Status), "Creating the provider registration failed (0x%lx)\n", Status);
+    if (NT_SUCCESS(Status))
+    {
+        Status = AddProviderToOrder();
+        ok(NT_SUCCESS(Status), "Adding the provider to the order failed (0x%lx)\n", Status);
+    }
 
     Status = FsRtlRegisterUncProviderEx(&MupHandle, &Name, Device, 0);
     ok(NT_SUCCESS(Status), "FsRtlRegisterUncProviderEx failed (0x%lx)\n", Status);
@@ -222,7 +531,9 @@ START_TEST(FsRtlUncProviderEx)
                           NULL,
                           IO_NO_PARAMETER_CHECKING);
     ok(NT_SUCCESS(Status), "Opening %S failed (0x%lx)\n", FILE_NAME, Status);
-    ok(CreateSeen, "The provider did not receive the create\n");
+    ok(CreateSeen,
+       "The provider did not receive the create (queries %lu, accepted %lu)\n",
+       QueryCount, QueryAccepted);
 
     if (NT_SUCCESS(Status))
     {
@@ -239,5 +550,6 @@ Cleanup:
     KmtDriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = SavedDeviceControl;
     KmtDriverObject->MajorFunction[IRP_MJ_CLEANUP] = SavedCleanup;
     KmtDriverObject->MajorFunction[IRP_MJ_CLOSE] = SavedClose;
+    RemoveProviderRegistration();
     IoDeleteDevice(Device);
 }
