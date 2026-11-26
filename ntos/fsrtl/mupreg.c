@@ -49,12 +49,12 @@ FsRtlpRegisterProviderWithMUP(
     _In_opt_ PVOID DeviceObject,
     _In_ BOOLEAN MailslotsSupported)
 {
-    PMUP_PROVIDER_REGISTRATION_INFO Registration;
+    PMUP_PROVIDER_REGISTRATION_INFO_PRIVATE Registration;
     IO_STATUS_BLOCK IoStatus;
     ULONG Length;
     NTSTATUS Status;
 
-    Length = sizeof(MUP_PROVIDER_REGISTRATION_INFO) +
+    Length = sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE) +
              RedirectorDeviceName->Length;
 
     Registration = ExAllocatePoolWithTag(PagedPool, Length, FSRTL_MUP_TAG);
@@ -62,14 +62,14 @@ FsRtlpRegisterProviderWithMUP(
 
     RtlZeroMemory(Registration, Length);
 
-    Registration->RedirectorDeviceNameOffset =
-        sizeof(MUP_PROVIDER_REGISTRATION_INFO);
-    Registration->RedirectorDeviceNameLength = RedirectorDeviceName->Length;
+    Registration->Public.RedirectorDeviceNameOffset =
+        sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE);
+    Registration->Public.RedirectorDeviceNameLength = RedirectorDeviceName->Length;
     Registration->DeviceObject = DeviceObject;
-    Registration->MailslotsSupported = MailslotsSupported;
+    Registration->Public.MailslotsSupported = MailslotsSupported;
 
     RtlCopyMemory((PUCHAR)Registration +
-                      sizeof(MUP_PROVIDER_REGISTRATION_INFO),
+                      sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE),
                   RedirectorDeviceName->Buffer,
                   RedirectorDeviceName->Length);
 
