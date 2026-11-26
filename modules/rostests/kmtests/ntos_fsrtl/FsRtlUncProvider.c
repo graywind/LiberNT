@@ -8,7 +8,7 @@
 #include <kmt_test.h>
 
 #define PROVIDER_NAME L"\\Device\\KmtUncProvider"
-#define FILE_NAME L"\\Device\\Mup\\KmtServer\\Share\\KmtFile"
+#define FILE_NAME L"\\??\\UNC\\KmtServer\\Share\\KmtFile"
 #define ACCEPTED_PREFIX L"\\KmtServer\\Share"
 
 static BOOLEAN CreateSeen;
@@ -172,6 +172,7 @@ START_TEST(FsRtlUncProviderEx)
     PDEVICE_OBJECT Device = NULL;
     HANDLE MupHandle = INVALID_HANDLE_VALUE;
     HANDLE FileHandle = INVALID_HANDLE_VALUE;
+    BOOLEAN Registered = FALSE;
     NTSTATUS Status;
 
     CreateSeen = FALSE;
@@ -199,6 +200,7 @@ START_TEST(FsRtlUncProviderEx)
     Status = FsRtlRegisterUncProviderEx(&MupHandle, &Name, Device, 0);
     ok(NT_SUCCESS(Status), "FsRtlRegisterUncProviderEx failed (0x%lx)\n", Status);
     if (!NT_SUCCESS(Status)) goto Cleanup;
+    Registered = TRUE;
 
     InitializeObjectAttributes(&ObjectAttributes,
                                &FileName,
@@ -227,9 +229,12 @@ START_TEST(FsRtlUncProviderEx)
         ZwClose(FileHandle);
     }
 
-    FsRtlDeregisterUncProvider(MupHandle);
-
 Cleanup:
+    if (Registered)
+    {
+        FsRtlDeregisterUncProvider(MupHandle);
+    }
+
     KmtDriverObject->MajorFunction[IRP_MJ_CREATE] = SavedCreate;
     KmtDriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = SavedDeviceControl;
     KmtDriverObject->MajorFunction[IRP_MJ_CLEANUP] = SavedCleanup;
