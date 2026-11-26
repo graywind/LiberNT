@@ -1567,7 +1567,7 @@ CmpLoadHiveThread(
                                  &Allocate,
                                  CM_CHECK_REGISTRY_VALIDATE_HIVE |
                                  CM_CHECK_REGISTRY_PURGE_VOLATILES,
-                                 TRUE);
+                                 FALSE);
     if (NT_SUCCESS(Status))
     {
         CmHive->Flags |= ListEntry->CmHiveFlags;

@@ -530,11 +530,6 @@ CmpDereferenceHive(
     CmpDestroyHive(Hive);
 }
 
-/*
- * Loads a hive whose file cannot be opened for writing: the file is read into
- * memory and the hive is initialized from that copy, with no file handle, so
- * nothing is ever written back. Windows loads read-only hives the same way.
- */
 static
 NTSTATUS
 CmpInitHiveFromReadOnlyFile(
@@ -574,7 +569,7 @@ CmpInitHiveFromReadOnlyFile(
 
     Status = ZwQueryInformationFile(File, &IoStatus, &Basic, sizeof(Basic), FileBasicInformation);
     if (!NT_SUCCESS(Status)) goto CloseFile;
-    /* Windows 11 loads a read-only hive that also carries ARCHIVE, and refuses one without it */
+    /* Special case: Windows 11 refuses a read-only hive without ARCHIVE. */
     if ((Basic.FileAttributes & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_ARCHIVE)) !=
         (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_ARCHIVE))
     {
@@ -584,7 +579,8 @@ CmpInitHiveFromReadOnlyFile(
 
     Status = ZwQueryInformationFile(File, &IoStatus, &Standard, sizeof(Standard), FileStandardInformation);
     if (!NT_SUCCESS(Status)) goto CloseFile;
-    if (Standard.EndOfFile.QuadPart == 0 || Standard.EndOfFile.QuadPart > HCELL_TYPE_MASK)
+    if (Standard.EndOfFile.QuadPart < (LONGLONG)sizeof(HBASE_BLOCK) ||
+        Standard.EndOfFile.QuadPart > HCELL_TYPE_MASK)
     {
         Status = STATUS_REGISTRY_CORRUPT;
         goto CloseFile;
@@ -602,6 +598,12 @@ CmpInitHiveFromReadOnlyFile(
     ZwClose(File);
     if (NT_SUCCESS(Status) && IoStatus.Information != Standard.EndOfFile.QuadPart)
         Status = STATUS_END_OF_FILE;
+    if (NT_SUCCESS(Status) &&
+        ((PHBASE_BLOCK)Buffer)->Length >
+        (ULONG)Standard.EndOfFile.QuadPart - HBLOCK_SIZE)
+    {
+        Status = STATUS_REGISTRY_CORRUPT;
+    }
 
     if (NT_SUCCESS(Status))
     {
@@ -612,6 +614,7 @@ CmpInitHiveFromReadOnlyFile(
     ExFreePoolWithTag(Buffer, TAG_CM);
     if (!NT_SUCCESS(Status)) return Status;
 
+    CmHive->Hive.HiveFlags |= HIVE_NOLAZYFLUSH;
     *Hive = CmHive;
     return STATUS_SUCCESS;
 
