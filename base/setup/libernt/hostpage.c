@@ -83,6 +83,7 @@ typedef struct _HOST_SETUP
     BOOL Auto;
     BOOL AutoUpgrade;
     BOOL NoReboot;
+    BOOL SelfTest;
     ULONGLONG AutoSizeMb;
     WCHAR Unattend[MAX_PATH];
 } HOST_SETUP;
@@ -1465,6 +1466,11 @@ ParseCommandLine(
             Host.NoReboot = TRUE;
             continue;
         }
+        if (_wcsicmp(Option, L"/selftest") == 0)
+        {
+            Host.SelfTest = TRUE;
+            continue;
+        }
 
         Text = NextArgument(Text, Value, ARRAYSIZE(Value));
         if (_wcsicmp(Option, L"/auto") == 0 && (_wcsicmp(Value, L"install") == 0 || _wcsicmp(Value, L"upgrade") == 0))
@@ -1537,6 +1543,40 @@ RunAutomatic(
     return PrepareInstall(pSetupData);
 }
 
+static DWORD
+RunHostSelfTest(VOID)
+{
+    WCHAR Temp[MAX_PATH], Base[MAX_PATH], Root[MAX_PATH], Path[MAX_PATH], File[MAX_PATH];
+    HANDLE Handle = INVALID_HANDLE_VALUE;
+    BOOLEAN Ok;
+
+    Temp[0] = Base[0] = Root[0] = Path[0] = File[0] = UNICODE_NULL;
+    Ok = GetTempPathW(ARRAYSIZE(Temp), Temp) != 0 &&
+         SUCCEEDED(StringCchPrintfW(Base, ARRAYSIZE(Base), L"%slogtest-%lu-%lu",
+                                    Temp, GetCurrentProcessId(), GetTickCount())) &&
+         SUCCEEDED(StringCchPrintfW(Root, ARRAYSIZE(Root), L"%s%s", Base, HOST_LOG_ROOT)) &&
+         CreateDirectoryW(Base, NULL);
+    if (Ok)
+        Ok = HostEnsureLogDirectory(Base, Path, ARRAYSIZE(Path));
+    if (Ok)
+        Ok = SUCCEEDED(StringCchPrintfW(File, ARRAYSIZE(File), L"%s%s", Path, HOST_LOG_FILE));
+    if (Ok)
+    {
+        Handle = CreateFileW(File, FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS,
+                             FILE_ATTRIBUTE_NORMAL, NULL);
+        Ok = Handle != INVALID_HANDLE_VALUE;
+    }
+    HostLog(L"SETUPTEST %s log.dir \\Logs\\LiberNT under %s: file %s",
+            Ok ? L"PASS" : L"FAIL", Base, File);
+    if (Handle != INVALID_HANDLE_VALUE)
+        CloseHandle(Handle);
+    DeleteFileW(File);
+    RemoveDirectoryW(Path);
+    RemoveDirectoryW(Root);
+    RemoveDirectoryW(Base);
+    return Ok ? ERROR_SUCCESS : ERROR_GEN_FAILURE;
+}
+
 INT
 RunHostSetup(
     _Inout_ PSETUPDATA pSetupData,
@@ -1553,6 +1593,10 @@ RunHostSetup(
     if (!ParseCommandLine(CommandLine))
     {
         Host.Error = ERROR_INVALID_PARAMETER;
+    }
+    else if (Host.SelfTest)
+    {
+        Host.Error = RunHostSelfTest();
     }
     else if (!CheckComputer(pSetupData))
     {
