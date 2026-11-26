@@ -25,6 +25,7 @@ extern void func_d3d10_bindings(void);
 extern void func_d3d10_create(void);
 extern void func_copy_regions(void);
 extern void func_adapter_outputs(void);
+extern void func_render_only(void);
 extern void func_counters(void);
 extern void func_query_order(void);
 extern void func_composition(void);
@@ -43,6 +44,8 @@ extern void func_volume_readback(void);
 extern void func_viewport_levels(void);
 extern void func_wait_vblank(void);
 extern void func_sampler_default(void);
+extern void func_umd_version(void);
+extern void func_software_adapter(void);
 
 const struct test winetest_testlist[] =
 {
@@ -70,6 +73,7 @@ const struct test winetest_testlist[] =
     { "d3d10_create", func_d3d10_create },
     { "copy_regions", func_copy_regions },
     { "adapter_outputs", func_adapter_outputs },
+    { "render_only", func_render_only },
     { "counters", func_counters },
     { "query_order", func_query_order },
     { "composition", func_composition },
@@ -88,5 +92,7 @@ const struct test winetest_testlist[] =
     { "viewport_levels", func_viewport_levels },
     { "wait_vblank", func_wait_vblank },
     { "sampler_default", func_sampler_default },
+    { "umd_version", func_umd_version },
+    { "software_adapter", func_software_adapter },
     { 0, 0 }
 };

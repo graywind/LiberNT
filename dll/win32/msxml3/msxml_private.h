@@ -51,6 +51,9 @@ enum error_codes
     E_SAX_BADNAMECHAR = 0xc00ce505,
     E_SAX_BADCHARINSTRING = 0xc00ce506,
     E_SAX_XMLDECLSYNTAX = 0xc00ce507,
+#ifdef __REACTOS__
+    E_SAX_BADCHARDATA = 0xc00ce508,
+#endif
     E_SAX_MISSINGWHITESPACE = 0xc00ce509,
     E_SAX_EXPECTINGTAGEND = 0xc00ce50a,
     E_SAX_BADCHARINDTD = 0xc00ce50b,
@@ -296,6 +299,11 @@ extern bool domnode_is_namespace_declaration(const struct domnode *node);
 extern HRESULT node_clone_domnode(struct domnode *, bool, struct domnode **);
 extern HRESULT parse_stream(ISequentialStream *stream, bool utf16, const struct domdoc_properties *properties,
         struct domnode **tree);
+#ifdef __REACTOS__
+extern HRESULT parse_stream_ex(ISequentialStream *stream, bool utf16, const struct domdoc_properties *properties,
+        struct domnode **tree, int *line, int *column);
+extern void saxreader_get_error_position(ISAXXMLReader *reader, int *line, int *column);
+#endif
 #ifdef __REACTOS__
 extern bool domnode_is_sax_building(const struct domnode *node);
 #endif

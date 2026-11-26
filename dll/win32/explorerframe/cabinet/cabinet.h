@@ -141,6 +141,8 @@ private:
     void LoadText(UINT id, LPWSTR buffer, int length);
     void CreateBands();
     void CreateNavigationPane();
+    void LoadNavigationRoots();
+    void ReloadNavigationRoots();
     void SetNavigationBackground(COLORREF color);
     void SyncNavigationPane();
     void WatchFolder();
@@ -216,7 +218,7 @@ private:
     IShellItem *m_NavigationRoots[8];
     UINT m_NavigationRootCount;
     UINT m_PinnedCount;
-    HICON m_PinIcon;
+    BOOL m_QuickAccess;
     HWND m_FocusSave;
     RECT m_PanelRect;
     RECT m_ViewRect;
