@@ -42,7 +42,13 @@ CopyHive(
         return FALSE;
     }
 
-    return SetFileAttributesW(Destination, Attributes) != 0;
+    if (!SetFileAttributesW(Destination, Attributes))
+    {
+        ok(0, "SetFileAttributesW(%ls) failed with %lu\n", Destination, GetLastError());
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 START_TEST(NtLoadKeyReadOnly)
@@ -61,7 +67,6 @@ START_TEST(NtLoadKeyReadOnly)
     }
     RtlAdjustPrivilege(SE_BACKUP_PRIVILEGE, TRUE, FALSE, &BackupEnabled);
 
-    /* BCD-Template is the hive every install of both systems ships */
     GetWindowsDirectoryW(WindowsDir, ARRAYSIZE(WindowsDir));
     StringCchPrintfW(Source, ARRAYSIZE(Source), L"%ls\\System32\\config\\BCD-Template", WindowsDir);
 
@@ -73,14 +78,12 @@ START_TEST(NtLoadKeyReadOnly)
     DeleteFileW(HiveArchive);
     DeleteFileW(HivePlain);
 
-    /* What attrib +r makes: the hive loads */
     if (CopyHive(Source, HiveArchive, FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_READONLY))
     {
         Status = LoadHive(HiveArchive, L"\\Registry\\Machine\\TestHiveReadOnly");
         ok(NT_SUCCESS(Status), "NtLoadKey on an ARCHIVE|READONLY hive failed with 0x%08lx\n", Status);
     }
 
-    /* Windows 11 refuses it without ARCHIVE */
     if (CopyHive(Source, HivePlain, FILE_ATTRIBUTE_READONLY))
     {
         Status = LoadHive(HivePlain, L"\\Registry\\Machine\\TestHiveReadOnlyNotArchive");
