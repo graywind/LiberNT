@@ -20,6 +20,10 @@
 static BOOLEAN CreateSeen;
 static ULONG QueryCount;
 static ULONG QueryAccepted;
+static ULONG LastQueryIoControl;
+static ULONG LastQueryLength;
+static NTSTATUS LastQueryStatus;
+static WCHAR LastQueryPath[128];
 static PDEVICE_OBJECT ProviderDevice;
 static PDRIVER_DISPATCH SavedCreate;
 static PDRIVER_DISPATCH SavedDeviceControl;
@@ -318,8 +322,10 @@ ULONG
 AcceptedPrefixLength(
     _In_ PUNICODE_STRING Path)
 {
-    UNICODE_STRING Prefix = RTL_CONSTANT_STRING(ACCEPTED_PREFIX);
+    UNICODE_STRING OneSlash = RTL_CONSTANT_STRING(ACCEPTED_PREFIX);
+    UNICODE_STRING TwoSlashes = RTL_CONSTANT_STRING(L"\\\\KmtServer\\Share");
     UNICODE_STRING NoSlash = RTL_CONSTANT_STRING(L"KmtServer\\Share");
+    UNICODE_STRING Prefix;
 
     if ((Path->Length == 0) || (Path->Buffer == NULL))
     {
@@ -329,6 +335,14 @@ AcceptedPrefixLength(
     if (Path->Buffer[0] != L'\\')
     {
         Prefix = NoSlash;
+    }
+    else if ((Path->Length >= 2 * sizeof(WCHAR)) && (Path->Buffer[1] == L'\\'))
+    {
+        Prefix = TwoSlashes;
+    }
+    else
+    {
+        Prefix = OneSlash;
     }
 
     if ((Path->Length < Prefix.Length) ||
@@ -344,6 +358,32 @@ AcceptedPrefixLength(
     }
 
     return Prefix.Length;
+}
+
+static
+VOID
+RecordQueryPath(
+    _In_ PUNICODE_STRING Path)
+{
+    ULONG Chars;
+
+    LastQueryPath[0] = UNICODE_NULL;
+    LastQueryLength = 0;
+
+    if ((Path->Buffer == NULL) || (Path->Length == 0))
+    {
+        return;
+    }
+
+    Chars = Path->Length / sizeof(WCHAR);
+    if (Chars > (sizeof(LastQueryPath) / sizeof(WCHAR)) - 1)
+    {
+        Chars = (sizeof(LastQueryPath) / sizeof(WCHAR)) - 1;
+    }
+
+    RtlCopyMemory(LastQueryPath, Path->Buffer, Chars * sizeof(WCHAR));
+    LastQueryPath[Chars] = UNICODE_NULL;
+    LastQueryLength = Path->Length;
 }
 
 static
@@ -383,6 +423,7 @@ DeviceControlHandler(
     PQUERY_PATH_RESPONSE Response = Irp->UserBuffer;
     UNICODE_STRING Path = {0};
     ULONG LengthAccepted = 0;
+    ULONG IoControl = IoStackLocation->Parameters.DeviceIoControl.IoControlCode;
     NTSTATUS Status = STATUS_INVALID_DEVICE_REQUEST;
 
     if (DeviceObject != ProviderDevice)
@@ -390,33 +431,43 @@ DeviceControlHandler(
         return SavedDeviceControl(DeviceObject, Irp);
     }
 
+    if ((IoControl != IOCTL_REDIR_QUERY_PATH_EX) &&
+        (IoControl != IOCTL_REDIR_QUERY_PATH))
+    {
+        goto Complete;
+    }
+
+    QueryCount++;
+    LastQueryIoControl = IoControl;
+
     if ((Irp->RequestorMode != KernelMode) || (Response == NULL))
     {
-        Status = STATUS_INVALID_PARAMETER;
+        goto Complete;
     }
-    else if (IoStackLocation->Parameters.DeviceIoControl.IoControlCode == IOCTL_REDIR_QUERY_PATH_EX)
+
+    if (IoControl == IOCTL_REDIR_QUERY_PATH_EX)
     {
         PQUERY_PATH_REQUEST_EX Request =
             IoStackLocation->Parameters.DeviceIoControl.Type3InputBuffer;
 
-        QueryCount++;
         if (Request != NULL)
         {
             Path = Request->PathName;
         }
     }
-    else if (IoStackLocation->Parameters.DeviceIoControl.IoControlCode == IOCTL_REDIR_QUERY_PATH)
+    else
     {
         PQUERY_PATH_REQUEST Request =
             IoStackLocation->Parameters.DeviceIoControl.Type3InputBuffer;
 
-        QueryCount++;
         if (Request != NULL)
         {
             Path.Buffer = Request->FilePathName;
             Path.Length = Path.MaximumLength = Request->PathNameLength;
         }
     }
+
+    RecordQueryPath(&Path);
 
     if (Path.Buffer != NULL)
     {
@@ -429,7 +480,13 @@ DeviceControlHandler(
         QueryAccepted++;
         Status = STATUS_SUCCESS;
     }
+    else
+    {
+        Status = STATUS_BAD_NETWORK_PATH;
+    }
 
+Complete:
+    LastQueryStatus = Status;
     Irp->IoStatus.Status = Status;
     Irp->IoStatus.Information = 0;
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -476,6 +533,10 @@ START_TEST(FsRtlUncProviderEx)
     CreateSeen = FALSE;
     QueryCount = 0;
     QueryAccepted = 0;
+    LastQueryIoControl = 0;
+    LastQueryLength = 0;
+    LastQueryStatus = STATUS_SUCCESS;
+    LastQueryPath[0] = UNICODE_NULL;
 
     Status = IoCreateDevice(KmtDriverObject,
                             0,
@@ -532,8 +593,9 @@ START_TEST(FsRtlUncProviderEx)
                           IO_NO_PARAMETER_CHECKING);
     ok(NT_SUCCESS(Status), "Opening %S failed (0x%lx)\n", FILE_NAME, Status);
     ok(CreateSeen,
-       "The provider did not receive the create (queries %lu, accepted %lu)\n",
-       QueryCount, QueryAccepted);
+       "The provider did not receive the create (queries %lu, accepted %lu, ioctl 0x%lx, length %lu, path '%S', status 0x%lx)\n",
+       QueryCount, QueryAccepted, LastQueryIoControl, LastQueryLength,
+       LastQueryPath, LastQueryStatus);
 
     if (NT_SUCCESS(Status))
     {
