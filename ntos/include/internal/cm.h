@@ -921,7 +921,8 @@ CmpInitHiveFromFile(
     _In_ ULONG HiveFlags,
     _Out_ PCMHIVE *Hive,
     _Inout_ PBOOLEAN New,
-    _In_ ULONG CheckFlags);
+    _In_ ULONG CheckFlags,
+    _In_ BOOLEAN AllowReadOnly);
 
 VOID
 NTAPI

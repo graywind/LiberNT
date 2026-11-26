@@ -530,6 +530,99 @@ CmpDereferenceHive(
     CmpDestroyHive(Hive);
 }
 
+static
+NTSTATUS
+CmpInitHiveFromReadOnlyFile(
+    _In_ PCUNICODE_STRING HiveName,
+    _In_ ULONG HiveFlags,
+    _Out_ PCMHIVE *Hive,
+    _In_ ULONG CheckFlags)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    IO_STATUS_BLOCK IoStatus;
+    FILE_BASIC_INFORMATION Basic;
+    FILE_STANDARD_INFORMATION Standard;
+    PVOID Buffer;
+    PCMHIVE CmHive;
+    HANDLE File;
+    NTSTATUS Status;
+
+    *Hive = NULL;
+
+    InitializeObjectAttributes(&ObjectAttributes,
+                               (PUNICODE_STRING)HiveName,
+                               OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+                               NULL,
+                               NULL);
+    Status = ZwCreateFile(&File,
+                          FILE_READ_DATA | SYNCHRONIZE,
+                          &ObjectAttributes,
+                          &IoStatus,
+                          NULL,
+                          FILE_ATTRIBUTE_NORMAL,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                          FILE_OPEN,
+                          FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE,
+                          NULL,
+                          0);
+    if (!NT_SUCCESS(Status)) return Status;
+
+    Status = ZwQueryInformationFile(File, &IoStatus, &Basic, sizeof(Basic), FileBasicInformation);
+    if (!NT_SUCCESS(Status)) goto CloseFile;
+    /* Special case: Windows 11 refuses a read-only hive without ARCHIVE. */
+    if ((Basic.FileAttributes & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_ARCHIVE)) !=
+        (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_ARCHIVE))
+    {
+        Status = STATUS_ACCESS_DENIED;
+        goto CloseFile;
+    }
+
+    Status = ZwQueryInformationFile(File, &IoStatus, &Standard, sizeof(Standard), FileStandardInformation);
+    if (!NT_SUCCESS(Status)) goto CloseFile;
+    if (Standard.EndOfFile.QuadPart < (LONGLONG)sizeof(HBASE_BLOCK) ||
+        Standard.EndOfFile.QuadPart > HCELL_TYPE_MASK)
+    {
+        Status = STATUS_REGISTRY_CORRUPT;
+        goto CloseFile;
+    }
+
+    Buffer = ExAllocatePoolWithTag(PagedPool, (SIZE_T)Standard.EndOfFile.QuadPart, TAG_CM);
+    if (Buffer == NULL)
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+        goto CloseFile;
+    }
+
+    Status = ZwReadFile(File, NULL, NULL, NULL, &IoStatus, Buffer,
+                        (ULONG)Standard.EndOfFile.QuadPart, NULL, NULL);
+    ZwClose(File);
+    if (NT_SUCCESS(Status) && IoStatus.Information != Standard.EndOfFile.QuadPart)
+        Status = STATUS_END_OF_FILE;
+    if (NT_SUCCESS(Status) &&
+        ((PHBASE_BLOCK)Buffer)->Length >
+        (ULONG)Standard.EndOfFile.QuadPart - HBLOCK_SIZE)
+    {
+        Status = STATUS_REGISTRY_CORRUPT;
+    }
+
+    if (NT_SUCCESS(Status))
+    {
+        Status = CmpInitializeHiveWithCluster(&CmHive, HINIT_MEMORY, HiveFlags,
+                                              HFILE_TYPE_PRIMARY, Buffer, NULL, NULL,
+                                              NULL, NULL, HiveName, CheckFlags, 1);
+    }
+    ExFreePoolWithTag(Buffer, TAG_CM);
+    if (!NT_SUCCESS(Status)) return Status;
+
+    CmHive->Hive.HiveFlags |= HIVE_NOLAZYFLUSH;
+    *Hive = CmHive;
+    return STATUS_SUCCESS;
+
+CloseFile:
+    ZwClose(File);
+    return Status;
+}
+
 NTSTATUS
 NTAPI
 CmpInitHiveFromFile(
@@ -538,7 +631,8 @@ CmpInitHiveFromFile(
     _In_ ULONG HiveFlags,
     _Out_ PCMHIVE *Hive,
     _Inout_ PBOOLEAN New,
-    _In_ ULONG CheckFlags)
+    _In_ ULONG CheckFlags,
+    _In_ BOOLEAN AllowReadOnly)
 {
     ULONG PrimaryDisposition = 0;
     ULONG LogDisposition = 0;
@@ -575,6 +669,12 @@ CmpInitHiveFromFile(
                               FALSE,
                               FALSE,
                               &ClusterSize);
+    if (AllowReadOnly && Status == STATUS_ACCESS_DENIED)
+    {
+        Status = CmpInitHiveFromReadOnlyFile(HiveName, HiveFlags, Hive, CheckFlags);
+        if (NT_SUCCESS(Status)) *New = FALSE;
+        return Status;
+    }
     if (!NT_SUCCESS(Status)) return Status;
 
     if (Primary == NULL) return STATUS_OBJECT_NAME_NOT_FOUND;
