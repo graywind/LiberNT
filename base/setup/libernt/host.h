@@ -57,6 +57,12 @@ HostLog(
     ...);
 
 BOOL
+HostEnsureLogDirectory(
+    _In_ PCWSTR Base,
+    _Out_writes_(Chars) PWSTR Path,
+    _In_ SIZE_T Chars);
+
+BOOL
 HostIsWindows(VOID);
 
 BOOL

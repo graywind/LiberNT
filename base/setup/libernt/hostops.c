@@ -72,12 +72,30 @@
 
 DEFINE_GUID(HostSystemPartitionType, 0xc12a7328, 0xf81f, 0x11d2, 0xba, 0x4b, 0x00, 0xa0, 0xc9, 0x3e, 0xc9, 0x3b);
 
+BOOL
+HostEnsureLogDirectory(
+    _In_ PCWSTR Base,
+    _Out_writes_(Chars) PWSTR Path,
+    _In_ SIZE_T Chars)
+{
+    if (FAILED(StringCchCopyW(Path, Chars, Base)) ||
+        FAILED(StringCchCatW(Path, Chars, HOST_LOG_ROOT)))
+    {
+        return FALSE;
+    }
+    CreateDirectoryW(Path, NULL);
+    if (FAILED(StringCchCatW(Path, Chars, HOST_LOG_DIRECTORY)))
+        return FALSE;
+    CreateDirectoryW(Path, NULL);
+    return TRUE;
+}
+
 VOID
 HostLog(
     _In_ PCWSTR Format,
     ...)
 {
-    WCHAR Line[1024], Path[MAX_PATH];
+    WCHAR Line[1024], Windows[MAX_PATH], Path[MAX_PATH];
     CHAR Utf8[3 * ARRAYSIZE(Line)];
     SYSTEMTIME Time;
     va_list Args;
@@ -96,17 +114,12 @@ HostLog(
     StringCchCatW(Line, ARRAYSIZE(Line), L"\r\n");
     OutputDebugStringW(Line);
 
-    if (!GetWindowsDirectoryW(Path, ARRAYSIZE(Path)) ||
-        FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_ROOT)))
+    if (!GetWindowsDirectoryW(Windows, ARRAYSIZE(Windows)) ||
+        !HostEnsureLogDirectory(Windows, Path, ARRAYSIZE(Path)) ||
+        FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_FILE)))
     {
         return;
     }
-    CreateDirectoryW(Path, NULL);
-    if (FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_DIRECTORY)))
-        return;
-    CreateDirectoryW(Path, NULL);
-    if (FAILED(StringCchCatW(Path, ARRAYSIZE(Path), HOST_LOG_FILE)))
-        return;
     Bytes = WideCharToMultiByte(CP_UTF8, 0, Line, -1, Utf8, sizeof(Utf8), NULL, NULL);
     File = CreateFileW(Path, FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (File == INVALID_HANDLE_VALUE)
