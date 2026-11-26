@@ -544,7 +544,7 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Cryptography\Configuration\Local\Default\
 HKLM,"SYSTEM\CurrentControlSet\Control\Cryptography\Configuration\Local\Default\00010002","Functions",0x00010000,"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA"
 HKLM,"SYSTEM\CurrentControlSet\Control\Cryptography\Configuration\Local\SSL\00010002","",0x00000000,"NCRYPT_SCHANNEL_INTERFACE"
 HKLM,"SYSTEM\CurrentControlSet\Control\Cryptography\Configuration\Local\SSL\00010002","Functions",0x00010000,"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA","TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA","TLS_RSA_WITH_AES_256_GCM_SHA384","TLS_RSA_WITH_AES_128_GCM_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA256","TLS_RSA_WITH_AES_128_CBC_SHA256","TLS_RSA_WITH_AES_256_CBC_SHA","TLS_RSA_WITH_AES_128_CBC_SHA"
-HKLM,"SYSTEM\CurrentControlSet\Control\CrashControl","AutoReboot",0x00010003,0
+HKLM,"SYSTEM\CurrentControlSet\Control\CrashControl","AutoReboot",0x00010003,1
 HKLM,"SYSTEM\CurrentControlSet\Control\CrashControl","CrashDumpEnabled",0x00010003,7
 HKLM,"SYSTEM\CurrentControlSet\Control\CrashControl","DedicatedDumpPartitionType",0x00010003,0x0000007f
 HKLM,"SYSTEM\CurrentControlSet\Control\CrashControl","DumpFile",0x00020002,"%SystemRoot%\MEMORY.DMP"
@@ -1674,6 +1674,9 @@ HKLM,"SYSTEM\CurrentControlSet\Control\ProductOptions","ProductType",2,"WinNT"
 HKLM,"SYSTEM\CurrentControlSet\Control\ProductOptions","ProductSuite",0x00010002,"Terminal Server"
 HKLM,"SYSTEM\CurrentControlSet\Control\ProductOptions\LicenseInformation","Kernel-MUI-Language-Allowed",2,"EMPTY"
 HKLM,"SYSTEM\CurrentControlSet\Control\ProductOptions\LicenseInformation","Kernel-MUI-Number-Allowed",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Control\ProductOptions\LicenseInformation","Kernel-OneCore-DeviceFamilyID",0x00010001,3
+HKLM,"SYSTEM\CurrentControlSet\Control\ProductOptions\LicenseInformation","Kernel-ProductInfo",0x00010001,0x00000030
+HKLM,"SYSTEM\CurrentControlSet\Control\ProductOptions\LicenseInformation","Microsoft-Windows-Core-AllowMultiMon",0x00010001,1
 ; ReactOS specific - by default we report ourselves as Workstation for the user,
 ; but we can also report as Server if some application needs it.
 HKLM,"SYSTEM\CurrentControlSet\Control\ReactOS\Settings\Version","ReportAsWorkstation",0x00010001,0x00000001
@@ -1911,7 +1914,7 @@ HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","ErrorControl",0x00010001,0x00
 HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Group",0x00000000,"AudioGroup"
 HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","ImagePath",0x00020000,"%SystemRoot%\system32\audiosrv.exe"
 HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","ObjectName",0x00000000,"LocalSystem"
-HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Start",0x00010001,0x00000003
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Start",0x00010001,0x00000002
 HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Type",0x00010001,0x00000010
 
 ; Background Intelligent Transfer Service (BITS)
@@ -2049,6 +2052,46 @@ HKLM,"SYSTEM\CurrentControlSet\Services\Nwifi","ErrorControl",0x00010001,0x00000
 HKLM,"SYSTEM\CurrentControlSet\Services\Nwifi","ImagePath",0x00020000,"system32\drivers\nwifi.sys"
 HKLM,"SYSTEM\CurrentControlSet\Services\Nwifi","Group",0x00000000,"NDIS"
 HKLM,"SYSTEM\CurrentControlSet\Services\Nwifi","DisplayName",0x00000000,"ReactOS Native WiFi Service"
+
+; qWAVE flow driver, started as a dependency of the qWAVE service
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVEdrv","DisplayName",0x00000000,"QWAVE driver"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVEdrv","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVEdrv","ImagePath",0x00020000,"system32\drivers\qwavedrv.sys"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVEdrv","Start",0x00010001,0x00000003
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVEdrv","Type",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVEdrv\Security","Security",0x00000001,01,00,04,80,84,00,00,00,90,00,00,00,00,00,00,00,14,00,00,00,02,00,70,00,04,00,00,00,00,00,14,00,9d,00,00,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,9d,00,00,00,01,01,00,00,00,00,00,05,14,00,00,00,00,00,28,00,9d,00,00,00,01,06,00,00,00,00,00,05,54,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,18,00,ff,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,01,01,00,00,00,00,00,05,12,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00
+
+; Link-Layer Topology Discovery mapper I/O
+HKLM,"SYSTEM\CurrentControlSet\Services\lltdio","DisplayName",0x00000000,"Link-Layer Topology Discovery Mapper I/O Driver"
+HKLM,"SYSTEM\CurrentControlSet\Services\lltdio","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\lltdio","Group",0x00000000,"NDIS"
+HKLM,"SYSTEM\CurrentControlSet\Services\lltdio","ImagePath",0x00020000,"system32\drivers\lltdio.sys"
+HKLM,"SYSTEM\CurrentControlSet\Services\lltdio","Start",0x00010001,0x00000002
+HKLM,"SYSTEM\CurrentControlSet\Services\lltdio","Type",0x00010001,0x00000001
+
+; Link-Layer Topology Discovery responder
+HKLM,"SYSTEM\CurrentControlSet\Services\rspndr","DisplayName",0x00000000,"Link-Layer Topology Discovery Responder"
+HKLM,"SYSTEM\CurrentControlSet\Services\rspndr","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\rspndr","Group",0x00000000,"NDIS"
+HKLM,"SYSTEM\CurrentControlSet\Services\rspndr","ImagePath",0x00020000,"system32\drivers\rspndr.sys"
+HKLM,"SYSTEM\CurrentControlSet\Services\rspndr","Start",0x00010001,0x00000002
+HKLM,"SYSTEM\CurrentControlSet\Services\rspndr","Type",0x00010001,0x00000001
+
+; Quality Windows Audio Video Experience
+; FIXME: Windows also depends on psched (the packet scheduler); LiberNT marks qWAVE traffic in tcpip and shapes none
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","DependOnService",0x00010000,"RpcSs","QWAVEdrv","lltdio"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","Description",0x00000000,"Provides network quality of service to audio and video streaming applications."
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","DisplayName",0x00000000,"Quality Windows Audio Video Experience"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","ImagePath",0x00020000,"%SystemRoot%\system32\svchost.exe -k LocalServiceAndNoImpersonation -p"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","ObjectName",0x00000000,"NT AUTHORITY\LocalService"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","RequiredPrivileges",0x00010000,"SeChangeNotifyPrivilege"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","ServiceSidType",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","Start",0x00010001,0x00000003
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE","Type",0x00010001,0x00000020
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE\Parameters","ServiceDll",0x00020000,"%SystemRoot%\system32\qwave.dll"
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE\Parameters","ServiceDllUnloadOnStop",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\QWAVE\Security","Security",0x00000001,01,00,04,80,84,00,00,00,90,00,00,00,00,00,00,00,14,00,00,00,02,00,70,00,04,00,00,00,00,00,14,00,9d,00,00,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,9d,00,00,00,01,01,00,00,00,00,00,05,14,00,00,00,00,00,28,00,9d,00,00,00,01,06,00,00,00,00,00,05,54,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,18,00,ff,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,01,01,00,00,00,00,00,05,12,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00
 
 ; Packet driver
 HKLM,"SYSTEM\CurrentControlSet\Services\Packet","ErrorControl",0x00010001,0x00000001

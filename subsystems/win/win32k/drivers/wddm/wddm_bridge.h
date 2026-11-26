@@ -15,6 +15,7 @@ VOID     WddmBridgeCleanup(VOID);
 NTSTATUS WddmBridgeGetStatus(VOID);
 NTSTATUS WddmBridgeRequireReady(VOID);
 BOOLEAN  WddmBridgeIsReady(VOID);
+BOOLEAN  WddmBridgeIsProviderBound(VOID);
 ULONG    WddmBridgeGetInterfaceVersion(VOID);
 NTSTATUS WddmBridgeGetInterface(_Out_ PREACTOS_WIN32K_DXGKRNL_INTERFACE Interface);
 
@@ -70,6 +71,10 @@ WddmBridgeSetCompositorSourceOwner(
 NTSTATUS
 WddmBridgeRegisterDwmProcess(VOID);
 
+NTSTATUS
+D3dkmtBridgeOpenResourceEntries2(
+    _Inout_ D3DKMT_OPENRESOURCE *pData);
+
 /* Cached device object pointer (set by WddmBridgeInit) */
 extern PFILE_OBJECT   g_DxgkrnlFileObject;
 extern PDEVICE_OBJECT g_DxgkrnlDeviceObject;
@@ -80,3 +85,18 @@ APIENTRY
 D3DKMTPresentWithOverlays(
     _In_ const RXGK_PRESENT_OVERLAYS *Overlays,
     _In_ const D3DKMT_PRESENT *Present);
+
+NTSTATUS
+APIENTRY
+D3DKMTAddSurfaceToSwapChain(
+    _Inout_ D3DKMT_ADDSURFACETOSWAPCHAIN *pData);
+
+NTSTATUS
+APIENTRY
+D3DKMTRemoveSurfaceFromSwapChain(
+    _In_ D3DKMT_REMOVESURFACEFROMSWAPCHAIN *pData);
+
+NTSTATUS
+APIENTRY
+D3DKMTUnOrderedPresentSwapChain(
+    _In_ D3DKMT_UNORDEREDPRESENTSWAPCHAIN *pData);

@@ -145,6 +145,7 @@ list(APPEND SOURCE
     NtQuerySecurityObject.c
     NtSetSecurityObjectStatus.c
     NtQuerySystemEnvironmentValue.c
+    NtQueryLicenseValue.c
     NtQuerySystemInformation.c
     NtQuerySystemMemoryInformation.c
     NtQueryValueKey.c
@@ -191,6 +192,7 @@ list(APPEND SOURCE
     ObHandleRace.c
     LinkReparseLimit.c
     RtlWnfAndSqm.c
+    ThreadStackRelease.c
     WinSqmSession.c
     RtlCheckPortableOperatingSystem.c
     RtlDoesFileExists.c

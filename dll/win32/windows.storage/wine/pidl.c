@@ -2877,6 +2877,26 @@ LPITEMIDLIST WINAPI ILCloneFirst(LPCITEMIDLIST pidl)
  * NOTES
  *   the first two bytes are the len, the pidl is following then
  */
+#ifdef __REACTOS__
+static BOOL ILIsTerminatedWithin(LPCITEMIDLIST pidl, WORD size)
+{
+    WORD pos = 0;
+
+    while (size - pos >= sizeof(USHORT))
+    {
+        USHORT cb;
+
+        memcpy(&cb, (const BYTE *)pidl + pos, sizeof(cb));
+        if (!cb)
+            return TRUE;
+        if (cb < sizeof(USHORT) || cb > size - pos)
+            return FALSE;
+        pos += cb;
+    }
+    return FALSE;
+}
+
+#endif
 HRESULT WINAPI ILLoadFromStream (IStream * pStream, LPITEMIDLIST * ppPidl)
 {
     WORD        wLen = 0;
@@ -2897,7 +2917,12 @@ HRESULT WINAPI ILLoadFromStream (IStream * pStream, LPITEMIDLIST * ppPidl)
         if (wLen != 0)
         {
             *ppPidl = SHAlloc (wLen);
+#ifdef __REACTOS__
+            if (*ppPidl && SUCCEEDED(IStream_Read(pStream, *ppPidl , wLen, &dwBytesRead)) &&
+                dwBytesRead == wLen && ILIsTerminatedWithin(*ppPidl, wLen))
+#else
             if (SUCCEEDED(IStream_Read(pStream, *ppPidl , wLen, &dwBytesRead)))
+#endif
             {
                 TRACE("Stream read OK\n");
                 ret = S_OK;
@@ -3922,6 +3947,24 @@ static HRESULT GetShellFolder1ItemDetailsExToBuffer(LPSHELLFOLDER psf, LPCITEMID
     return hr;
 }
 
+static void
+ILGetFileSizeFromDisk(LPSHELLFOLDER psf, LPCITEMIDLIST pidl, DWORD *SizeHigh, DWORD *SizeLow)
+{
+    STRRET str;
+    WCHAR path[MAX_PATH];
+    WIN32_FILE_ATTRIBUTE_DATA data;
+
+    if (!(_ILGetFSType(pidl) & PT_FS_FILE_FLAG))
+        return;
+    if (SUCCEEDED(IShellFolder_GetDisplayNameOf(psf, pidl, SHGDN_FORPARSING, &str)) &&
+        SUCCEEDED(StrRetToBufW(&str, pidl, path, _countof(path))) &&
+        GetFileAttributesExW(path, GetFileExInfoStandard, &data))
+    {
+        *SizeHigh = data.nFileSizeHigh;
+        *SizeLow = data.nFileSizeLow;
+    }
+}
+
 /*************************************************************************
  * SHGetDataFromIDListA [SHELL32.247]
  *
@@ -3957,6 +4000,7 @@ HRESULT WINAPI SHGetDataFromIDListA(LPSHELLFOLDER psf, LPCITEMIDLIST pidl,
         _ILGetFileDateTime( pidl, &(pfd->ftLastWriteTime));
         pfd->dwFileAttributes = _ILGetFileAttributes(pidl, NULL, 0);
         pfd->nFileSizeLow = _ILGetFileSize ( pidl, NULL, 0);
+        ILGetFileSizeFromDisk(psf, pidl, &pfd->nFileSizeHigh, &pfd->nFileSizeLow);
 
         filename = _ILGetTextPointer(pidl);
         pFileStructW = _ILGetFileStructW(pidl);
@@ -4030,6 +4074,7 @@ HRESULT WINAPI SHGetDataFromIDListW(LPSHELLFOLDER psf, LPCITEMIDLIST pidl,
         _ILGetFileDateTime( pidl, &(pfd->ftLastWriteTime));
         pfd->dwFileAttributes = _ILGetFileAttributes(pidl, NULL, 0);
         pfd->nFileSizeLow = _ILGetFileSize ( pidl, NULL, 0);
+        ILGetFileSizeFromDisk(psf, pidl, &pfd->nFileSizeHigh, &pfd->nFileSizeLow);
 
         filename = _ILGetTextPointer(pidl);
         pFileStructW = _ILGetFileStructW(pidl);

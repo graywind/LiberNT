@@ -72,7 +72,6 @@ W32KAPI NTSTATUS WINAPI NtGdiDdDDIReclaimAllocations2(D3DKMT_RECLAIMALLOCATIONS2
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIGetResourcePresentPrivateDriverData(D3DDDI_GETRESOURCEPRESENTPRIVATEDRIVERDATA *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIRegisterTrimNotification(D3DKMT_REGISTERTRIMNOTIFICATION *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIUnregisterTrimNotification(D3DKMT_UNREGISTERTRIMNOTIFICATION *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDISignalSynchronizationObject2(const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2 *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISignalSynchronizationObjectFromGpu(const D3DKMT_SIGNALSYNCHRONIZATIONOBJECTFROMGPU *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISignalSynchronizationObjectFromGpu2(const D3DKMT_SIGNALSYNCHRONIZATIONOBJECTFROMGPU2 *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDICreateHwContext(D3DKMT_CREATEHWCONTEXT *desc);
@@ -80,8 +79,8 @@ W32KAPI NTSTATUS WINAPI NtGdiDdDDICreateHwQueue(D3DKMT_CREATEHWQUEUE *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISubmitCommandToHwQueue(const D3DKMT_SUBMITCOMMANDTOHWQUEUE *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISubmitWaitForSyncObjectsToHwQueue(const D3DKMT_SUBMITWAITFORSYNCOBJECTSTOHWQUEUE *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISubmitSignalSyncObjectsToHwQueue(const D3DKMT_SUBMITSIGNALSYNCOBJECTSTOHWQUEUE *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDISubmitPresentToHwQueue(D3DKMT_SUBMITPRESENTTOHWQUEUE *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDISubmitPresentBltToHwQueue(const D3DKMT_SUBMITPRESENTBLTTOHWQUEUE *desc);
+W32KAPI NTSTATUS WINAPI NtDxgkSubmitPresentToHwQueue(D3DKMT_SUBMITPRESENTTOHWQUEUE *desc);
+W32KAPI NTSTATUS WINAPI NtDxgkSubmitPresentBltToHwQueue(const D3DKMT_SUBMITPRESENTBLTTOHWQUEUE *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDICreateOverlay(D3DKMT_CREATEOVERLAY *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIUpdateOverlay(const D3DKMT_UPDATEOVERLAY *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIFlipOverlay(const D3DKMT_FLIPOVERLAY *desc);
@@ -104,9 +103,8 @@ W32KAPI NTSTATUS WINAPI NtGdiDdDDISetDisplayMode(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISetDisplayPrivateDriverFormat(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISharedPrimaryLockNotification(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISharedPrimaryUnLockNotification(void *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDISignalSynchronizationObject(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDISignalSynchronizationObject(const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2 *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIWaitForSynchronizationObject(void *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDIWaitForSynchronizationObject2(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIReserveGpuVirtualAddress(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIGetOverlayState(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDICheckSharedResourceAccess(void *desc);
@@ -118,7 +116,8 @@ W32KAPI NTSTATUS WINAPI NtGdiDdDDISetStablePowerState(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISetContextInProcessSchedulingPriority(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIGetContextInProcessSchedulingPriority(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISetSyncRefreshCountWaitTarget(void *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDIIsFeatureEnabled(void *desc);
+W32KAPI NTSTATUS WINAPI NtDxgkEnumAdapters3(D3DKMT_ENUMADAPTERS3 *desc);
+W32KAPI NTSTATUS WINAPI NtDxgkIsFeatureEnabled(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISetFSEBlock(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIQueryFSEBlock(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIAdjustFullscreenGamma(void *desc);
@@ -129,8 +128,20 @@ W32KAPI NTSTATUS WINAPI NtGdiDdDDIQueryProtectedSessionStatus(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDIQueryRemoteVidPnSourceFromGdiDisplayName(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISetHwProtectionTeardownRecovery(void *desc);
 W32KAPI NTSTATUS WINAPI NtGdiDdDDISetVidPnSourceHwProtection(void *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDIGetNativeFenceLogDetail(void *desc);
-W32KAPI NTSTATUS WINAPI NtGdiDdDDIRegisterVailProcess(void *desc);
+W32KAPI NTSTATUS WINAPI NtDxgkGetNativeFenceLogDetail(void *desc);
+W32KAPI NTSTATUS WINAPI NtDxgkRegisterVailProcess(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDICreateSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIOpenSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIAddSurfaceToSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIRemoveSurfaceFromSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIAbandonSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIUnOrderedPresentSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIAcquireSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIReleaseSwapChain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIGetSetSwapChainMetadata(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDISetDodIndirectSwapchain(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDICreateBundleObject(void *desc);
+W32KAPI NTSTATUS WINAPI NtGdiDdDDIExtractBundleObject(void *desc);
 
 typedef struct
 {
@@ -1230,19 +1241,9 @@ NTSTATUS WINAPI wow64_NtGdiDdDDISharedPrimaryUnLockNotification(UINT *args)
     return NtGdiDdDDISharedPrimaryUnLockNotification(get_ptr(&args));
 }
 
-NTSTATUS WINAPI wow64_NtGdiDdDDISignalSynchronizationObject(UINT *args)
-{
-    return NtGdiDdDDISignalSynchronizationObject(get_ptr(&args));
-}
-
 NTSTATUS WINAPI wow64_NtGdiDdDDIWaitForSynchronizationObject(UINT *args)
 {
     return NtGdiDdDDIWaitForSynchronizationObject(get_ptr(&args));
-}
-
-NTSTATUS WINAPI wow64_NtGdiDdDDIWaitForSynchronizationObject2(UINT *args)
-{
-    return NtGdiDdDDIWaitForSynchronizationObject2(get_ptr(&args));
 }
 
 NTSTATUS WINAPI wow64_NtGdiDdDDIReserveGpuVirtualAddress(UINT *args)
@@ -1300,9 +1301,29 @@ NTSTATUS WINAPI wow64_NtGdiDdDDISetSyncRefreshCountWaitTarget(UINT *args)
     return NtGdiDdDDISetSyncRefreshCountWaitTarget(get_ptr(&args));
 }
 
-NTSTATUS WINAPI wow64_NtGdiDdDDIIsFeatureEnabled(UINT *args)
+NTSTATUS WINAPI wow64_NtDxgkEnumAdapters3(UINT *args)
 {
-    return NtGdiDdDDIIsFeatureEnabled(get_ptr(&args));
+    struct
+    {
+        ULONGLONG Filter;
+        ULONG NumAdapters;
+        ULONG pAdapters;
+    } *desc32 = get_ptr(&args);
+    D3DKMT_ENUMADAPTERS3 desc;
+    NTSTATUS status;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.Filter.Value = desc32->Filter;
+    desc.NumAdapters = desc32->NumAdapters;
+    desc.pAdapters = ULongToPtr(desc32->pAdapters);
+    status = NtDxgkEnumAdapters3(&desc);
+    desc32->NumAdapters = desc.NumAdapters;
+    return status;
+}
+
+NTSTATUS WINAPI wow64_NtDxgkIsFeatureEnabled(UINT *args)
+{
+    return NtDxgkIsFeatureEnabled(get_ptr(&args));
 }
 
 NTSTATUS WINAPI wow64_NtGdiDdDDISetFSEBlock(UINT *args)
@@ -1355,14 +1376,14 @@ NTSTATUS WINAPI wow64_NtGdiDdDDISetVidPnSourceHwProtection(UINT *args)
     return NtGdiDdDDISetVidPnSourceHwProtection(get_ptr(&args));
 }
 
-NTSTATUS WINAPI wow64_NtGdiDdDDIGetNativeFenceLogDetail(UINT *args)
+NTSTATUS WINAPI wow64_NtDxgkGetNativeFenceLogDetail(UINT *args)
 {
-    return NtGdiDdDDIGetNativeFenceLogDetail(get_ptr(&args));
+    return NtDxgkGetNativeFenceLogDetail(get_ptr(&args));
 }
 
-NTSTATUS WINAPI wow64_NtGdiDdDDIRegisterVailProcess(UINT *args)
+NTSTATUS WINAPI wow64_NtDxgkRegisterVailProcess(UINT *args)
 {
-    return NtGdiDdDDIRegisterVailProcess(get_ptr(&args));
+    return NtDxgkRegisterVailProcess(get_ptr(&args));
 }
 
 NTSTATUS WINAPI wow64_NtGdiDdDDICreateAllocation(UINT *args)
@@ -1961,7 +1982,7 @@ NTSTATUS WINAPI wow64_NtGdiDdDDIUnregisterTrimNotification(UINT *args)
     return status;
 }
 
-NTSTATUS WINAPI wow64_NtGdiDdDDISignalSynchronizationObject2(UINT *args)
+NTSTATUS WINAPI wow64_NtGdiDdDDISignalSynchronizationObject(UINT *args)
 {
     const D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2_32 *desc32 = get_ptr(&args);
     D3DKMT_SIGNALSYNCHRONIZATIONOBJECT2 desc;
@@ -1970,7 +1991,7 @@ NTSTATUS WINAPI wow64_NtGdiDdDDISignalSynchronizationObject2(UINT *args)
     memcpy(&desc, desc32, sizeof(desc));
     if (desc32->Flags.EnqueueCpuEvent)
         desc.CpuEventHandle = LongToHandle(desc32->CpuEventHandle);
-    return NtGdiDdDDISignalSynchronizationObject2(&desc);
+    return NtGdiDdDDISignalSynchronizationObject(&desc);
 }
 
 NTSTATUS WINAPI wow64_NtGdiDdDDISignalSynchronizationObjectFromGpu(UINT *args)
@@ -2095,7 +2116,7 @@ NTSTATUS WINAPI wow64_NtGdiDdDDISubmitSignalSyncObjectsToHwQueue(UINT *args)
     return NtGdiDdDDISubmitSignalSyncObjectsToHwQueue(&desc);
 }
 
-NTSTATUS WINAPI wow64_NtGdiDdDDISubmitPresentToHwQueue(UINT *args)
+NTSTATUS WINAPI wow64_NtDxgkSubmitPresentToHwQueue(UINT *args)
 {
     D3DKMT_SUBMITPRESENTTOHWQUEUE32 *desc32 = get_ptr(&args);
     D3DKMT_SUBMITPRESENTTOHWQUEUE desc;
@@ -2108,12 +2129,12 @@ NTSTATUS WINAPI wow64_NtGdiDdDDISubmitPresentToHwQueue(UINT *args)
     status = present_32to64(&desc32->PrivatePresentData, &desc.PrivatePresentData, &regions);
     if (status) return status;
 
-    status = NtGdiDdDDISubmitPresentToHwQueue(&desc);
+    status = NtDxgkSubmitPresentToHwQueue(&desc);
     desc32->PrivatePresentData.bOptimizeForComposition = desc.PrivatePresentData.bOptimizeForComposition;
     return status;
 }
 
-NTSTATUS WINAPI wow64_NtGdiDdDDISubmitPresentBltToHwQueue(UINT *args)
+NTSTATUS WINAPI wow64_NtDxgkSubmitPresentBltToHwQueue(UINT *args)
 {
     const D3DKMT_SUBMITPRESENTBLTTOHWQUEUE32 *desc32 = get_ptr(&args);
     D3DKMT_SUBMITPRESENTBLTTOHWQUEUE desc;
@@ -2126,7 +2147,7 @@ NTSTATUS WINAPI wow64_NtGdiDdDDISubmitPresentBltToHwQueue(UINT *args)
     desc.HwQueueProgressFenceId = desc32->HwQueueProgressFenceId;
     status = present_32to64(&desc32->PrivatePresentData, &desc.PrivatePresentData, &regions);
     if (status) return status;
-    return NtGdiDdDDISubmitPresentBltToHwQueue(&desc);
+    return NtDxgkSubmitPresentBltToHwQueue(&desc);
 }
 
 NTSTATUS WINAPI wow64_NtGdiDdDDICreateOverlay(UINT *args)
@@ -2272,5 +2293,338 @@ NTSTATUS WINAPI wow64_NtGdiDdDDIGetSharedResourceAdapterLuid(UINT *args)
 
     status = NtGdiDdDDIGetSharedResourceAdapterLuid(&desc);
     desc32->AdapterLuid = desc.AdapterLuid;
+    return status;
+}
+
+#define WOW64_SWAPCHAIN_SURFACES 50
+
+typedef struct
+{
+    BOOL bProducer;
+    D3DKMT_HANDLE hDevice;
+    ULONG pObjectAttributes;
+    ACCESS_MASK DesiredAccess;
+    UINT SurfaceCount;
+    ULONG pNtSurfaceHandles;
+    BOOL bFailAcquireIfSurfaceBusy;
+    ULONG BufferAvailableEvent;
+    ULONG hNtSwapChain;
+} D3DKMT_CREATESWAPCHAIN32;
+
+typedef struct
+{
+    ULONG hNtSwapChain;
+    ULONG pObjectAttributes;
+    BOOL bProducer;
+    D3DKMT_HANDLE hDevice;
+    BOOL bFailAcquireIfSurfaceBusy;
+    ACCESS_MASK DesiredAccess;
+    ACCESS_MASK DesiredAccessTextures;
+    ULONG BufferAvailableEvent;
+    UINT SurfaceCount;
+    ULONG pNtSurfaceHandles;
+} D3DKMT_OPENSWAPCHAIN32;
+
+typedef struct
+{
+    ULONG hNtSwapChain;
+    BOOL bProducer;
+    ULONG hNtSurfaceHandle;
+    UINT BufferIdx;
+} D3DKMT_SWAPCHAINSURFACE32;
+
+typedef struct
+{
+    ULONG hNtSwapChain;
+    BOOL bProducer;
+    UINT PresentBufferIdx;
+    UINT MetaDataSize;
+    ULONG pMetaData;
+} D3DKMT_UNORDEREDPRESENTSWAPCHAIN32;
+
+typedef struct
+{
+    ULONG hNtSwapChain;
+    BOOL bProducer;
+    UINT MetaDataSize;
+    ULONG pMetaData;
+} D3DKMT_RELEASESWAPCHAIN32;
+
+typedef struct
+{
+    ULONG hNtSwapChain;
+    BOOL bReleaseBeforeAcquire;
+    BOOL bProducer;
+    D3DKMT_RELEASESWAPCHAIN32 ReleaseInfo;
+    UINT AcquiredBufferIdx;
+    UINT AcquireMetadataSize;
+} D3DKMT_ACQUIRESWAPCHAIN32;
+
+typedef struct
+{
+    ULONG hNtSwapChain;
+    BOOL bSetMetaData;
+    BOOL bProducer;
+    BOOL bGlobalMetaData;
+    UINT BufferSize;
+    ULONG pBuffer;
+    UINT DataCopied;
+} D3DKMT_GETSETSWAPCHAINMETADATA32;
+
+typedef struct
+{
+    D3DKMT_HANDLE hDodAdapter;
+    D3DKMT_HANDLE hDevice;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+    ULONG hNtSwapChain;
+    BOOL bTerminateOutput;
+} D3DKMT_SETDODINDIRECTSWAPCHAIN32;
+
+typedef struct
+{
+    UINT cObjects;
+    ULONG phObjects;
+    ULONG ppObjectAttributes;
+    ULONG pBundleObjectAttributes;
+    DWORD dwBundleDesiredAccess;
+    ULONG hNtBundleHandle;
+} D3DKMT_CREATEBUNDLEOBJECT32;
+
+typedef struct
+{
+    ULONG hNtBundleHandle;
+    UINT cObjects;
+    ULONG pdwDesiredAccess;
+    ULONG phNtHandles;
+} D3DKMT_EXTRACTBUNDLEOBJECT32;
+
+static void
+swapchain_release_32to64(D3DKMT_RELEASESWAPCHAIN *out, const D3DKMT_RELEASESWAPCHAIN32 *in)
+{
+    out->hNtSwapChain = LongToHandle((LONG)in->hNtSwapChain);
+    out->bProducer = in->bProducer;
+    out->MetaDataSize = in->MetaDataSize;
+    out->pMetaData = ULongToPtr(in->pMetaData);
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDICreateSwapChain(UINT *args)
+{
+    D3DKMT_CREATESWAPCHAIN32 *desc32 = get_ptr(&args);
+    HANDLE surfaces[WOW64_SWAPCHAIN_SURFACES];
+    D3DKMT_CREATESWAPCHAIN desc;
+    struct object_attr64 attr;
+    const ULONG *surfaces32;
+    NTSTATUS status;
+    UINT i;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    surfaces32 = ULongToPtr(desc32->pNtSurfaceHandles);
+    desc.bProducer = desc32->bProducer;
+    desc.hDevice = desc32->hDevice;
+    desc.pObjectAttributes = objattr_32to64(&attr, ULongToPtr(desc32->pObjectAttributes));
+    desc.DesiredAccess = desc32->DesiredAccess;
+    desc.SurfaceCount = desc32->SurfaceCount;
+    desc.pNtSurfaceHandles = surfaces32 ? surfaces : NULL;
+    for (i = 0; surfaces32 && i < desc32->SurfaceCount && i < ARRAY_SIZE(surfaces); i++)
+        surfaces[i] = LongToHandle((LONG)surfaces32[i]);
+    desc.bFailAcquireIfSurfaceBusy = desc32->bFailAcquireIfSurfaceBusy;
+    desc.BufferAvailableEvent = LongToHandle((LONG)desc32->BufferAvailableEvent);
+    desc.hNtSwapChain = NULL;
+    status = NtGdiDdDDICreateSwapChain(&desc);
+    if (NT_SUCCESS(status))
+        desc32->hNtSwapChain = HandleToUlong(desc.hNtSwapChain);
+    return status;
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIOpenSwapChain(UINT *args)
+{
+    D3DKMT_OPENSWAPCHAIN32 *desc32 = get_ptr(&args);
+    HANDLE surfaces[WOW64_SWAPCHAIN_SURFACES];
+    D3DKMT_OPENSWAPCHAIN desc;
+    struct object_attr64 attr;
+    ULONG *surfaces32;
+    NTSTATUS status;
+    UINT i;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    surfaces32 = ULongToPtr(desc32->pNtSurfaceHandles);
+    desc.hNtSwapChain = LongToHandle((LONG)desc32->hNtSwapChain);
+    desc.pObjectAttributes = objattr_32to64(&attr, ULongToPtr(desc32->pObjectAttributes));
+    desc.bProducer = desc32->bProducer;
+    desc.hDevice = desc32->hDevice;
+    desc.bFailAcquireIfSurfaceBusy = desc32->bFailAcquireIfSurfaceBusy;
+    desc.DesiredAccess = desc32->DesiredAccess;
+    desc.DesiredAccessTextures = desc32->DesiredAccessTextures;
+    desc.BufferAvailableEvent = LongToHandle((LONG)desc32->BufferAvailableEvent);
+    desc.SurfaceCount = desc32->SurfaceCount;
+    desc.pNtSurfaceHandles = surfaces32 ? surfaces : NULL;
+    status = NtGdiDdDDIOpenSwapChain(&desc);
+    if (status == STATUS_BUFFER_TOO_SMALL)
+        desc32->SurfaceCount = desc.SurfaceCount;
+    if (!NT_SUCCESS(status))
+        return status;
+    for (i = 0; i < desc.SurfaceCount && i < ARRAY_SIZE(surfaces); i++)
+        surfaces32[i] = HandleToUlong(surfaces[i]);
+    desc32->hNtSwapChain = HandleToUlong(desc.hNtSwapChain);
+    return status;
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIAddSurfaceToSwapChain(UINT *args)
+{
+    D3DKMT_SWAPCHAINSURFACE32 *desc32 = get_ptr(&args);
+    D3DKMT_ADDSURFACETOSWAPCHAIN desc;
+    NTSTATUS status;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.hNtSwapChain = LongToHandle((LONG)desc32->hNtSwapChain);
+    desc.bProducer = desc32->bProducer;
+    desc.hNtSurfaceHandle = LongToHandle((LONG)desc32->hNtSurfaceHandle);
+    desc.BufferIdx = desc32->BufferIdx;
+    status = NtGdiDdDDIAddSurfaceToSwapChain(&desc);
+    if (NT_SUCCESS(status))
+        desc32->BufferIdx = desc.BufferIdx;
+    return status;
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIRemoveSurfaceFromSwapChain(UINT *args)
+{
+    D3DKMT_SWAPCHAINSURFACE32 *desc32 = get_ptr(&args);
+    D3DKMT_REMOVESURFACEFROMSWAPCHAIN desc;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.hNtSwapChain = LongToHandle((LONG)desc32->hNtSwapChain);
+    desc.bProducer = desc32->bProducer;
+    desc.hNtSurfaceHandle = LongToHandle((LONG)desc32->hNtSurfaceHandle);
+    desc.BufferIdx = desc32->BufferIdx;
+    return NtGdiDdDDIRemoveSurfaceFromSwapChain(&desc);
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIAbandonSwapChain(UINT *args)
+{
+    const ULONG *desc32 = get_ptr(&args);
+    D3DKMT_ABANDONSWAPCHAIN desc;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.hNtSwapChain = LongToHandle((LONG)desc32[0]);
+    return NtGdiDdDDIAbandonSwapChain(&desc);
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIUnOrderedPresentSwapChain(UINT *args)
+{
+    const D3DKMT_UNORDEREDPRESENTSWAPCHAIN32 *desc32 = get_ptr(&args);
+    D3DKMT_UNORDEREDPRESENTSWAPCHAIN desc;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.hNtSwapChain = LongToHandle((LONG)desc32->hNtSwapChain);
+    desc.bProducer = desc32->bProducer;
+    desc.PresentBufferIdx = desc32->PresentBufferIdx;
+    desc.MetaDataSize = desc32->MetaDataSize;
+    desc.pMetaData = ULongToPtr(desc32->pMetaData);
+    return NtGdiDdDDIUnOrderedPresentSwapChain(&desc);
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIAcquireSwapChain(UINT *args)
+{
+    D3DKMT_ACQUIRESWAPCHAIN32 *desc32 = get_ptr(&args);
+    D3DKMT_ACQUIRESWAPCHAIN desc;
+    NTSTATUS status;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.hNtSwapChain = LongToHandle((LONG)desc32->hNtSwapChain);
+    desc.bReleaseBeforeAcquire = desc32->bReleaseBeforeAcquire;
+    desc.bProducer = desc32->bProducer;
+    swapchain_release_32to64(&desc.ReleaseInfo, &desc32->ReleaseInfo);
+    desc.AcquiredBufferIdx = desc32->AcquiredBufferIdx;
+    desc.AcquireMetadataSize = desc32->AcquireMetadataSize;
+    status = NtGdiDdDDIAcquireSwapChain(&desc);
+    if (NT_SUCCESS(status))
+    {
+        desc32->AcquiredBufferIdx = desc.AcquiredBufferIdx;
+        desc32->AcquireMetadataSize = desc.AcquireMetadataSize;
+    }
+    return status;
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIReleaseSwapChain(UINT *args)
+{
+    D3DKMT_RELEASESWAPCHAIN32 *desc32 = get_ptr(&args);
+    D3DKMT_RELEASESWAPCHAIN desc;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    swapchain_release_32to64(&desc, desc32);
+    return NtGdiDdDDIReleaseSwapChain(&desc);
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIGetSetSwapChainMetadata(UINT *args)
+{
+    D3DKMT_GETSETSWAPCHAINMETADATA32 *desc32 = get_ptr(&args);
+    D3DKMT_GETSETSWAPCHAINMETADATA desc;
+    NTSTATUS status;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.hNtSwapChain = LongToHandle((LONG)desc32->hNtSwapChain);
+    desc.bSetMetaData = desc32->bSetMetaData;
+    desc.bProducer = desc32->bProducer;
+    desc.bGlobalMetaData = desc32->bGlobalMetaData;
+    desc.BufferSize = desc32->BufferSize;
+    desc.pBuffer = ULongToPtr(desc32->pBuffer);
+    desc.DataCopied = desc32->DataCopied;
+    status = NtGdiDdDDIGetSetSwapChainMetadata(&desc);
+    if (status == STATUS_SUCCESS)
+        desc32->DataCopied = desc.DataCopied;
+    return status;
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDISetDodIndirectSwapchain(UINT *args)
+{
+    const D3DKMT_SETDODINDIRECTSWAPCHAIN32 *desc32 = get_ptr(&args);
+    D3DKMT_SETDODINDIRECTSWAPCHAIN desc;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.hDodAdapter = desc32->hDodAdapter;
+    desc.hDevice = desc32->hDevice;
+    desc.VidPnSourceId = desc32->VidPnSourceId;
+    desc.hNtSwapChain = LongToHandle((LONG)desc32->hNtSwapChain);
+    desc.bTerminateOutput = desc32->bTerminateOutput;
+    return NtGdiDdDDISetDodIndirectSwapchain(&desc);
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDICreateBundleObject(UINT *args)
+{
+    const D3DKMT_CREATEBUNDLEOBJECT32 *desc32 = get_ptr(&args);
+    D3DKMT_CREATEBUNDLEOBJECT desc;
+    struct object_attr64 attr;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    desc.cObjects = desc32->cObjects;
+    desc.phObjects = ULongToPtr(desc32->phObjects);
+    /* TODO: widen the per-object attribute array once bundle objects are created */
+    desc.ppObjectAttributes = ULongToPtr(desc32->ppObjectAttributes);
+    desc.pBundleObjectAttributes = objattr_32to64(&attr, ULongToPtr(desc32->pBundleObjectAttributes));
+    desc.dwBundleDesiredAccess = desc32->dwBundleDesiredAccess;
+    desc.hNtBundleHandle = NULL;
+    return NtGdiDdDDICreateBundleObject(&desc);
+}
+
+NTSTATUS WINAPI wow64_NtGdiDdDDIExtractBundleObject(UINT *args)
+{
+    const D3DKMT_EXTRACTBUNDLEOBJECT32 *desc32 = get_ptr(&args);
+    HANDLE handles[D3DKMT_MAX_OBJECTS_PER_HANDLE];
+    D3DKMT_EXTRACTBUNDLEOBJECT desc;
+    ULONG *handles32;
+    NTSTATUS status;
+    UINT i;
+
+    if (!desc32) return STATUS_INVALID_PARAMETER;
+    handles32 = ULongToPtr(desc32->phNtHandles);
+    desc.hNtBundleHandle = LongToHandle((LONG)desc32->hNtBundleHandle);
+    desc.cObjects = desc32->cObjects;
+    desc.pdwDesiredAccess = ULongToPtr(desc32->pdwDesiredAccess);
+    desc.phNtHandles = handles32 ? handles : NULL;
+    status = NtGdiDdDDIExtractBundleObject(&desc);
+    if (!NT_SUCCESS(status))
+        return status;
+    for (i = 0; i < desc.cObjects && i < ARRAY_SIZE(handles); i++)
+        handles32[i] = HandleToUlong(handles[i]);
     return status;
 }

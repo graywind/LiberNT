@@ -7,6 +7,7 @@
  */
 
 #include <win32k.h>
+#include "drivers/wddm/wddm_bridge.h"
 DBG_DEFAULT_CHANNEL(UserDisplay);
 
 BOOL gbBaseVideo = FALSE;
@@ -161,6 +162,16 @@ InitVideo(VOID)
     gbBaseVideo = NT_SUCCESS(Status);
     if (gbBaseVideo)
         ERR("VGA mode requested.\n");
+
+    if (WddmBridgeIsProviderBound())
+    {
+        UNICODE_STRING FirmwareDisplay = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\uefifb");
+
+        /* FIXME: the firmware framebuffer keeps being drawn to after the provider commits a VidPn of its own */
+        /* FIXME: only the session that opens the firmware display draws; session 0 has no dummy display as on Windows */
+        Status = ZwLoadDriver(&FirmwareDisplay);
+        ERR("dxgkrnl has no win32k bridge, firmware framebuffer display: 0x%lx\n", Status);
+    }
 
     /*
      * Initialize all display devices.
@@ -720,7 +731,7 @@ NtUserEnumDisplaySettings(
     WCHAR awcDevice[CCHDEVICENAME];
     NTSTATUS Status;
     ULONG cbSize = 0, cbExtra = 0;
-    DEVMODEW dmReg, dmDetached, *pdm;
+    DEVMODEW dmReg, *pdm;
     PDEVMODEW pdmCaptured = NULL;
     POINTL ptlPosition;
     BOOL bCurrent = FALSE;
@@ -792,18 +803,6 @@ NtUserEnumDisplaySettings(
         /* Get the current settings */
         Status = UserEnumCurrentDisplaySettings(pustrDevice, &pdmCaptured, &ptlPosition);
         pdm = pdmCaptured;
-        if (Status == STATUS_INVALID_PARAMETER_1 && pustrDevice && EngpFindGraphicsDevice(pustrDevice, 0))
-        {
-            /* A display device that is not attached to the desktop is current in the detached mode, at its registry position */
-            RtlZeroMemory(&dmDetached, sizeof(dmDetached));
-            dmDetached.dmSize = sizeof(dmDetached);
-            ptlPosition.x = ptlPosition.y = 0;
-            if (NT_SUCCESS(UserEnumRegistryDisplaySettings(pustrDevice, &dmReg)))
-                ptlPosition = dmReg.dmPosition;
-            dmDetached.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
-            pdm = &dmDetached;
-            Status = STATUS_SUCCESS;
-        }
         bCurrent = TRUE;
     }
     else

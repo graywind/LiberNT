@@ -207,6 +207,7 @@ list(APPEND KMTEST_DRV_SOURCE
     ntos_io/IoCancelKM.c
     ntos_io/IoCloseIrqlKM.c
     ntos_io/IoContainerId.c
+    ntos_io/IoRootPdo.c
     ntos_io/IoCreateDeviceSecure.c
     ntos_io/IoDeleteDeviceName.c
     ntos_io/IoReadPartitionTable.c
@@ -230,6 +231,7 @@ list(APPEND KMTEST_DRV_SOURCE
     ntos_io/IoResourceSearch.c
     ntos_io/IoMessageInterruptClaim.c
     ntos_io/IoCreateDriverContext.c
+    ntos_io/IoDefaultDispatch.c
     ntos_io/PciLineInterrupt.c
     ntos_io/IoStorageDumpPath.c
     ntos_io/IoFilesystem.c
