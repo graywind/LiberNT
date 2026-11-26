@@ -196,7 +196,7 @@ Test_ThreadHideFromDebuggerClass(void)
     IsThreadHidden = TRUE;
     Status = NtSetInformationThread(hThread,
                                     ThreadHideFromDebugger,
-                                    &IsThreadHidden,
+                                    (PVOID)((ULONG_PTR)&IsThreadHidden | 1),
                                     sizeof(IsThreadHidden));
     ok_ntstatus(Status, STATUS_DATATYPE_MISALIGNMENT);
 
