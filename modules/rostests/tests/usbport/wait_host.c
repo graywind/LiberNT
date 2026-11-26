@@ -2,6 +2,7 @@
  * PROJECT: LiberNT host-side USBPORT tests
  * LICENSE: GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
  * PURPOSE: Test that USBPORT_Wait never waits on a thread at raised IRQL.
+ * COPYRIGHT:   Copyright 2026 LiberNT contributors
  */
 #include <assert.h>
 #include <stddef.h>

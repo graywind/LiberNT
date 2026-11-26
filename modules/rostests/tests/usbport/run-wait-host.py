@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GPL-3.0-or-later
+# PROJECT:     LiberNT host-side USBPORT tests
+# LICENSE:     GPL-3.0-or-later (https://spdx.org/licenses/GPL-3.0-or-later)
+# PURPOSE:     Exercise the production USBPORT_Wait at passive and raised IRQL
+# COPYRIGHT:   Copyright 2026 LiberNT contributors
 """Exercise the production USBPORT_Wait at passive and raised IRQL."""
 import argparse
 import os
