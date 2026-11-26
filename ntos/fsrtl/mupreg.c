@@ -64,7 +64,8 @@ FsRtlpRegisterProviderWithMUP(
 
     Registration->Public.RedirectorDeviceNameOffset =
         sizeof(MUP_PROVIDER_REGISTRATION_INFO_PRIVATE);
-    Registration->Public.RedirectorDeviceNameLength = RedirectorDeviceName->Length;
+    Registration->Public.RedirectorDeviceNameLength =
+        RedirectorDeviceName->Length;
     Registration->DeviceObject = DeviceObject;
     Registration->Public.MailslotsSupported = MailslotsSupported;
 
