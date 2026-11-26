@@ -124,10 +124,38 @@ ZwOpenPartition(
 
 extern NTKERNELAPI POBJECT_TYPE PsPartitionType;
 
+typedef struct _TEST_VIRTUAL_FRAME_BUFFER
+{
+    PVOID Buffer;
+    SIZE_T Size;
+} TEST_VIRTUAL_FRAME_BUFFER, *PTEST_VIRTUAL_FRAME_BUFFER;
+
 NTSTATUS
 NTAPI
 InbvSetVirtualFrameBuffer(
-    _In_opt_ PVOID VirtualFrameBuffer);
+    _In_opt_ PTEST_VIRTUAL_FRAME_BUFFER VirtualFrameBuffer);
+
+BOOLEAN
+NTAPI
+InbvCheckDisplayOwnership(VOID);
+
+VOID
+NTAPI
+InbvAcquireDisplayOwnership(VOID);
+
+VOID
+NTAPI
+InbvNotifyDisplayOwnershipLost(
+    _In_opt_ PVOID Callback);
+
+VOID
+NTAPI
+InbvSolidColorFill(
+    _In_ ULONG Left,
+    _In_ ULONG Top,
+    _In_ ULONG Right,
+    _In_ ULONG Bottom,
+    _In_ ULONG Color);
 
 VOID
 NTAPI
@@ -303,14 +331,6 @@ MmGetPhysicalMemoryRangesEx(
 
 BOOLEAN
 NTAPI
-ExIsManufacturingModeEnabled(VOID);
-
-BOOLEAN
-NTAPI
-ExIsSoftBoot(VOID);
-
-BOOLEAN
-NTAPI
 ExQueryFastCacheDevLicense(VOID);
 
 ULONGLONG
@@ -408,6 +428,11 @@ KsrMdlToMemoryRuns(
     _Out_writes_(MemoryRunCapacity) PULONGLONG MemoryRuns,
     _In_ ULONG MemoryRunCapacity,
     _Out_ PULONG MemoryRunCount);
+
+/* FIXME: the parameters are INFO_NEEDED, so the routine is only bound, never called */
+NTSTATUS
+NTAPI
+KsrFreePersistedMemoryBlock(VOID);
 #endif
 
 #define DEFINE_LKMD_CALLBACK(Number) \
@@ -619,6 +644,13 @@ static
 VOID
 TestDeviceAddressSpace(VOID)
 {
+    UNICODE_STRING RoutineName = RTL_CONSTANT_STRING(L"ExShareAddressSpaceWithDevice");
+
+    if (sizeof(PVOID) == sizeof(ULONGLONG))
+    {
+        ok(MmGetSystemRoutineAddress(&RoutineName) != NULL,
+           "ExShareAddressSpaceWithDevice is not exported\n");
+    }
 #ifdef _M_ARM64
     PDEVICE_OBJECT DeviceObject;
     ULONG FirstAsid = 0;
@@ -945,6 +977,48 @@ TestKsrPersistMemoryWithMetadata(VOID)
 
 static
 VOID
+CheckBootGraphicsSize(
+    _In_ ULONG Size)
+{
+    UCHAR Buffer[sizeof(SYSTEM_BOOT_GRAPHICS_INFORMATION) + 8];
+    ULONG Length = 0;
+    NTSTATUS Status;
+
+    RtlFillMemory(Buffer, sizeof(Buffer), 0xA5);
+    Status = ZwQuerySystemInformation(SystemBootGraphicsInformation, Buffer, Size, &Length);
+    ok_eq_hex(Status, STATUS_INFO_LENGTH_MISMATCH);
+    ok_eq_ulong(Length, (ULONG)sizeof(SYSTEM_BOOT_GRAPHICS_INFORMATION));
+    ok_eq_hex(Buffer[0], 0xA5);
+}
+
+static
+VOID
+TestBootGraphicsInformation(VOID)
+{
+    SYSTEM_BOOT_GRAPHICS_INFORMATION Graphics;
+    ULONG Length = 0;
+    NTSTATUS Status;
+
+    if (skip(ExGetFirmwareType() == FirmwareTypeUefi, "boot graphics information is measured on UEFI firmware only\n"))
+        return;
+
+    RtlFillMemory(&Graphics, sizeof(Graphics), 0xA5);
+    Status = ZwQuerySystemInformation(SystemBootGraphicsInformation, &Graphics, sizeof(Graphics), &Length);
+    ok_eq_hex(Status, STATUS_SUCCESS);
+    ok_eq_ulong(Length, (ULONG)sizeof(Graphics));
+    ok(Graphics.FrameBuffer.QuadPart != 0, "no boot framebuffer address\n");
+    ok(Graphics.Width != 0 && Graphics.Height != 0, "no boot framebuffer size\n");
+    ok(Graphics.PixelStride >= Graphics.Width, "pixel stride %lu below the width %lu\n", Graphics.PixelStride, Graphics.Width);
+    ok_eq_ulong(Graphics.Flags, 0UL);
+    ok_eq_ulong(Graphics.DisplayRotation, 0UL);
+
+    CheckBootGraphicsSize(sizeof(Graphics) - sizeof(ULONG));
+    CheckBootGraphicsSize(sizeof(Graphics) + sizeof(ULONGLONG));
+    CheckBootGraphicsSize(0);
+}
+
+static
+VOID
 TestKsrFirmwareInformation(VOID)
 {
     PVOID FirmwareInformation;
@@ -1017,6 +1091,7 @@ TestKsrApiSetContract(VOID)
     TestKsrQueryMetadata();
     TestKsrPersistMemoryWithMetadata();
     TestKsrFirmwareInformation();
+    TestBootGraphicsInformation();
     TestKsrEnumeratePersistedMemory();
     TestKsrMdlToMemoryRuns();
     TestKsrFreePersistedMemory();
@@ -1403,6 +1478,106 @@ TestModernInbvState(VOID)
 
 static
 VOID
+TestVirtualFrameBuffer(VOID)
+{
+    SYSTEM_BOOT_GRAPHICS_INFORMATION Graphics;
+    TEST_VIRTUAL_FRAME_BUFFER Descriptor;
+    PUCHAR Buffer;
+    SIZE_T Size;
+    SIZE_T Index;
+    BOOLEAN Owned;
+    BOOLEAN Drawn = FALSE;
+    ULONG Length = 0;
+    NTSTATUS Status;
+
+    Status = ZwQuerySystemInformation(SystemBootGraphicsInformation, &Graphics, sizeof(Graphics), &Length);
+    if (skip(NT_SUCCESS(Status) && Graphics.Height != 0 && Graphics.PixelStride != 0, "no boot frame buffer\n"))
+        return;
+
+    Size = (SIZE_T)Graphics.Height * Graphics.PixelStride * sizeof(ULONG);
+    Buffer = ExAllocatePoolZero(NonPagedPoolNx, Size, 'bVtK');
+    if (skip(Buffer != NULL, "no memory for a %Iu-byte frame buffer\n", Size))
+        return;
+
+    Descriptor.Buffer = Buffer;
+    Descriptor.Size = Size;
+    Status = InbvSetVirtualFrameBuffer(&Descriptor);
+    ok_eq_hex(Status, STATUS_SUCCESS);
+    if (NT_SUCCESS(Status))
+    {
+        Owned = InbvCheckDisplayOwnership();
+        if (!Owned)
+            InbvAcquireDisplayOwnership();
+        InbvSolidColorFill(0, 0, 7, 7, 15);
+        if (!Owned)
+            InbvNotifyDisplayOwnershipLost(NULL);
+
+        ok_eq_pointer(Descriptor.Buffer, (PVOID)Buffer);
+        ok_eq_size(Descriptor.Size, Size);
+        for (Index = 0; Index < Size && !Drawn; Index++)
+            Drawn = (Buffer[Index] != 0);
+        ok(Drawn, "the boot video driver did not draw to the virtual frame buffer\n");
+
+        Status = InbvSetVirtualFrameBuffer(NULL);
+        ok_eq_hex(Status, STATUS_SUCCESS);
+    }
+
+    ExFreePoolWithTag(Buffer, 'bVtK');
+}
+
+typedef struct _TEST_MEMORY_PARTITION_INFORMATION
+{
+    ULONG Flags;
+    ULONG NumaNode;
+    ULONG Channel;
+    ULONG NumberOfNumaNodes;
+    ULONG64 ResidentAvailablePages;
+    ULONG64 CommittedPages;
+    ULONG64 CommitLimit;
+    ULONG64 PeakCommitment;
+    ULONG64 TotalNumberOfPages;
+    ULONG64 AvailablePages;
+    ULONG64 ZeroPages;
+    ULONG64 FreePages;
+    ULONG64 StandbyPages;
+    ULONG64 Reserved[16];
+    ULONG64 MaximumCommitLimit;
+    ULONG64 Reserved2;
+    ULONG PartitionId;
+} TEST_MEMORY_PARTITION_INFORMATION;
+
+C_ASSERT(sizeof(TEST_MEMORY_PARTITION_INFORMATION) == 0xF0);
+
+static
+VOID
+TestSystemPartitionInformation(
+    _In_ HANDLE PartitionHandle)
+{
+    TEST_MEMORY_PARTITION_INFORMATION Information;
+    NTSTATUS Status;
+
+    RtlZeroMemory(&Information, sizeof(Information));
+    Information.NumaNode = MAXULONG;
+    Information.Channel = MAXULONG;
+    Status = ZwManagePartition(PartitionHandle, NULL, SystemMemoryPartitionInformation, &Information, sizeof(Information));
+    ok_eq_hex(Status, STATUS_SUCCESS);
+    if (!NT_SUCCESS(Status))
+        return;
+
+    ok_eq_ulong(Information.Flags, 0UL);
+    ok_eq_ulong(Information.NumaNode, MAXULONG);
+    ok_eq_ulong(Information.Channel, MAXULONG);
+    ok(Information.NumberOfNumaNodes != 0, "no NUMA node was reported\n");
+    ok(Information.CommittedPages <= Information.CommitLimit, "%I64u pages committed, limit %I64u\n", Information.CommittedPages, Information.CommitLimit);
+    ok(Information.PeakCommitment >= Information.CommittedPages, "peak %I64u below the %I64u pages committed\n", Information.PeakCommitment, Information.CommittedPages);
+    ok(Information.TotalNumberOfPages != 0, "the partition has no pages\n");
+    ok(Information.AvailablePages <= Information.TotalNumberOfPages, "%I64u pages available of %I64u\n", Information.AvailablePages, Information.TotalNumberOfPages);
+    ok(Information.MaximumCommitLimit >= Information.CommitLimit, "maximum commit limit %I64u below the limit %I64u\n", Information.MaximumCommitLimit, Information.CommitLimit);
+    ok_eq_ulong(Information.PartitionId, 0UL);
+}
+
+static
+VOID
 TestModernProviderState(VOID)
 {
     static const WCHAR ExpectedLicenseData[] = L"EMPTY";
@@ -1718,7 +1893,10 @@ START_TEST(ExWddmFault)
 #ifdef KMT_KSR_APISET
 START_TEST(ExWddmKsrLoad)
 {
+    PVOID volatile Routine = (PVOID)KsrFreePersistedMemoryBlock;
+
     ok(TRUE, "KSR API-set import table resolved\n");
+    ok(Routine != NULL, "KsrFreePersistedMemoryBlock is not bound\n");
 }
 
 START_TEST(ExWddmKsr)
@@ -1745,6 +1923,7 @@ START_TEST(ExWddmPoFx)
 START_TEST(ExWddmInbv)
 {
     TestModernInbvState();
+    TestVirtualFrameBuffer();
 }
 
 START_TEST(ExWddmRotate)
@@ -1760,6 +1939,8 @@ START_TEST(ExWddmRotateValid)
 START_TEST(ExWddmProviders)
 {
     TestModernProviderState();
+    TestSystemPartitionInformation((HANDLE)(LONG_PTR)MEMORY_CURRENT_PARTITION_HANDLE);
+    TestSystemPartitionInformation((HANDLE)(LONG_PTR)MEMORY_SYSTEM_PARTITION_HANDLE);
 }
 
 START_TEST(ExWddmTls)

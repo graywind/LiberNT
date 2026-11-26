@@ -178,6 +178,7 @@ typedef struct _DXGKVMM_RESOURCE DXGKVMM_RESOURCE, *PDXGKVMM_RESOURCE;
 #define TAG_DXGK_SUBMITDMA  'QxgD'   /* DXGQ - tracked submit DMA buffers */
 #define TAG_DXGK_HANDLE     'HxgD'   /* DXGH - typed D3DKMT handle entry   */
 #define TAG_DXGK_CAPTURE    'UxgD'   /* DXGU - captured user buffers       */
+#define TAG_DXGK_SWAPCHAIN  'WxgD'   /* DXGW - swap chain metadata         */
 #define TAG_DXGK_OVERLAY    'OxgD'   /* DXGO - hardware overlays           */
 #define DXGKP_MAX_USER_PRIVATE_DATA (1024U * 1024U)
 #define DXGKP_MAX_CAPTURE_ALLOCATIONS 4096U
@@ -2321,6 +2322,11 @@ typedef struct _DXGKRNL_SYNC_OBJECT
     LIST_ENTRY                  ViewListHead;
     LIST_ENTRY                  ViewListEntry;
     volatile LONG               ViewCount;
+    /* A shared object's state lives in a core that belongs to no device; every holder, the creator included, holds a view of it. */
+    PDXGKRNL_ADAPTER            CoreAdapter;
+    LUID                        CoreAdapterLuid;
+    DXGK_SYNC_WAIT_CORE_REGISTRY CoreWaitRegistry;
+    struct _DXGKRNL_SYNC_OBJECT *HomeView;
     volatile LONG               MonitoredPageQuarantined;
 
     /*
@@ -3430,6 +3436,13 @@ NTSTATUS
 DxgkSharedObjectsInitialize(VOID);
 
 NTSTATUS
+DxgkSwapChainInitialize(VOID);
+
+NTSTATUS
+DxgkSwapChainDispatch(
+    _Inout_ struct _RXGK_SWAPCHAIN_PACKET *Packet);
+
+NTSTATUS
 DxgkCleanupAdapterDevices(
     _In_ PDXGKRNL_ADAPTER Adapter);
 
@@ -3546,6 +3559,16 @@ DxgkpReferenceSyncObjectView(
 VOID
 DxgkSyncWakeViews(
     _In_opt_ PDXGKRNL_SYNC_OBJECT SyncObj);
+
+BOOLEAN
+DxgkSyncObjectOnAdapter(
+    _In_ PDXGKRNL_SYNC_OBJECT SyncObj,
+    _In_ PDXGKRNL_ADAPTER Adapter);
+
+BOOLEAN
+DxgkSyncObjectIsHomeDevice(
+    _In_ PDXGKRNL_SYNC_OBJECT SyncObj,
+    _In_ PDXGKRNL_DEVICE Device);
 
 NTSTATUS
 DxgkSyncSharedObjectsInitialize(VOID);

@@ -1112,6 +1112,10 @@ CmpCommitKeyControlBlockRename(
     _In_ PVOID RenameContext,
     _In_ HCELL_INDEX NewCell);
 
+BOOLEAN
+CmpIsHardwareTree(
+    _In_ PCM_KEY_CONTROL_BLOCK Kcb);
+
 PUNICODE_STRING
 NTAPI
 CmpConstructName(

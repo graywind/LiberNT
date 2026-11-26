@@ -1091,6 +1091,22 @@ void free_authorization_cache(void)
     LeaveCriticalSection(&authcache_cs);
 }
 
+#ifdef __REACTOS__
+static BOOL is_intranet_host(const WCHAR *host)
+{
+    const WCHAR *p;
+
+    if (!host[0] || host[0] == '[')
+        return FALSE;
+    for (p = host; *p && *p != ':'; p++)
+    {
+        if (*p == '.')
+            return FALSE;
+    }
+    return TRUE;
+}
+
+#endif
 static BOOL HTTP_DoAuthorization( http_request_t *request, LPCWSTR pszAuthValue,
                                   struct HttpAuthInfo **ppAuthInfo,
                                   LPWSTR domain_and_username, LPWSTR password,
@@ -1169,6 +1185,13 @@ static BOOL HTTP_DoAuthorization( http_request_t *request, LPCWSTR pszAuthValue,
             }
             else if(retrieve_cached_authorization(host, pAuthInfo->scheme, &nt_auth_identity))
                 pAuthData = &nt_auth_identity;
+#ifdef __REACTOS__
+            else if (host && !is_intranet_host(host))
+            {
+                destroy_authinfo(pAuthInfo);
+                return FALSE;
+            }
+#endif
             else
                 /* use default credentials */
                 pAuthData = NULL;
@@ -5877,6 +5900,15 @@ static DWORD create_request(http_request_t *request, void *optional, DWORD optle
                         request->verb = wcsdup(L"GET");
                     }
                     http_release_netconn(request, drain_content(request, FALSE) == ERROR_SUCCESS);
+#ifdef __REACTOS__
+                    if (request->redirect_count >= 10)
+                    {
+                        free(new_url);
+                        res = ERROR_HTTP_REDIRECT_FAILED;
+                        break;
+                    }
+                    request->redirect_count++;
+#endif
                     res = HTTP_HandleRedirect(request, new_url);
                     free(new_url);
                     if (res == ERROR_SUCCESS)
@@ -6308,6 +6340,9 @@ static void AsyncHttpSendRequestProc(task_header_t *hdr)
 
     TRACE("%p\n", request);
 
+#ifdef __REACTOS__
+    request->redirect_count = 0;
+#endif
     HTTP_HttpSendRequestW(request, task->headers, task->headers_len, task->optional,
             task->optional_len, task->content_len, task->end_request);
 #ifdef __REACTOS__
@@ -6401,6 +6436,15 @@ static DWORD HTTP_HttpEndRequestW(http_request_t *request, DWORD dwFlags, DWORD_
                 request->verb = wcsdup(L"GET");
             }
             http_release_netconn(request, drain_content(request, FALSE) == ERROR_SUCCESS);
+#ifdef __REACTOS__
+            if (request->redirect_count >= 10)
+            {
+                free(new_url);
+                res = ERROR_HTTP_REDIRECT_FAILED;
+                break;
+            }
+            request->redirect_count++;
+#endif
             res = HTTP_HandleRedirect(request, new_url);
             free(new_url);
             if (res == ERROR_SUCCESS)
@@ -6705,6 +6749,9 @@ BOOL WINAPI HttpSendRequestExW(HINTERNET hRequest,
     }
     else
     {
+#ifdef __REACTOS__
+        request->redirect_count = 0;
+#endif
         if (lpBuffersIn)
             res = HTTP_HttpSendRequestW(request, lpBuffersIn->lpcszHeader, lpBuffersIn->dwHeadersLength,
                                         lpBuffersIn->lpvBuffer, lpBuffersIn->dwBufferLength,
@@ -6824,6 +6871,9 @@ BOOL WINAPI HttpSendRequestW(HINTERNET hHttpRequest, LPCWSTR lpszHeaders,
     }
     else
     {
+#ifdef __REACTOS__
+	request->redirect_count = 0;
+#endif
 	res = HTTP_HttpSendRequestW(request, lpszHeaders,
 		dwHeaderLength, lpOptional, dwOptionalLength,
 		dwOptionalLength, TRUE);

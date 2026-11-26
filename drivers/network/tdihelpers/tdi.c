@@ -747,6 +747,7 @@ NTSTATUS TdiQueryDeviceControl(
                                         &Iosb);
     if (!Irp)
         return STATUS_INSUFFICIENT_RESOURCES;
+    IoGetNextIrpStackLocation(Irp)->FileObject = FileObject;
 
     Status = TdiCall(Irp, DeviceObject, &Event, &Iosb);
 
@@ -849,6 +850,40 @@ NTSTATUS TdiQueryInformationEx(
                                  OutputBuffer,                              /* Output buffer */
                                  *OutputLength,                             /* Output buffer length */
                                  OutputLength);                             /* Return information */
+}
+
+NTSTATUS TdiSetInformationEx(
+    PFILE_OBJECT FileObject,
+    ULONG Entity,
+    ULONG Instance,
+    ULONG Class,
+    ULONG Type,
+    ULONG Id,
+    PVOID InputBuffer,
+    ULONG InputLength)
+{
+    PTCP_REQUEST_SET_INFORMATION_EX SetInfo;
+    ULONG Length = FIELD_OFFSET(TCP_REQUEST_SET_INFORMATION_EX, Buffer) + InputLength;
+    ULONG Returned = 0;
+    NTSTATUS Status;
+
+    NT_ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+    NT_ASSERT(InputBuffer != NULL || InputLength == 0);
+
+    SetInfo = ExAllocatePoolZero(NonPagedPool, Length, TAG_AFD_TDI_CONNECTION_INFORMATION);
+    if (!SetInfo)
+        return STATUS_INSUFFICIENT_RESOURCES;
+    SetInfo->ID.toi_entity.tei_entity = Entity;
+    SetInfo->ID.toi_entity.tei_instance = Instance;
+    SetInfo->ID.toi_class = Class;
+    SetInfo->ID.toi_type = Type;
+    SetInfo->ID.toi_id = Id;
+    SetInfo->BufferSize = InputLength;
+    RtlCopyMemory(SetInfo->Buffer, InputBuffer, InputLength);
+
+    Status = TdiQueryDeviceControl(FileObject, IOCTL_TCP_SET_INFORMATION_EX, SetInfo, Length, NULL, 0, &Returned);
+    ExFreePoolWithTag(SetInfo, TAG_AFD_TDI_CONNECTION_INFORMATION);
+    return Status;
 }
 
 NTSTATUS TdiQueryAddress(

@@ -29,6 +29,7 @@ list(APPEND SOURCE
     d3dkmt_softgpu_tdr.c
     d3dkmt_hwqueue.c
     d3dkmt_sync2.c
+    d3dkmt_syncver.c
     d3dkmt_fencestorage.c
     d3dkmt_videomem.c
     d3dkmt_enum2.c
@@ -106,6 +107,7 @@ if(REACTOS_USE_WDDM AND (REACTOS_WDDM_TARGET_LEVEL GREATER_EQUAL 2000))
     target_compile_definitions(d3dkmt_apitest PRIVATE REACTOS_D3DKMT_VC4KMT_TEST)
 endif()
 set_module_type(d3dkmt_apitest win32cui)
-add_importlibs(d3dkmt_apitest gdi32 user32 advapi32 msvcrt kernel32 ntdll)
+add_importlibs(d3dkmt_apitest user32 advapi32 msvcrt kernel32 ntdll)
+add_delay_importlibs(d3dkmt_apitest gdi32)
 add_pch(d3dkmt_apitest precomp.h "${PCH_SKIP_SOURCE}")
 add_rostests_file(TARGET d3dkmt_apitest)

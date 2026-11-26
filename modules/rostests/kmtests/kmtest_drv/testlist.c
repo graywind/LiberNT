@@ -184,6 +184,7 @@ KMT_TESTFUNC Test_KsDispatchFileObject;
 KMT_TESTFUNC Test_HalRealTimeClock;
 KMT_TESTFUNC Test_HalSystemInfo;
 KMT_TESTFUNC Test_IoContainerId;
+KMT_TESTFUNC Test_IoRootPdo;
 KMT_TESTFUNC Test_IoDriverKeyOpen;
 KMT_TESTFUNC Test_IoDriverState;
 KMT_TESTFUNC Test_IoAllocateIrpEx;
@@ -202,10 +203,12 @@ KMT_TESTFUNC Test_IoDeviceInterface;
 KMT_TESTFUNC Test_IoDeviceTextProperties;
 KMT_TESTFUNC Test_IoDeviceSecurity;
 KMT_TESTFUNC Test_IoEvent;
+KMT_TESTFUNC Test_IoInterfaceDisable;
 KMT_TESTFUNC Test_IoInterfaceOrderCheck;
 KMT_TESTFUNC Test_IoResourceSearch;
 KMT_TESTFUNC Test_IoMessageInterruptClaim;
 KMT_TESTFUNC Test_IoCreateDriverContext;
+KMT_TESTFUNC Test_IoDefaultDispatch;
 KMT_TESTFUNC Test_PciLineInterrupt;
 KMT_TESTFUNC Test_IoStorageDumpPath;
 KMT_TESTFUNC Test_IoWmiAcpi;
@@ -324,6 +327,7 @@ KMT_TESTFUNC Test_CmSaveKeyFlush;
 KMT_TESTFUNC Test_CmCallbacks;
 KMT_TESTFUNC Test_CmTransactions;
 KMT_TESTFUNC Test_CmKeyKM;
+KMT_TESTFUNC Test_CmVolatileParent;
 KMT_TESTFUNC Test_EtwRegisterKM;
 KMT_TESTFUNC Test_EtwSessionKM;
 KMT_TESTFUNC Test_EtwSessionIrqlKM;
@@ -374,6 +378,7 @@ KMT_TESTFUNC Test_MmMdl;
 KMT_TESTFUNC Test_MmMdlDispatch;
 KMT_TESTFUNC Test_MmLargePages;
 KMT_TESTFUNC Test_MmSection;
+KMT_TESTFUNC Test_MmSectionPartition;
 KMT_TESTFUNC Test_MmSystemViewCache;
 KMT_TESTFUNC Test_MmWddmRanges;
 KMT_TESTFUNC Test_MmPhysicalAddressRace;
@@ -630,6 +635,7 @@ const KMT_TEST TestList[] =
     { "HalRealTimeClock",                   Test_HalRealTimeClock },
     { "HalSystemInfo",                      Test_HalSystemInfo },
     { "IoContainerId",                      Test_IoContainerId },
+    { "IoRootPdo",                          Test_IoRootPdo },
     { "-IoDriverKeyOpen",                   Test_IoDriverKeyOpen },
     { "IoDriverState",                      Test_IoDriverState },
     { "IoAllocateIrpEx",                    Test_IoAllocateIrpEx },
@@ -648,10 +654,12 @@ const KMT_TEST TestList[] =
     { "IoDeviceTextProperties",             Test_IoDeviceTextProperties },
     { "IoDeviceSecurity",                   Test_IoDeviceSecurity },
     { "IoEvent",                            Test_IoEvent },
+    { "IoInterfaceDisable",                 Test_IoInterfaceDisable },
     { "-IoInterfaceOrderCheck",             Test_IoInterfaceOrderCheck },
     { "IoResourceSearch",                   Test_IoResourceSearch },
     { "IoMessageInterruptClaim",            Test_IoMessageInterruptClaim },
     { "IoCreateDriverContext",              Test_IoCreateDriverContext },
+    { "IoDefaultDispatch",                  Test_IoDefaultDispatch },
     { "PciLineInterrupt",                   Test_PciLineInterrupt },
     { "IoStorageDumpPath",            Test_IoStorageDumpPath },
     { "IoFilesystem",                       Test_IoFilesystem },
@@ -687,6 +695,7 @@ const KMT_TEST TestList[] =
     { "CmCallbacks",                        Test_CmCallbacks },
     { "CmTransactions",                     Test_CmTransactions },
     { "CmKeyKM",                            Test_CmKeyKM },
+    { "CmVolatileParent",                   Test_CmVolatileParent },
     { "CmSaveKeyFlush",                     Test_CmSaveKeyFlush },
     { "EtwRegisterKM",                      Test_EtwRegisterKM },
     { "EtwSessionKM",                       Test_EtwSessionKM },
@@ -839,6 +848,7 @@ const KMT_TEST TestList[] =
     { "MmLargePages",                       Test_MmLargePages },
     { "MmSecureKM",                         Test_MmSecureKM },
     { "MmSection",                          Test_MmSection },
+    { "MmSectionPartition",                 Test_MmSectionPartition },
     { "MmSystemViewCache",                  Test_MmSystemViewCache },
     { "MmWddmRanges",                       Test_MmWddmRanges },
     { "MmPhysicalAddressRace",              Test_MmPhysicalAddressRace },

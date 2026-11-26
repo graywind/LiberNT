@@ -138,3 +138,61 @@ START_TEST(NdisSgDma)
     }
     RegCloseKey(Key);
 }
+
+START_TEST(NdisCheckForHang)
+{
+    WCHAR InfPath[MAX_PATH];
+    ULONG Irql = NDISSG_UNSET, One = 1, Zero = 0, Done = 0;
+    BOOL Reboot = FALSE, Found = FALSE;
+    PWSTR Filename;
+    HKEY Key = NULL;
+    DWORD Length, Start;
+
+    if (skip(NdisSgDevicePresent(), "No %ls device to bind the test miniport to\n", NDISSG_HARDWARE_ID))
+        return;
+    Length = GetModuleFileNameW(NULL, InfPath, RTL_NUMBER_OF(InfPath));
+    Filename = Length && Length < RTL_NUMBER_OF(InfPath) ? wcsrchr(InfPath, L'\\') : NULL;
+    if (!Filename || Filename - InfPath + RTL_NUMBER_OF(L"\\kmtest_ndissg.inf") > RTL_NUMBER_OF(InfPath))
+    {
+        ok(FALSE, "Cannot build the INF path\n");
+        return;
+    }
+    wcscpy(Filename + 1, L"kmtest_ndissg.inf");
+    RegDeleteKeyW(HKEY_LOCAL_MACHINE, NDISSG_PARAMETERS_KEY);
+    ok(RegCreateKeyExW(HKEY_LOCAL_MACHINE, NDISSG_PARAMETERS_KEY, 0, NULL, 0, KEY_SET_VALUE | KEY_QUERY_VALUE, NULL, &Key, NULL) == ERROR_SUCCESS,
+       "Cannot create the parameters key\n");
+    if (!Key)
+        return;
+    RegSetValueExW(Key, L"HangCheck", 0, REG_DWORD, (PBYTE)&One, sizeof(One));
+
+    ok(UpdateDriverForPlugAndPlayDevicesW(NULL, NDISSG_HARDWARE_ID, InfPath, INSTALLFLAG_FORCE | INSTALLFLAG_NONINTERACTIVE, &Reboot),
+       "Installing the test miniport failed: %lu\n", GetLastError());
+
+    Start = GetTickCount();
+    do
+    {
+        Found = NdisSgRead(Key, L"HangIrql", &Irql);
+        if (Found)
+            break;
+        Sleep(100);
+    } while (GetTickCount() - Start < 10000);
+    ok(Found, "MiniportCheckForHangEx was not called\n");
+    if (Found)
+        ok(Irql == 0, "MiniportCheckForHangEx ran at IRQL %lu, expected PASSIVE_LEVEL\n", Irql);
+
+    RegSetValueExW(Key, L"HangCheck", 0, REG_DWORD, (PBYTE)&Zero, sizeof(Zero));
+    RegDeleteValueW(Key, L"Done");
+    Reboot = TRUE;
+    ok(UpdateDriverForPlugAndPlayDevicesW(NULL, NDISSG_HARDWARE_ID, InfPath, INSTALLFLAG_FORCE | INSTALLFLAG_NONINTERACTIVE, &Reboot),
+       "Reinstalling the test miniport failed: %lu\n", GetLastError());
+    ok(!Reboot, "Reinstalling the started test miniport needs a reboot\n");
+    Start = GetTickCount();
+    do
+    {
+        if (NdisSgRead(Key, L"Done", &Done) && Done)
+            break;
+        Sleep(100);
+    } while (GetTickCount() - Start < 10000);
+    ok(Done == 1, "The started test miniport was not restarted by the reinstall\n");
+    RegCloseKey(Key);
+}
