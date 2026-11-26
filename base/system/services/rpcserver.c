@@ -842,7 +842,6 @@ ScmCanonDriverImagePath(DWORD dwStartType,
             return ERROR_NOT_ENOUGH_MEMORY;
         }
 
-        /* The loader resolves the global system root for every start type */
         wcscpy(*lpCanonName, L"\\SystemRoot\\");
 
         wcscat(*lpCanonName, lpServiceName + 13);
@@ -897,7 +896,6 @@ ScmCanonDriverImagePath(DWORD dwStartType,
     Result = ScmConvertToBootPathName(*lpCanonName, &RelativeName);
     if (Result)
     {
-        /* A driver outside the system root keeps its full NT path */
         if (dwStartType == SERVICE_BOOT_START)
         {
             HeapFree(GetProcessHeap(), 0, *lpCanonName);
@@ -913,13 +911,11 @@ ScmCanonDriverImagePath(DWORD dwStartType,
 
     if (dwStartType == SERVICE_BOOT_START)
     {
-        /* Boot drivers are given to the bootloader system-root relative */
         wcscpy(*lpCanonName, RelativeName + 12);
         HeapFree(GetProcessHeap(), 0, RelativeName);
     }
     else
     {
-        /* The loader resolves the global system root for every start type */
         HeapFree(GetProcessHeap(), 0, *lpCanonName);
         *lpCanonName = RelativeName;
     }
