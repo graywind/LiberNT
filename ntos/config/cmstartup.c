@@ -1057,7 +1057,8 @@ CmpInitializeHiveList(VOID)
                                      &Hive,
                                      &Allocate,
                                      CM_CHECK_REGISTRY_VALIDATE_HIVE |
-                                     CM_CHECK_REGISTRY_PURGE_VOLATILES);
+                                     CM_CHECK_REGISTRY_PURGE_VOLATILES,
+                                     FALSE);
         if (!NT_SUCCESS(Status)) continue;
 
         Hive->Flags |= Entry->CmHiveFlags;

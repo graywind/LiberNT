@@ -478,7 +478,8 @@ CmpCmdHiveOpen(
                                  0,
                                  NewHive,
                                  Allocate,
-                                 CheckFlags);
+                                 CheckFlags,
+                                 TRUE);
 
     if (ImpersonationContext != NULL) PsRevertToSelf();
 
@@ -765,7 +766,8 @@ CmpLoadHiveAtName(
                                  &CmHive,
                                  &Allocate,
                                  CM_CHECK_REGISTRY_VALIDATE_HIVE |
-                                 CM_CHECK_REGISTRY_PURGE_VOLATILES);
+                                 CM_CHECK_REGISTRY_PURGE_VOLATILES,
+                                 TRUE);
     if (!NT_SUCCESS(Status))
     {
         ExReleasePushLockExclusive(&CmpLoadHiveLock);
@@ -1565,7 +1567,8 @@ CmpLoadHiveThread(
                                  &CmHive,
                                  &Allocate,
                                  CM_CHECK_REGISTRY_VALIDATE_HIVE |
-                                 CM_CHECK_REGISTRY_PURGE_VOLATILES);
+                                 CM_CHECK_REGISTRY_PURGE_VOLATILES,
+                                 TRUE);
     if (NT_SUCCESS(Status))
     {
         CmHive->Flags |= ListEntry->CmHiveFlags;
